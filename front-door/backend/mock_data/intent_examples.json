@@ -1,0 +1,382 @@
+{
+  "intent_examples": {
+    "password_reset": {
+      "category": "ACCOUNT_ACCESS",
+      "department": "IT",
+      "examples": [
+        "I forgot my password",
+        "Can't log into Canvas",
+        "Need to reset my password",
+        "My password isn't working",
+        "Locked out of my account",
+        "Password expired"
+      ],
+      "entities": ["system", "account_type"],
+      "priority": "MEDIUM"
+    },
+    "login_issues": {
+      "category": "ACCOUNT_ACCESS",
+      "department": "IT",
+      "examples": [
+        "I can't log in",
+        "Getting an error when I try to sign in",
+        "Authentication failed",
+        "My login isn't working",
+        "Can't access my account"
+      ],
+      "entities": ["system", "error_message"],
+      "priority": "MEDIUM"
+    },
+    "account_locked": {
+      "category": "ACCOUNT_ACCESS",
+      "department": "IT",
+      "examples": [
+        "My account is locked",
+        "Account has been disabled",
+        "Can't access anything, account blocked",
+        "Locked out after too many attempts"
+      ],
+      "entities": ["system"],
+      "priority": "HIGH"
+    },
+    "transcript_request": {
+      "category": "ACADEMIC_RECORDS",
+      "department": "REGISTRAR",
+      "examples": [
+        "I need a transcript",
+        "How do I get my official transcript?",
+        "Need transcript for grad school",
+        "Send my transcript to another university",
+        "Transcript for job application"
+      ],
+      "entities": ["recipient", "urgency"],
+      "priority": "MEDIUM"
+    },
+    "grade_inquiry": {
+      "category": "ACADEMIC_RECORDS",
+      "department": "REGISTRAR",
+      "examples": [
+        "When will grades be posted?",
+        "I can't see my final grade",
+        "Grade isn't showing up",
+        "When do professors submit grades?"
+      ],
+      "entities": ["course_code", "semester"],
+      "priority": "LOW"
+    },
+    "enrollment_verification": {
+      "category": "ACADEMIC_RECORDS",
+      "department": "REGISTRAR",
+      "examples": [
+        "I need enrollment verification",
+        "Proof of enrollment for insurance",
+        "Letter confirming I'm a student",
+        "Verification for loan deferment"
+      ],
+      "entities": ["purpose", "recipient"],
+      "priority": "MEDIUM"
+    },
+    "financial_aid_inquiry": {
+      "category": "FINANCIAL",
+      "department": "FINANCIAL_AID",
+      "examples": [
+        "When will my financial aid come in?",
+        "Questions about my aid package",
+        "How much aid will I receive?",
+        "Financial aid status",
+        "Where's my refund?"
+      ],
+      "entities": ["aid_type", "semester"],
+      "priority": "MEDIUM"
+    },
+    "tuition_payment": {
+      "category": "FINANCIAL",
+      "department": "FINANCIAL_AID",
+      "examples": [
+        "How do I pay my tuition?",
+        "Payment plan options",
+        "Can I pay tuition in installments?",
+        "When is tuition due?",
+        "Set up automatic payments"
+      ],
+      "entities": ["payment_method", "semester"],
+      "priority": "MEDIUM"
+    },
+    "refund_request": {
+      "category": "FINANCIAL",
+      "department": "FINANCIAL_AID",
+      "escalate": true,
+      "examples": [
+        "I want a refund",
+        "Can I get my money back?",
+        "Refund for dropped class",
+        "Request tuition refund"
+      ],
+      "entities": ["reason", "amount"],
+      "priority": "HIGH"
+    },
+    "facilities_issue": {
+      "category": "FACILITIES",
+      "department": "FACILITIES",
+      "examples": [
+        "The elevator is broken",
+        "No hot water in the dorm",
+        "AC isn't working",
+        "Light bulb out in classroom",
+        "Heating problem in building"
+      ],
+      "entities": ["building", "room", "issue_type"],
+      "priority": "MEDIUM"
+    },
+    "maintenance_request": {
+      "category": "FACILITIES",
+      "department": "FACILITIES",
+      "examples": [
+        "Need maintenance in my room",
+        "Something needs to be fixed",
+        "Report a broken fixture",
+        "Request repair"
+      ],
+      "entities": ["building", "room", "issue_type"],
+      "priority": "MEDIUM"
+    },
+    "room_booking": {
+      "category": "FACILITIES",
+      "department": "FACILITIES",
+      "examples": [
+        "How do I book a study room?",
+        "Reserve a conference room",
+        "Need a room for club meeting",
+        "Room reservation"
+      ],
+      "entities": ["building", "date", "time", "purpose"],
+      "priority": "LOW"
+    },
+    "course_enrollment": {
+      "category": "ENROLLMENT",
+      "department": "REGISTRAR",
+      "examples": [
+        "How do I register for classes?",
+        "Add a course to my schedule",
+        "Enroll in a class",
+        "Sign up for courses"
+      ],
+      "entities": ["course_code", "semester"],
+      "priority": "MEDIUM"
+    },
+    "add_drop": {
+      "category": "ENROLLMENT",
+      "department": "REGISTRAR",
+      "examples": [
+        "I want to drop a class",
+        "Add/drop deadline",
+        "Remove course from schedule",
+        "Switch sections"
+      ],
+      "entities": ["course_code", "action"],
+      "priority": "MEDIUM"
+    },
+    "registration_hold": {
+      "category": "ENROLLMENT",
+      "department": "REGISTRAR",
+      "examples": [
+        "I have a hold on my account",
+        "Can't register because of hold",
+        "How do I clear a hold?",
+        "Registration blocked"
+      ],
+      "entities": ["hold_type"],
+      "priority": "HIGH"
+    },
+    "parking_permit": {
+      "category": "STUDENT_SERVICES",
+      "department": "CAMPUS_SAFETY",
+      "examples": [
+        "How do I get a parking permit?",
+        "Buy parking pass",
+        "Parking permit cost",
+        "Register my car for parking"
+      ],
+      "entities": ["permit_type", "vehicle_info"],
+      "priority": "LOW"
+    },
+    "id_card": {
+      "category": "STUDENT_SERVICES",
+      "department": "STUDENT_AFFAIRS",
+      "examples": [
+        "Lost my student ID",
+        "Need a new ID card",
+        "Replace student ID",
+        "ID card not working"
+      ],
+      "entities": ["issue_type"],
+      "priority": "MEDIUM"
+    },
+    "housing": {
+      "category": "STUDENT_SERVICES",
+      "department": "STUDENT_AFFAIRS",
+      "examples": [
+        "Housing application",
+        "Dorm room questions",
+        "Roommate issues",
+        "Move out date"
+      ],
+      "entities": ["building", "issue_type"],
+      "priority": "MEDIUM"
+    },
+    "grade_appeal": {
+      "category": "POLICY_EXCEPTION",
+      "department": "STUDENT_AFFAIRS",
+      "escalate": true,
+      "examples": [
+        "I want to appeal my grade",
+        "Contest my final grade",
+        "Grade appeal process",
+        "Unfair grading"
+      ],
+      "entities": ["course_code", "instructor", "reason"],
+      "priority": "HIGH"
+    },
+    "withdrawal_request": {
+      "category": "POLICY_EXCEPTION",
+      "department": "REGISTRAR",
+      "escalate": true,
+      "examples": [
+        "I need to withdraw from school",
+        "Medical withdrawal",
+        "Leave of absence",
+        "Take time off"
+      ],
+      "entities": ["reason", "semester"],
+      "priority": "HIGH"
+    },
+    "waiver_request": {
+      "category": "POLICY_EXCEPTION",
+      "department": "REGISTRAR",
+      "escalate": true,
+      "examples": [
+        "Request a waiver",
+        "Exception to policy",
+        "Waive the requirement",
+        "Override needed"
+      ],
+      "entities": ["requirement", "reason"],
+      "priority": "HIGH"
+    },
+    "general_question": {
+      "category": "GENERAL_INQUIRY",
+      "department": "IT",
+      "examples": [
+        "I have a question",
+        "Can you help me?",
+        "Need some information",
+        "Where can I find..."
+      ],
+      "entities": [],
+      "priority": "LOW"
+    },
+    "department_contact": {
+      "category": "GENERAL_INQUIRY",
+      "department": "IT",
+      "examples": [
+        "How do I contact the registrar?",
+        "Financial aid office hours",
+        "IT help desk location",
+        "Phone number for..."
+      ],
+      "entities": ["department"],
+      "priority": "LOW"
+    },
+    "ticket_status": {
+      "category": "STATUS_CHECK",
+      "department": "IT",
+      "examples": [
+        "What's the status of my ticket?",
+        "Check on my request",
+        "Any update on my issue?",
+        "Following up on ticket"
+      ],
+      "entities": ["ticket_id"],
+      "priority": "LOW"
+    },
+    "request_followup": {
+      "category": "STATUS_CHECK",
+      "department": "IT",
+      "examples": [
+        "Following up on my earlier request",
+        "Haven't heard back",
+        "Checking on progress",
+        "Any news on my case?"
+      ],
+      "entities": ["original_request"],
+      "priority": "MEDIUM"
+    },
+    "request_human": {
+      "category": "HUMAN_REQUEST",
+      "department": "ESCALATE_TO_HUMAN",
+      "escalate": true,
+      "examples": [
+        "I want to talk to a person",
+        "Can I speak to someone?",
+        "Transfer me to a human",
+        "Real person please",
+        "Connect me to an agent"
+      ],
+      "entities": [],
+      "priority": "HIGH"
+    },
+    "speak_to_person": {
+      "category": "HUMAN_REQUEST",
+      "department": "ESCALATE_TO_HUMAN",
+      "escalate": true,
+      "examples": [
+        "This isn't helping, I need a person",
+        "Let me talk to your supervisor",
+        "I don't want to use the chatbot",
+        "Human please"
+      ],
+      "entities": [],
+      "priority": "HIGH"
+    }
+  },
+  "policy_keywords": [
+    "appeal",
+    "waiver",
+    "exception",
+    "override",
+    "refund",
+    "withdrawal",
+    "deadline extension",
+    "discrimination",
+    "harassment",
+    "title ix",
+    "mental health",
+    "crisis",
+    "threat",
+    "emergency"
+  ],
+  "sensitive_topics": [
+    "title ix",
+    "sexual harassment",
+    "sexual assault",
+    "discrimination",
+    "mental health crisis",
+    "suicidal",
+    "self-harm",
+    "threat",
+    "violence",
+    "weapon"
+  ],
+  "urgency_indicators": [
+    "urgent",
+    "emergency",
+    "asap",
+    "immediately",
+    "right now",
+    "today",
+    "tonight",
+    "deadline",
+    "due tomorrow",
+    "can't wait"
+  ]
+}
