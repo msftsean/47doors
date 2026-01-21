@@ -104,6 +104,54 @@ class MockKnowledgeService(KnowledgeServiceInterface):
 
         return articles
 
+    async def search_with_content(
+        self,
+        query: str,
+        department: Optional[Department] = None,
+        limit: int = 3,
+    ) -> tuple[list[KnowledgeArticle], list[dict]]:
+        """Search articles and return both metadata and full content."""
+        results = []
+
+        for article in self._articles:
+            # Filter by department if specified
+            if department:
+                article_dept = article.get("department")
+                if article_dept and article_dept != department.value:
+                    continue
+
+            # Calculate relevance score
+            score = self._calculate_relevance(query, article)
+            if score > 0.1:  # Minimum threshold
+                results.append((article, score))
+
+        # Sort by relevance score descending
+        results.sort(key=lambda x: x[1], reverse=True)
+
+        # Build both article metadata and full content lists
+        articles = []
+        contents = []
+        for article, score in results[:limit]:
+            articles.append(
+                KnowledgeArticle(
+                    article_id=article["article_id"],
+                    title=article["title"],
+                    url=article["url"],
+                    snippet=article.get("snippet"),
+                    relevance_score=score,
+                    department=Department(article["department"]) if article.get("department") else None,
+                )
+            )
+            contents.append({
+                "article_id": article["article_id"],
+                "title": article["title"],
+                "content": article.get("content", ""),
+                "snippet": article.get("snippet", ""),
+                "tags": article.get("tags", []),
+            })
+
+        return articles, contents
+
     async def get_article(
         self,
         article_id: str,

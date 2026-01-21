@@ -75,6 +75,8 @@ export interface TicketStatusResponse {
   department: Department;
   status: TicketStatus;
   priority?: Priority;
+  summary?: string;
+  description?: string;
   created_at: string;
   updated_at?: string;
   assigned_to?: string;
@@ -87,6 +89,7 @@ export interface TicketSummary {
   status: string;
   created_at: string;
   summary: string;
+  description?: string;
 }
 
 export interface TicketListResponse {
@@ -144,4 +147,14 @@ export interface ChatState {
   isLoading: boolean;
   sessionId: string | null;
   error: string | null;
+}
+
+// =============================================================================
+// Admin Types
+// =============================================================================
+
+export interface TicketUpdateRequest {
+  status: TicketStatus;
+  assigned_to?: string;
+  resolution_summary?: string;
 }

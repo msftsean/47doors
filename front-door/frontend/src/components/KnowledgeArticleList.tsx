@@ -25,20 +25,16 @@ export function KnowledgeArticleList({ articles }: KnowledgeArticleListProps) {
       </div>
 
       <ul className="divide-y divide-gray-200">
-        {articles.map((article) => (
-          <li key={article.article_id}>
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-start gap-3 px-3 py-2 hover:bg-white transition-colors focus:outline-none focus:bg-white focus:ring-2 focus:ring-inset focus:ring-primary-500"
-            >
+        {articles.map((article) => {
+          const hasValidUrl = article.url && article.url !== '#';
+          const content = (
+            <>
               <DocumentTextIcon
                 className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5"
                 aria-hidden="true"
               />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-primary-600 hover:text-primary-700 truncate">
+                <p className={`text-sm font-medium truncate ${hasValidUrl ? 'text-primary-600 hover:text-primary-700' : 'text-gray-900'}`}>
                   {article.title}
                 </p>
                 {article.snippet && (
@@ -48,9 +44,28 @@ export function KnowledgeArticleList({ articles }: KnowledgeArticleListProps) {
                 )}
               </div>
               <RelevanceBadge score={article.relevance_score} />
-            </a>
-          </li>
-        ))}
+            </>
+          );
+
+          return (
+            <li key={article.article_id}>
+              {hasValidUrl ? (
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 px-3 py-2 hover:bg-white transition-colors focus:outline-none focus:bg-white focus:ring-2 focus:ring-inset focus:ring-primary-500"
+                >
+                  {content}
+                </a>
+              ) : (
+                <div className="flex items-start gap-3 px-3 py-2">
+                  {content}
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

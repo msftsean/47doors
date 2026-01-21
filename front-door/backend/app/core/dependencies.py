@@ -28,9 +28,13 @@ def get_llm_service(settings: Settings | None = None) -> LLMServiceInterface:
         from app.services.mock.llm_service import MockLLMService
         return MockLLMService()
     else:
-        # TODO: Implement Azure OpenAI service
-        from app.services.mock.llm_service import MockLLMService
-        return MockLLMService()
+        from app.services.azure.llm_service import AzureOpenAILLMService
+        return AzureOpenAILLMService(
+            endpoint=settings.azure_openai_endpoint,
+            api_key=settings.azure_openai_api_key,
+            deployment=settings.azure_openai_deployment,
+            api_version=settings.azure_openai_api_version,
+        )
 
 
 @lru_cache

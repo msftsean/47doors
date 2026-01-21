@@ -227,8 +227,27 @@ def mock_session_store() -> MagicMock:
 
 # Environment variable fixtures
 @pytest.fixture(autouse=True)
-def set_test_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Set test environment variables."""
+def set_test_env(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Set test environment variables.
+
+    Skips overriding Azure OpenAI credentials for GPT-4o evaluation tests
+    (test_gpt4o_evals.py) so they can use real API credentials.
+    """
+    # Check if this is a GPT-4o evaluation test that needs real credentials
+    test_file = request.fspath.basename if request.fspath else ""
+    if test_file == "test_gpt4o_evals.py":
+        # Only set non-Azure-OpenAI env vars for eval tests
+        monkeypatch.setenv("ENVIRONMENT", "test")
+        # Don't set MOCK_MODE for eval tests - they need real API
+        monkeypatch.setenv("COSMOS_DB_ENDPOINT", "https://test.documents.azure.com")
+        monkeypatch.setenv("COSMOS_DB_KEY", "test-key")
+        monkeypatch.setenv("SERVICENOW_INSTANCE", "test.service-now.com")
+        monkeypatch.setenv("SERVICENOW_API_KEY", "test-key")
+        monkeypatch.setenv("AZURE_SEARCH_ENDPOINT", "https://test.search.windows.net")
+        monkeypatch.setenv("AZURE_SEARCH_API_KEY", "test-key")
+        return
+
+    # For all other tests, override with test credentials
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.setenv("MOCK_MODE", "true")
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://test.openai.azure.com")

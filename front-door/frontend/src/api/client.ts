@@ -9,6 +9,7 @@ import type {
   KnowledgeSearchResponse,
   TicketListResponse,
   TicketStatusResponse,
+  TicketUpdateRequest,
   ApiError,
   Department,
 } from '../types';
@@ -166,4 +167,48 @@ export async function searchKnowledge(
  */
 export async function getHealthStatus(): Promise<HealthStatus> {
   return request<HealthStatus>('/health');
+}
+
+// =============================================================================
+// Admin API
+// =============================================================================
+
+/**
+ * List all tickets for admin view.
+ */
+export async function adminListAllTickets(
+  status?: string,
+  department?: Department,
+  limit: number = 50
+): Promise<TicketListResponse> {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (department) params.set('department', department);
+  params.set('limit', limit.toString());
+
+  return request<TicketListResponse>(`/admin/tickets?${params.toString()}`);
+}
+
+/**
+ * Update a ticket's status (admin action).
+ */
+export async function adminUpdateTicket(
+  ticketId: string,
+  update: TicketUpdateRequest
+): Promise<TicketStatusResponse> {
+  return request<TicketStatusResponse>(`/admin/tickets/${encodeURIComponent(ticketId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(update),
+  });
+}
+
+/**
+ * Delete a ticket (admin action).
+ */
+export async function adminDeleteTicket(
+  ticketId: string
+): Promise<{ message: string }> {
+  return request<{ message: string }>(`/admin/tickets/${encodeURIComponent(ticketId)}`, {
+    method: 'DELETE',
+  });
 }

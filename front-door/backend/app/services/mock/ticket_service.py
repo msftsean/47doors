@@ -122,6 +122,8 @@ class MockTicketService(TicketServiceInterface):
             department=Department(ticket["department"]),
             status=TicketStatus(ticket["status"]),
             priority=Priority(ticket["priority"]) if ticket.get("priority") else None,
+            summary=ticket.get("summary"),
+            description=ticket.get("description"),
             created_at=datetime.fromisoformat(ticket["created_at"].replace("Z", "+00:00")),
             updated_at=datetime.fromisoformat(ticket["updated_at"].replace("Z", "+00:00")) if ticket.get("updated_at") else None,
             assigned_to=ticket.get("assigned_to"),
@@ -156,9 +158,97 @@ class MockTicketService(TicketServiceInterface):
                 status=t["status"],
                 created_at=datetime.fromisoformat(t["created_at"].replace("Z", "+00:00")),
                 summary=t.get("summary", "No summary available"),
+                description=t.get("description"),
             )
             for t in user_tickets
         ]
+
+    # =========================================================================
+    # Admin Methods
+    # =========================================================================
+
+    async def list_all_tickets(
+        self,
+        status_filter: Optional[str] = None,
+        department_filter: Optional[Department] = None,
+        limit: int = 50,
+    ) -> list[TicketSummary]:
+        """List all tickets (admin view)."""
+        all_tickets = []
+
+        for ticket in MockTicketService._tickets.values():
+            # Apply status filter
+            if status_filter and ticket.get("status") != status_filter:
+                continue
+
+            # Apply department filter
+            if department_filter and ticket.get("department") != department_filter.value:
+                continue
+
+            all_tickets.append(ticket)
+
+        # Sort by created_at descending (newest first)
+        all_tickets.sort(key=lambda t: t.get("created_at", ""), reverse=True)
+
+        # Limit results
+        all_tickets = all_tickets[:limit]
+
+        return [
+            TicketSummary(
+                ticket_id=t["ticket_id"],
+                department=Department(t["department"]),
+                status=t["status"],
+                created_at=datetime.fromisoformat(t["created_at"].replace("Z", "+00:00")),
+                summary=t.get("summary", "No summary available"),
+                description=t.get("description"),
+            )
+            for t in all_tickets
+        ]
+
+    async def update_ticket_status(
+        self,
+        ticket_id: str,
+        new_status: TicketStatus,
+        assigned_to: Optional[str] = None,
+        resolution_summary: Optional[str] = None,
+    ) -> Optional[TicketStatusResponse]:
+        """Update ticket status (admin/triage action)."""
+        ticket = MockTicketService._tickets.get(ticket_id)
+        if not ticket:
+            return None
+
+        # Update fields
+        ticket["status"] = new_status.value
+        ticket["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+        if assigned_to is not None:
+            ticket["assigned_to"] = assigned_to
+
+        if resolution_summary is not None:
+            ticket["resolution_summary"] = resolution_summary
+
+        return TicketStatusResponse(
+            ticket_id=ticket["ticket_id"],
+            department=Department(ticket["department"]),
+            status=TicketStatus(ticket["status"]),
+            priority=Priority(ticket["priority"]) if ticket.get("priority") else None,
+            summary=ticket.get("summary"),
+            description=ticket.get("description"),
+            created_at=datetime.fromisoformat(ticket["created_at"].replace("Z", "+00:00")),
+            updated_at=datetime.fromisoformat(ticket["updated_at"].replace("Z", "+00:00")),
+            assigned_to=ticket.get("assigned_to"),
+            resolution_summary=ticket.get("resolution_summary"),
+        )
+
+    async def delete_ticket(
+        self,
+        ticket_id: str,
+    ) -> bool:
+        """Delete a ticket (admin action)."""
+        if ticket_id in MockTicketService._tickets:
+            del MockTicketService._tickets[ticket_id]
+            return True
+        return False
 
     async def health_check(self) -> tuple[bool, Optional[int], Optional[str]]:
         """Mock health check - always healthy."""

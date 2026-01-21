@@ -109,6 +109,8 @@ class TicketStatusResponse(BaseModel):
     department: Department = Field(..., description="Assigned department")
     status: TicketStatus = Field(..., description="Current ticket status")
     priority: Optional[Priority] = Field(default=None, description="Priority level")
+    summary: Optional[str] = Field(default=None, description="Brief description")
+    description: Optional[str] = Field(default=None, description="Full request content")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: Optional[datetime] = Field(default=None, description="Last update timestamp")
     assigned_to: Optional[str] = Field(default=None, description="Assigned agent name")
@@ -125,6 +127,7 @@ class TicketSummary(BaseModel):
     status: str = Field(..., description="Current status")
     created_at: datetime = Field(..., description="Creation timestamp")
     summary: str = Field(..., max_length=200, description="Brief description")
+    description: Optional[str] = Field(default=None, description="Full request content")
 
 
 class TicketListResponse(BaseModel):

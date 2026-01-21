@@ -260,8 +260,11 @@ class MockLLMService(LLMServiceInterface):
         ticket_id: Optional[str],
         escalated: bool,
         estimated_response_time: str,
+        original_message: Optional[str] = None,
+        knowledge_articles: Optional[list] = None,
+        kb_article_contents: Optional[list[dict]] = None,
     ) -> str:
-        """Generate a user-friendly response message."""
+        """Generate a user-friendly response message with self-service info."""
         dept_names = {
             Department.IT: "IT Support",
             Department.HR: "Human Resources",
@@ -275,6 +278,15 @@ class MockLLMService(LLMServiceInterface):
 
         dept_name = dept_names.get(department, str(department.value))
 
+        # Build self-service content from KB articles if available
+        self_service_info = ""
+        if kb_article_contents:
+            # Use the first/most relevant article's content for self-service
+            top_article = kb_article_contents[0]
+            content = top_article.get("content", top_article.get("snippet", ""))
+            if content:
+                self_service_info = f"\n\nHere's how you can resolve this:\n{content}"
+
         if escalated:
             return (
                 f"I've forwarded your request to {dept_name} for personal attention. "
@@ -283,10 +295,19 @@ class MockLLMService(LLMServiceInterface):
             )
 
         if ticket_id:
-            return (
+            base_msg = (
                 f"I've created a support ticket ({ticket_id}) and routed it to {dept_name}. "
-                f"You can expect a response within {estimated_response_time}. "
-                "Is there anything else I can help you with?"
+                f"You can expect a response within {estimated_response_time}."
+            )
+            if self_service_info:
+                return base_msg + self_service_info + "\n\nLet me know if you need additional assistance."
+            return base_msg + " Is there anything else I can help you with?"
+
+        if self_service_info:
+            return (
+                f"I've found some helpful information from {dept_name}."
+                f"{self_service_info}\n\n"
+                "Let me know if you need additional assistance."
             )
 
         return (

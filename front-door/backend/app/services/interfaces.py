@@ -16,7 +16,7 @@ from app.models.schemas import (
     TicketStatusResponse,
     TicketSummary,
 )
-from app.models.enums import Department, Priority
+from app.models.enums import Department, Priority, TicketStatus
 
 
 class LLMServiceInterface(ABC):
@@ -66,9 +66,12 @@ class LLMServiceInterface(ABC):
         ticket_id: Optional[str],
         escalated: bool,
         estimated_response_time: str,
+        original_message: Optional[str] = None,
+        knowledge_articles: Optional[list[KnowledgeArticle]] = None,
+        kb_article_contents: Optional[list[dict]] = None,
     ) -> str:
         """
-        Generate a user-friendly response message.
+        Generate a user-friendly response message with self-service info.
 
         Args:
             intent: The detected intent.
@@ -76,9 +79,13 @@ class LLMServiceInterface(ABC):
             ticket_id: Created ticket ID (if any).
             escalated: Whether the request was escalated.
             estimated_response_time: Expected response time.
+            original_message: The user's original query (for context).
+            knowledge_articles: List of matched KB articles (metadata).
+            kb_article_contents: Full content of matched KB articles for self-service responses.
 
         Returns:
-            A friendly message to display to the user.
+            A friendly message to display to the user, including self-service
+            instructions from KB articles when available.
         """
         pass
 
@@ -158,6 +165,68 @@ class TicketServiceInterface(ABC):
         """
         pass
 
+    # =========================================================================
+    # Admin Methods
+    # =========================================================================
+
+    @abstractmethod
+    async def list_all_tickets(
+        self,
+        status_filter: Optional[str] = None,
+        department_filter: Optional[Department] = None,
+        limit: int = 50,
+    ) -> list[TicketSummary]:
+        """
+        List all tickets (admin view).
+
+        Args:
+            status_filter: Optional status filter.
+            department_filter: Optional department filter.
+            limit: Maximum number of tickets to return.
+
+        Returns:
+            List of ticket summaries.
+        """
+        pass
+
+    @abstractmethod
+    async def update_ticket_status(
+        self,
+        ticket_id: str,
+        new_status: "TicketStatus",
+        assigned_to: Optional[str] = None,
+        resolution_summary: Optional[str] = None,
+    ) -> Optional[TicketStatusResponse]:
+        """
+        Update ticket status (admin/triage action).
+
+        Args:
+            ticket_id: The ticket identifier.
+            new_status: New status to set.
+            assigned_to: Optional assignee name.
+            resolution_summary: Optional resolution notes (for closed tickets).
+
+        Returns:
+            Updated TicketStatusResponse if found, None otherwise.
+        """
+        pass
+
+    @abstractmethod
+    async def delete_ticket(
+        self,
+        ticket_id: str,
+    ) -> bool:
+        """
+        Delete a ticket (admin action).
+
+        Args:
+            ticket_id: The ticket identifier.
+
+        Returns:
+            True if deleted, False if not found.
+        """
+        pass
+
     @abstractmethod
     async def health_check(self) -> tuple[bool, Optional[int], Optional[str]]:
         """
@@ -189,6 +258,27 @@ class KnowledgeServiceInterface(ABC):
 
         Returns:
             List of relevant knowledge articles.
+        """
+        pass
+
+    @abstractmethod
+    async def search_with_content(
+        self,
+        query: str,
+        department: Optional[Department] = None,
+        limit: int = 3,
+    ) -> tuple[list[KnowledgeArticle], list[dict]]:
+        """
+        Search the knowledge base and return both article metadata and full content.
+
+        Args:
+            query: Search query.
+            department: Optional department filter.
+            limit: Maximum number of articles to return.
+
+        Returns:
+            Tuple of (list of KnowledgeArticle metadata, list of dicts with full content).
+            The content dicts include: article_id, title, content, snippet, tags.
         """
         pass
 

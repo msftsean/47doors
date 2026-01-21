@@ -36,6 +36,10 @@ class ActionAgent:
         72: "within 3 business days",
     }
 
+    # Minimum relevance score to consider KB as sufficient for self-service
+    # If top article has relevance >= this threshold, no ticket is created for low/medium priority
+    KB_SELF_SERVICE_THRESHOLD: float = 0.5
+
     def __init__(
         self,
         ticket_service: TicketServiceInterface,
@@ -77,8 +81,17 @@ class ActionAgent:
         ticket_url: Optional[str] = None
         status: ActionStatus
 
-        # Determine if we should create a ticket
-        should_create_ticket = self._should_create_ticket(routing_decision)
+        # Search knowledge base FIRST to determine if self-service is possible
+        knowledge_articles, kb_article_contents = await self._search_knowledge_with_content(
+            query_result=query_result,
+            department=routing_decision.department,
+        )
+
+        # Determine if we should create a ticket (considering KB results)
+        should_create_ticket = self._should_create_ticket(
+            routing_decision=routing_decision,
+            knowledge_articles=knowledge_articles,
+        )
 
         if should_create_ticket:
             # Generate ticket summary and description
@@ -105,22 +118,19 @@ class ActionAgent:
         else:
             status = ActionStatus.KB_ONLY
 
-        # Search knowledge base for relevant articles
-        knowledge_articles = await self._search_knowledge(
-            query_result=query_result,
-            department=routing_decision.department,
-        )
-
         # Generate human-readable response time
         estimated_response_time = self._format_sla(routing_decision.suggested_sla_hours)
 
-        # Generate user-friendly response message
+        # Generate user-friendly response message with KB content for self-service
         user_message = await self._llm.generate_response_message(
             intent=query_result.intent,
             department=routing_decision.department,
             ticket_id=ticket_id,
             escalated=routing_decision.escalate_to_human,
             estimated_response_time=estimated_response_time,
+            original_message=original_message,
+            knowledge_articles=knowledge_articles,
+            kb_article_contents=kb_article_contents,
         )
 
         return ActionResult(
@@ -158,18 +168,43 @@ class ActionAgent:
             user_message=clarification_question,
         )
 
-    def _should_create_ticket(self, routing_decision: RoutingDecision) -> bool:
-        """Determine if a ticket should be created."""
-        # Always create ticket for escalations
+    def _should_create_ticket(
+        self,
+        routing_decision: RoutingDecision,
+        knowledge_articles: list[KnowledgeArticle],
+    ) -> bool:
+        """
+        Determine if a ticket should be created.
+
+        First-contact resolution (no ticket) is preferred when:
+        - No escalation required
+        - Low/medium priority
+        - KB has a highly relevant article that can answer the question
+
+        Args:
+            routing_decision: The routing decision from RouterAgent.
+            knowledge_articles: KB articles found for this query.
+
+        Returns:
+            True if a ticket should be created, False for KB-only self-service.
+        """
+        # Always create ticket for escalations (human review required)
         if routing_decision.escalate_to_human:
             return True
 
-        # Create ticket for non-trivial requests
+        # Always create ticket for high priority/urgent requests
         if routing_decision.priority in (Priority.HIGH, Priority.URGENT):
             return True
 
-        # Skip ticket for very simple lookups that KB can answer
-        # For now, always create ticket for medium/low priority
+        # For low/medium priority: check if KB can handle it
+        # If we have a highly relevant KB article, skip ticket creation
+        if knowledge_articles:
+            top_article = knowledge_articles[0]
+            if top_article.relevance_score >= self.KB_SELF_SERVICE_THRESHOLD:
+                # KB can answer this - no ticket needed (first-contact resolution)
+                return False
+
+        # No good KB match - create ticket for human follow-up
         return True
 
     def _generate_ticket_summary(self, query_result: QueryResult) -> str:
@@ -207,12 +242,12 @@ class ActionAgent:
 
         return "\n".join(lines)
 
-    async def _search_knowledge(
+    async def _search_knowledge_with_content(
         self,
         query_result: QueryResult,
         department: Department,
-    ) -> list[KnowledgeArticle]:
-        """Search knowledge base for relevant articles."""
+    ) -> tuple[list[KnowledgeArticle], list[dict]]:
+        """Search knowledge base for relevant articles with full content."""
         # Build search query from intent and entities
         search_terms = [query_result.intent.replace("_", " ")]
 
@@ -225,12 +260,21 @@ class ActionAgent:
         # Don't filter by department for escalated requests
         dept_filter = None if department == Department.ESCALATE_TO_HUMAN else department
 
-        articles = await self._knowledge.search(
+        articles, contents = await self._knowledge.search_with_content(
             query=search_query,
             department=dept_filter,
             limit=3,
         )
 
+        return articles, contents
+
+    async def _search_knowledge(
+        self,
+        query_result: QueryResult,
+        department: Department,
+    ) -> list[KnowledgeArticle]:
+        """Search knowledge base for relevant articles (legacy method)."""
+        articles, _ = await self._search_knowledge_with_content(query_result, department)
         return articles
 
     def _format_sla(self, hours: int) -> str:

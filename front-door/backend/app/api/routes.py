@@ -26,7 +26,7 @@ from app.services.interfaces import (
     SessionStoreInterface,
     TicketServiceInterface,
 )
-from app.models.enums import ActionStatus, Department, TicketStatus
+from app.models.enums import ActionStatus, Department, Priority, TicketStatus
 from app.models.schemas import (
     AuditLog,
     ChatRequest,
@@ -362,3 +362,111 @@ async def health_check(
         timestamp=datetime.now(timezone.utc),
         services=services,
     )
+
+
+# =============================================================================
+# Admin Endpoints (Ticket Triage & Management)
+# =============================================================================
+
+
+@router.get(
+    "/admin/tickets",
+    response_model=TicketListResponse,
+    tags=["Admin"],
+    summary="List all tickets (admin)",
+    description="List all tickets across all users for admin triage and management.",
+)
+async def admin_list_all_tickets(
+    ticket_service: TicketServiceInterface = Depends(get_ticket_service),
+    status_filter: Optional[str] = Query(
+        None,
+        alias="status",
+        description="Filter by ticket status (open, in_progress, pending_info, resolved, closed)",
+    ),
+    department: Optional[Department] = Query(
+        None,
+        description="Filter by department",
+    ),
+    limit: int = Query(50, ge=1, le=100, description="Maximum tickets to return"),
+) -> TicketListResponse:
+    """Retrieve all tickets for admin triage."""
+    tickets = await ticket_service.list_all_tickets(
+        status_filter=status_filter,
+        department_filter=department,
+        limit=limit,
+    )
+
+    return TicketListResponse(
+        tickets=tickets,
+        total=len(tickets),
+    )
+
+
+from pydantic import BaseModel, Field
+
+
+class TicketUpdateRequest(BaseModel):
+    """Request body for updating a ticket."""
+    status: TicketStatus = Field(..., description="New ticket status")
+    assigned_to: Optional[str] = Field(None, description="Assignee name")
+    resolution_summary: Optional[str] = Field(None, description="Resolution notes (for closed tickets)")
+
+
+@router.patch(
+    "/admin/tickets/{ticket_id}",
+    response_model=TicketStatusResponse,
+    responses={
+        404: {"model": ErrorResponse, "description": "Ticket not found"},
+    },
+    tags=["Admin"],
+    summary="Update ticket status (admin)",
+    description="Update a ticket's status, assignee, or resolution for triage purposes.",
+)
+async def admin_update_ticket(
+    ticket_id: str,
+    *,
+    new_status: TicketStatus = Body(..., alias="status", description="New ticket status"),
+    assigned_to: Optional[str] = Body(None, description="Assignee name"),
+    resolution_summary: Optional[str] = Body(None, description="Resolution notes"),
+    ticket_service: TicketServiceInterface = Depends(get_ticket_service),
+) -> TicketStatusResponse:
+    """Update a ticket for triage/management."""
+    result = await ticket_service.update_ticket_status(
+        ticket_id=ticket_id,
+        new_status=new_status,
+        assigned_to=assigned_to,
+        resolution_summary=resolution_summary,
+    )
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "not_found", "message": f"Ticket {ticket_id} not found"},
+        )
+
+    return result
+
+
+@router.delete(
+    "/admin/tickets/{ticket_id}",
+    responses={
+        404: {"model": ErrorResponse, "description": "Ticket not found"},
+    },
+    tags=["Admin"],
+    summary="Delete a ticket (admin)",
+    description="Permanently delete a ticket from the system.",
+)
+async def admin_delete_ticket(
+    ticket_id: str,
+    ticket_service: TicketServiceInterface = Depends(get_ticket_service),
+) -> dict:
+    """Delete a ticket (admin action)."""
+    deleted = await ticket_service.delete_ticket(ticket_id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "not_found", "message": f"Ticket {ticket_id} not found"},
+        )
+
+    return {"message": f"Ticket {ticket_id} deleted successfully"}
