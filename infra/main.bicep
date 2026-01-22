@@ -16,6 +16,9 @@ param openAiModelVersion string = '2024-05-13'
 @description('Enable mock mode (no external service connections)')
 param mockMode bool = false
 
+@description('Deployment timestamp for tagging')
+param deploymentDate string = utcNow('yyyy-MM-dd')
+
 // Naming convention
 var resourceToken = toLower(uniqueString(subscription().id, resourceGroup().id, location))
 var prefix = '${resourcePrefix}-${resourceToken}'
@@ -24,7 +27,7 @@ var prefix = '${resourcePrefix}-${resourceToken}'
 var tags = {
   'azd-env-name': resourcePrefix
   'solution-accelerator': 'university-front-door-agent'
-  'deployment-date': utcNow('yyyy-MM-dd')
+  'deployment-date': deploymentDate
 }
 
 // ============================================================================

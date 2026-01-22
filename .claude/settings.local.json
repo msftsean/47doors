@@ -28,7 +28,12 @@
       "Bash(.venv/Scripts/pip install:*)",
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(netstat:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(az bicep build:*)",
+      "Bash(az version:*)",
+      "Bash(az bicep version:*)",
+      "Bash(az bicep:*)",
+      "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\segayle\\\\repos\\\\hied_cab\\\\hiedcab_frontdoor_agent\\\\infra''; az bicep build --file main.bicep --outfile azuredeploy.json; Get-ChildItem\")"
     ]
   }
 }
