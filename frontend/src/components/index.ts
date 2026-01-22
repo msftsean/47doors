@@ -9,3 +9,4 @@ export { MessageBubble } from './MessageBubble';
 export { TypingIndicator } from './TypingIndicator';
 export { TicketCard } from './TicketCard';
 export { KnowledgeArticleList } from './KnowledgeArticleList';
+export { BrandingSettingsPanel } from './BrandingSettingsPanel';

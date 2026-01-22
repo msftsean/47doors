@@ -13,8 +13,12 @@ import {
   TrashIcon,
   PencilSquareIcon,
   FunnelIcon,
+  SwatchIcon,
 } from '@heroicons/react/24/outline';
 import type { TicketSummary, TicketStatusResponse, Department, TicketStatus, Priority } from '../types';
+import { BrandingSettingsPanel } from './BrandingSettingsPanel';
+
+type AdminTab = 'tickets' | 'branding';
 
 const DEPARTMENT_LABELS: Record<Department, string> = {
   IT: 'IT Support',
@@ -422,50 +426,91 @@ export function AdminDashboard({
   onDeleteTicket,
 }: AdminDashboardProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>('tickets');
 
   return (
     <div className="flex-1 flex flex-col p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Admin Dashboard</h2>
-          <p className="text-sm text-gray-500">
-            {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
-            {statusFilter && ` (${STATUS_CONFIG[statusFilter]?.label || statusFilter})`}
-            {departmentFilter && ` in ${DEPARTMENT_LABELS[departmentFilter]}`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Tab navigation */}
+      <div className="mb-4 border-b border-gray-200">
+        <nav className="flex gap-4" aria-label="Admin sections">
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-              showFilters || statusFilter || departmentFilter
-                ? 'text-primary-700 bg-primary-50 border-primary-300'
-                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+            onClick={() => setActiveTab('tickets')}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'tickets'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
+            aria-current={activeTab === 'tickets' ? 'page' : undefined}
           >
-            <FunnelIcon className="w-4 h-4" />
-            Filters
-            {(statusFilter || departmentFilter) && (
-              <span className="px-1.5 py-0.5 text-xs bg-primary-600 text-white rounded-full">
-                {(statusFilter ? 1 : 0) + (departmentFilter ? 1 : 0)}
-              </span>
-            )}
+            <TicketIcon className="w-5 h-5" />
+            Tickets
           </button>
           <button
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Refresh tickets"
+            onClick={() => setActiveTab('branding')}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'branding'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+            aria-current={activeTab === 'branding' ? 'page' : undefined}
           >
-            <ArrowPathIcon
-              className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-              aria-hidden="true"
-            />
-            Refresh
+            <SwatchIcon className="w-5 h-5" />
+            Branding
           </button>
-        </div>
+        </nav>
       </div>
+
+      {/* Branding Tab */}
+      {activeTab === 'branding' && (
+        <div className="flex-1">
+          <BrandingSettingsPanel />
+        </div>
+      )}
+
+      {/* Tickets Tab */}
+      {activeTab === 'tickets' && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Ticket Management</h2>
+              <p className="text-sm text-gray-500">
+                {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
+                {statusFilter && ` (${STATUS_CONFIG[statusFilter]?.label || statusFilter})`}
+                {departmentFilter && ` in ${DEPARTMENT_LABELS[departmentFilter]}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                  showFilters || statusFilter || departmentFilter
+                    ? 'text-primary-700 bg-primary-50 border-primary-300'
+                    : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <FunnelIcon className="w-4 h-4" />
+                Filters
+                {(statusFilter || departmentFilter) && (
+                  <span className="px-1.5 py-0.5 text-xs bg-primary-600 text-white rounded-full">
+                    {(statusFilter ? 1 : 0) + (departmentFilter ? 1 : 0)}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={onRefresh}
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Refresh tickets"
+              >
+                <ArrowPathIcon
+                  className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+                  aria-hidden="true"
+                />
+                Refresh
+              </button>
+            </div>
+          </div>
 
       {/* Filters */}
       {showFilters && (
@@ -595,6 +640,8 @@ export function AdminDashboard({
             </div>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

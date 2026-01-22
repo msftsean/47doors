@@ -167,3 +167,54 @@ body {
 .typing-dot:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+/* =============================================================================
+   Dynamic Branding Support
+   These classes use CSS variables set by BrandingContext for runtime theming
+   ============================================================================= */
+
+/* Dynamic primary color utilities */
+.bg-brand-primary {
+  background-color: var(--color-primary);
+}
+
+.text-brand-primary {
+  color: var(--color-primary);
+}
+
+.border-brand-primary {
+  border-color: var(--color-primary);
+}
+
+.hover\:bg-brand-primary-light:hover {
+  background-color: var(--branding-primary-50, #eff6ff);
+}
+
+.ring-brand-primary {
+  --tw-ring-color: var(--color-primary);
+}
+
+/* Override Tailwind primary classes to use dynamic colors */
+:root:not(.high-contrast) .text-primary-600 {
+  color: var(--color-primary);
+}
+
+:root:not(.high-contrast) .bg-primary-600 {
+  background-color: var(--color-primary);
+}
+
+:root:not(.high-contrast) .border-primary-600 {
+  border-color: var(--color-primary);
+}
+
+:root:not(.high-contrast) .hover\:bg-primary-50:hover {
+  background-color: var(--branding-primary-50, #eff6ff);
+}
+
+:root:not(.high-contrast) .ring-primary-500 {
+  --tw-ring-color: var(--color-primary);
+}
+
+:root:not(.high-contrast) .focus\:ring-primary-500:focus {
+  --tw-ring-color: var(--color-primary);
+}

@@ -10,6 +10,7 @@ from uuid import UUID
 
 from app.models.schemas import (
     AuditLog,
+    BrandingConfig,
     KnowledgeArticle,
     QueryResult,
     Session,
@@ -437,6 +438,52 @@ class AuditLogInterface(ABC):
     async def health_check(self) -> tuple[bool, Optional[int], Optional[str]]:
         """
         Check audit log service health.
+
+        Returns:
+            Tuple of (is_healthy, latency_ms, error_message).
+        """
+        pass
+
+
+class BrandingServiceInterface(ABC):
+    """Interface for institution branding configuration management."""
+
+    @abstractmethod
+    async def get_branding(self) -> BrandingConfig:
+        """
+        Get current branding configuration.
+
+        Returns:
+            BrandingConfig with logo, colors, and institution name.
+        """
+        pass
+
+    @abstractmethod
+    async def update_branding(
+        self,
+        logo_url: Optional[str] = None,
+        primary_color: Optional[str] = None,
+        institution_name: Optional[str] = None,
+        tagline: Optional[str] = None,
+    ) -> BrandingConfig:
+        """
+        Update branding configuration. Only provided fields are updated.
+
+        Args:
+            logo_url: URL to institution logo image.
+            primary_color: Primary brand color in hex format.
+            institution_name: Institution name displayed in header.
+            tagline: Tagline displayed below institution name.
+
+        Returns:
+            Updated BrandingConfig.
+        """
+        pass
+
+    @abstractmethod
+    async def health_check(self) -> tuple[bool, Optional[int], Optional[str]]:
+        """
+        Check branding service health.
 
         Returns:
             Tuple of (is_healthy, latency_ms, error_message).

@@ -368,3 +368,68 @@ class AuditLog(BaseModel):
         if escalated and v is None:
             raise ValueError("escalation_reason is required when escalated is True")
         return v
+
+
+# =============================================================================
+# Branding Configuration Models
+# =============================================================================
+
+
+class BrandingConfig(BaseModel):
+    """Institution branding configuration."""
+    logo_url: Optional[str] = Field(
+        default=None,
+        description="URL to institution logo image"
+    )
+    primary_color: str = Field(
+        default="#2563eb",
+        pattern=r"^#[0-9A-Fa-f]{6}$",
+        description="Primary brand color in hex format (e.g., #2563eb)"
+    )
+    institution_name: str = Field(
+        default="University Support",
+        min_length=1,
+        max_length=200,
+        description="Institution name displayed in header"
+    )
+    tagline: str = Field(
+        default="Get help with IT, registration, financial aid, and more",
+        min_length=1,
+        max_length=500,
+        description="Tagline displayed below institution name"
+    )
+    updated_at: Optional[datetime] = Field(
+        default=None,
+        description="Last update timestamp"
+    )
+
+
+class BrandingUpdateRequest(BaseModel):
+    """Request body for updating branding configuration."""
+    logo_url: Optional[str] = Field(
+        default=None,
+        description="URL to institution logo image"
+    )
+    primary_color: Optional[str] = Field(
+        default=None,
+        pattern=r"^#[0-9A-Fa-f]{6}$",
+        description="Primary brand color in hex format"
+    )
+    institution_name: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=200,
+        description="Institution name displayed in header"
+    )
+    tagline: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=500,
+        description="Tagline displayed below institution name"
+    )
+
+
+class BrandingResponse(BaseModel):
+    """Response for branding endpoints."""
+    config: BrandingConfig
+    message: str = Field(default="Branding configuration retrieved successfully")

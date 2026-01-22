@@ -3,6 +3,8 @@
  */
 
 import type {
+  BrandingResponse,
+  BrandingUpdateRequest,
   ChatRequest,
   ChatResponse,
   HealthStatus,
@@ -14,7 +16,7 @@ import type {
   Department,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
 
 /**
@@ -210,5 +212,28 @@ export async function adminDeleteTicket(
 ): Promise<{ message: string }> {
   return request<{ message: string }>(`/admin/tickets/${encodeURIComponent(ticketId)}`, {
     method: 'DELETE',
+  });
+}
+
+// =============================================================================
+// Branding API
+// =============================================================================
+
+/**
+ * Get current branding configuration.
+ */
+export async function getBranding(): Promise<BrandingResponse> {
+  return request<BrandingResponse>('/admin/branding');
+}
+
+/**
+ * Update branding configuration.
+ */
+export async function updateBranding(
+  update: BrandingUpdateRequest
+): Promise<BrandingResponse> {
+  return request<BrandingResponse>('/admin/branding', {
+    method: 'PUT',
+    body: JSON.stringify(update),
   });
 }

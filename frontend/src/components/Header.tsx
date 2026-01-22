@@ -1,8 +1,10 @@
 /**
  * Header component with accessibility controls and navigation.
+ * Displays dynamic institution branding (logo, name, tagline).
  */
 
 import { SunIcon, MoonIcon, TrashIcon, ChatBubbleLeftRightIcon, TicketIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { useBranding } from '../context/BrandingContext';
 
 type View = 'chat' | 'tickets' | 'admin';
 
@@ -23,6 +25,8 @@ export function Header({
   currentView,
   onViewChange,
 }: HeaderProps) {
+  const { branding } = useBranding();
+
   return (
     <header
       className="bg-white border-b border-gray-200 shadow-sm"
@@ -33,30 +37,39 @@ export function Header({
         <div className="px-4 py-3 flex items-center justify-between">
           {/* Logo and title */}
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center"
-              aria-hidden="true"
-            >
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {branding.logo_url ? (
+              <img
+                src={branding.logo_url}
+                alt={`${branding.institution_name} logo`}
+                className="w-10 h-10 object-contain rounded-lg"
+              />
+            ) : (
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: branding.primary_color }}
+                aria-hidden="true"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
-            </div>
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                  />
+                </svg>
+              </div>
+            )}
             <div>
               <h1 className="text-lg font-semibold text-gray-900">
-                University Support
+                {branding.institution_name}
               </h1>
               <p className="text-xs text-gray-500">
-                Get help with IT, registration, financial aid, and more
+                {branding.tagline}
               </p>
             </div>
           </div>

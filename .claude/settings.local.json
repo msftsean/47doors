@@ -21,7 +21,14 @@
       "Bash(python -m pytest:*)",
       "Bash(python -m py_compile:*)",
       "Bash(git rm:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(uvicorn:*)",
+      "Bash(.venv/Scripts/python -m uvicorn:*)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(netstat:*)",
+      "Bash(dir:*)"
     ]
   }
 }

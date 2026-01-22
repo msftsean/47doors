@@ -158,3 +158,27 @@ export interface TicketUpdateRequest {
   assigned_to?: string;
   resolution_summary?: string;
 }
+
+// =============================================================================
+// Branding Types
+// =============================================================================
+
+export interface BrandingConfig {
+  logo_url: string | null;
+  primary_color: string;
+  institution_name: string;
+  tagline: string;
+  updated_at?: string;
+}
+
+export interface BrandingUpdateRequest {
+  logo_url?: string | null;
+  primary_color?: string;
+  institution_name?: string;
+  tagline?: string;
+}
+
+export interface BrandingResponse {
+  config: BrandingConfig;
+  message: string;
+}

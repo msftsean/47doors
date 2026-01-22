@@ -11,6 +11,7 @@ from fastapi import Depends
 from app.core.config import Settings, get_settings
 from app.services.interfaces import (
     AuditLogInterface,
+    BrandingServiceInterface,
     KnowledgeServiceInterface,
     LLMServiceInterface,
     SessionStoreInterface,
@@ -97,6 +98,21 @@ def get_audit_log(settings: Settings | None = None) -> AuditLogInterface:
         return MockAuditLog()
 
 
+@lru_cache
+def get_branding_service(settings: Settings | None = None) -> BrandingServiceInterface:
+    """Get branding service instance (mock or production)."""
+    if settings is None:
+        settings = get_settings()
+
+    if settings.use_mock_services:
+        from app.services.mock.branding_service import MockBrandingService
+        return MockBrandingService()
+    else:
+        # TODO: Implement Cosmos DB branding service
+        from app.services.mock.branding_service import MockBrandingService
+        return MockBrandingService()
+
+
 # FastAPI dependency annotations
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 LLMServiceDep = Annotated[LLMServiceInterface, Depends(get_llm_service)]
@@ -104,6 +120,7 @@ TicketServiceDep = Annotated[TicketServiceInterface, Depends(get_ticket_service)
 KnowledgeServiceDep = Annotated[KnowledgeServiceInterface, Depends(get_knowledge_service)]
 SessionStoreDep = Annotated[SessionStoreInterface, Depends(get_session_store)]
 AuditLogDep = Annotated[AuditLogInterface, Depends(get_audit_log)]
+BrandingServiceDep = Annotated[BrandingServiceInterface, Depends(get_branding_service)]
 
 
 def clear_service_caches() -> None:
@@ -113,3 +130,4 @@ def clear_service_caches() -> None:
     get_knowledge_service.cache_clear()
     get_session_store.cache_clear()
     get_audit_log.cache_clear()
+    get_branding_service.cache_clear()

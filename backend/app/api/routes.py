@@ -14,6 +14,7 @@ from app.agents import ActionAgent, QueryAgent, RouterAgent
 from app.core.config import Settings, get_settings
 from app.core.dependencies import (
     get_audit_log,
+    get_branding_service,
     get_knowledge_service,
     get_llm_service,
     get_session_store,
@@ -21,6 +22,7 @@ from app.core.dependencies import (
 )
 from app.services.interfaces import (
     AuditLogInterface,
+    BrandingServiceInterface,
     KnowledgeServiceInterface,
     LLMServiceInterface,
     SessionStoreInterface,
@@ -29,6 +31,9 @@ from app.services.interfaces import (
 from app.models.enums import ActionStatus, Department, Priority, TicketStatus
 from app.models.schemas import (
     AuditLog,
+    BrandingConfig,
+    BrandingResponse,
+    BrandingUpdateRequest,
     ChatRequest,
     ChatResponse,
     ConversationTurn,
@@ -470,3 +475,48 @@ async def admin_delete_ticket(
         )
 
     return {"message": f"Ticket {ticket_id} deleted successfully"}
+
+
+# =============================================================================
+# Branding Endpoints
+# =============================================================================
+
+
+@router.get(
+    "/admin/branding",
+    response_model=BrandingResponse,
+    tags=["Admin"],
+    summary="Get branding configuration",
+    description="Retrieve the current institution branding configuration including logo, colors, and name.",
+)
+async def get_branding(
+    branding_service: BrandingServiceInterface = Depends(get_branding_service),
+) -> BrandingResponse:
+    """Retrieve the current institution branding configuration."""
+    config = await branding_service.get_branding()
+    return BrandingResponse(config=config, message="Branding configuration retrieved successfully")
+
+
+@router.put(
+    "/admin/branding",
+    response_model=BrandingResponse,
+    tags=["Admin"],
+    summary="Update branding configuration",
+    description="Update institution branding including logo URL, primary color, institution name, and tagline.",
+)
+async def update_branding(
+    *,
+    update_request: BrandingUpdateRequest = Body(...),
+    branding_service: BrandingServiceInterface = Depends(get_branding_service),
+) -> BrandingResponse:
+    """Update the institution branding configuration."""
+    updated_config = await branding_service.update_branding(
+        logo_url=update_request.logo_url,
+        primary_color=update_request.primary_color,
+        institution_name=update_request.institution_name,
+        tagline=update_request.tagline,
+    )
+    return BrandingResponse(
+        config=updated_config,
+        message="Branding configuration updated successfully"
+    )
