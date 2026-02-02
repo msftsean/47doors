@@ -33,7 +33,19 @@
       "Bash(az version:*)",
       "Bash(az bicep version:*)",
       "Bash(az bicep:*)",
-      "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\segayle\\\\repos\\\\hied_cab\\\\hiedcab_frontdoor_agent\\\\infra''; az bicep build --file main.bicep --outfile azuredeploy.json; Get-ChildItem\")"
+      "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\segayle\\\\repos\\\\hied_cab\\\\hiedcab_frontdoor_agent\\\\infra''; az bicep build --file main.bicep --outfile azuredeploy.json; Get-ChildItem\")",
+      "Bash(git remote set-url:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(gh pr create --title \"feat: Add 8-hour hackathon curriculum with 8 progressive labs\" --body \"$\\(cat <<''EOF''\n## Summary\n\n- Complete 8-hour hackathon curriculum with 8 progressive labs \\(00-07\\)\n- Labs cover: environment setup, AI agents, Azure MCP, spec-driven development, RAG pipeline, agent orchestration, Azure deployment, and MCP server\n- Codespaces devcontainer configuration for 50-person hackathon deployment\n- GitHub Actions CI/CD with smoke tests and lab validation\n- 54 knowledge base articles across 5 departments \\(financial aid, registration, housing, IT, policies\\)\n- Coach facilitation materials with assessment rubrics and troubleshooting guides\n\n## Test plan\n\n- [ ] Run `npm run smoke-test` locally to validate environment\n- [ ] Verify GitHub Actions workflow passes on push\n- [ ] Test Codespaces launch from repository\n- [ ] Run `pytest backend/tests/test_lab_solutions.py -v` to validate lab solutions\n- [ ] Verify all 8 lab READMEs render correctly\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\nEOF\n\\)\")",
+      "Bash(git branch:*)",
+      "Bash(gh pr list:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
