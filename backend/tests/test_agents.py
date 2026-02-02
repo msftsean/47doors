@@ -208,6 +208,7 @@ class TestActionAgent:
         """Create mock knowledge service."""
         mock = MagicMock()
         mock.search = AsyncMock(return_value=[])
+        mock.search_with_content = AsyncMock(return_value=([], []))
         return mock
 
     @pytest.fixture
@@ -253,7 +254,7 @@ class TestActionAgent:
         assert result.ticket_id == "TKT-IT-20260120-0001"
         assert result.status == ActionStatus.CREATED
         mock_ticket_service.create_ticket.assert_called_once()
-        mock_knowledge_service.search.assert_called_once()
+        mock_knowledge_service.search_with_content.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_execute_escalation_status(

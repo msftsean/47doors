@@ -23,7 +23,7 @@ services:
 # Azure infrastructure
 infra:
   provider: bicep
-  path: ./accelerator/infra
+  path: ./infra
   module: main
 
 # Hooks for deployment lifecycle

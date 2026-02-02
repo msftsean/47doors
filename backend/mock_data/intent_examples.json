@@ -9,7 +9,10 @@
         "Need to reset my password",
         "My password isn't working",
         "Locked out of my account",
-        "Password expired"
+        "Password expired",
+        "How do I set up two-factor authentication?",
+        "Enable 2FA on my account",
+        "Multi-factor authentication setup"
       ],
       "entities": ["system", "account_type"],
       "priority": "MEDIUM"
@@ -22,7 +25,12 @@
         "Getting an error when I try to sign in",
         "Authentication failed",
         "My login isn't working",
-        "Can't access my account"
+        "Can't access my account",
+        "Need help with VPN connection",
+        "VPN not working",
+        "WiFi not connecting on campus",
+        "Campus WiFi issues",
+        "Internet connection problems"
       ],
       "entities": ["system", "error_message"],
       "priority": "MEDIUM"
@@ -47,7 +55,10 @@
         "How do I get my official transcript?",
         "Need transcript for grad school",
         "Send my transcript to another university",
-        "Transcript for job application"
+        "Transcript for job application",
+        "How do I request my transcripts?",
+        "Request official transcripts",
+        "Order my academic transcript"
       ],
       "entities": ["recipient", "urgency"],
       "priority": "MEDIUM"
@@ -84,7 +95,10 @@
         "Questions about my aid package",
         "How much aid will I receive?",
         "Financial aid status",
-        "Where's my refund?"
+        "Where's my refund?",
+        "How do I apply for scholarships?",
+        "Scholarship application process",
+        "Apply for financial assistance"
       ],
       "entities": ["aid_type", "semester"],
       "priority": "MEDIUM"
@@ -97,7 +111,10 @@
         "Payment plan options",
         "Can I pay tuition in installments?",
         "When is tuition due?",
-        "Set up automatic payments"
+        "Set up automatic payments",
+        "How do I set up a payment plan?",
+        "Create a payment plan for tuition",
+        "Monthly payment arrangement"
       ],
       "entities": ["payment_method", "semester"],
       "priority": "MEDIUM"
@@ -123,7 +140,11 @@
         "No hot water in the dorm",
         "AC isn't working",
         "Light bulb out in classroom",
-        "Heating problem in building"
+        "Heating problem in building",
+        "There's a leak in the bathroom",
+        "Water leak on floor",
+        "The heat isn't working in my classroom",
+        "Heating not working"
       ],
       "entities": ["building", "room", "issue_type"],
       "priority": "MEDIUM"
@@ -135,7 +156,10 @@
         "Need maintenance in my room",
         "Something needs to be fixed",
         "Report a broken fixture",
-        "Request repair"
+        "Request repair",
+        "How do I report a maintenance issue?",
+        "Submit a maintenance request",
+        "Report maintenance problem"
       ],
       "entities": ["building", "room", "issue_type"],
       "priority": "MEDIUM"
@@ -147,7 +171,9 @@
         "How do I book a study room?",
         "Reserve a conference room",
         "Need a room for club meeting",
-        "Room reservation"
+        "Room reservation",
+        "I need to book a conference room",
+        "Schedule a meeting room"
       ],
       "entities": ["building", "date", "time", "purpose"],
       "priority": "LOW"
@@ -195,7 +221,9 @@
         "How do I get a parking permit?",
         "Buy parking pass",
         "Parking permit cost",
-        "Register my car for parking"
+        "Register my car for parking",
+        "Where can I get a parking permit?",
+        "Purchase campus parking"
       ],
       "entities": ["permit_type", "vehicle_info"],
       "priority": "LOW"
@@ -207,7 +235,9 @@
         "Lost my student ID",
         "Need a new ID card",
         "Replace student ID",
-        "ID card not working"
+        "ID card not working",
+        "How do I replace my student ID?",
+        "Get a replacement ID card"
       ],
       "entities": ["issue_type"],
       "priority": "MEDIUM"
@@ -245,7 +275,10 @@
         "I need to withdraw from school",
         "Medical withdrawal",
         "Leave of absence",
-        "Take time off"
+        "Take time off",
+        "I want to withdraw after the deadline",
+        "Late withdrawal request",
+        "Withdraw from semester"
       ],
       "entities": ["reason", "semester"],
       "priority": "HIGH"
@@ -262,6 +295,20 @@
       ],
       "entities": ["requirement", "reason"],
       "priority": "HIGH"
+    },
+    "work_study": {
+      "category": "GENERAL_INQUIRY",
+      "department": "HR",
+      "examples": [
+        "How do I apply for a work-study job?",
+        "Work study application",
+        "Student employment opportunities",
+        "I need help with my student employment paperwork",
+        "Employment forms for students",
+        "Campus job application"
+      ],
+      "entities": ["job_type"],
+      "priority": "MEDIUM"
     },
     "general_question": {
       "category": "GENERAL_INQUIRY",
@@ -320,7 +367,10 @@
         "Can I speak to someone?",
         "Transfer me to a human",
         "Real person please",
-        "Connect me to an agent"
+        "Connect me to an agent",
+        "Can I speak with someone?",
+        "I need to talk to a real person",
+        "Speak with a human"
       ],
       "entities": [],
       "priority": "HIGH"
@@ -345,8 +395,17 @@
     "exception",
     "override",
     "refund",
-    "withdrawal",
+    "withdrawal request",
+    "want to withdraw",
+    "need to withdraw",
+    "medical withdrawal",
     "deadline extension",
+    "after the deadline",
+    "past the deadline",
+    "change my grade",
+    "modify my grade",
+    "update my enrollment",
+    "modify my financial aid",
     "discrimination",
     "harassment",
     "title ix",

@@ -110,10 +110,17 @@ class MockLLMService(LLMServiceInterface):
         human_request_terms = [
             "talk to a person", "speak to someone", "human please",
             "real person", "talk to human", "connect me to",
-            "transfer me", "speak to a human", "live agent"
+            "transfer me", "speak to a human", "live agent",
+            "speak with someone", "talk to a real person",
+            "speak with a human", "real person please"
         ]
         if any(term in lower_message for term in human_request_terms):
             return True, "user_requested_human"
+
+        # Check for individual sensitive words that indicate mental health concern
+        mental_health_words = ["depressed", "suicidal", "self-harm", "anxious", "panic"]
+        if any(word in lower_message for word in mental_health_words):
+            return True, "sensitive_topic"
 
         return False, None
 

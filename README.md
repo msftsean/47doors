@@ -1,4 +1,4 @@
-# University Front Door Support Agent
+# The Universal Front Door Support Agent
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmsftsean%2Fhiedcab_frontdoor_agent%2Fmain%2Finfra%2Fazuredeploy.json)
 
@@ -28,6 +28,67 @@ The **Universal Front Door Support Agent** is a three-agent AI system that provi
 ### Solution Architecture
 
 ![Solution Architecture](./docs/architecture/architecture-overview.jpg)
+
+---
+
+## Hackathon Labs Overview
+
+**Build this entire system in 8 hours!** This repository includes a complete hackathon curriculum with 8 progressive labs:
+
+| Lab | Title | Duration | What You'll Build |
+|:---:|-------|:--------:|-------------------|
+| 00 | [Environment Setup](./labs/00-setup/) | 30 min | Verify prerequisites, configure Azure credentials, test local development environment |
+| 01 | [Understanding AI Agents](./labs/01-understanding-agents/) | 90 min | Learn multi-agent vs monolithic architectures, build an intent classifier with >90% accuracy |
+| 02 | [Azure MCP Setup](./labs/02-azure-mcp-setup/) | 30 min | Configure Model Context Protocol for Azure OpenAI and AI Search integration |
+| 03 | [Spec-Driven Development](./labs/03-spec-driven-development/) | 45 min | Write feature specs and AI constitution before generating code with Claude/Copilot |
+| 04 | [Build RAG Pipeline](./labs/04-build-rag-pipeline/) | 2 hrs | Implement hybrid search (vector + keyword) with Azure AI Search and 54 KB articles |
+| 05 | [Agent Orchestration](./labs/05-agent-orchestration/) | 2 hrs | Wire up QueryAgent → RouterAgent → ActionAgent pipeline with session management |
+| 06 | [Deploy with azd](./labs/06-deploy-with-azd/) | 90 min | Containerize with Docker, deploy to Azure Container Apps with `azd up` |
+| 07 | [MCP Server](./labs/07-mcp-server/) | 60 min | *(Stretch)* Expose your agent as an MCP server for Claude Desktop integration |
+
+### Learning Path
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Lab 00    │     │   Lab 01    │     │   Lab 02    │     │   Lab 03    │
+│   Setup     │────▶│   Agents    │────▶│    MCP      │────▶│   Specs     │
+│   30 min    │     │   90 min    │     │   30 min    │     │   45 min    │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+                                                                   │
+       ┌───────────────────────────────────────────────────────────┘
+       ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Lab 04    │     │   Lab 05    │     │   Lab 06    │     │   Lab 07    │
+│    RAG      │────▶│  Pipeline   │────▶│   Deploy    │────▶│    MCP      │
+│   2 hrs     │     │   2 hrs     │     │   90 min    │     │   60 min    │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+```
+
+### Key Skills by Lab
+
+| Skill | Lab 00 | Lab 01 | Lab 02 | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 |
+|-------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+| Python/FastAPI | | | | | ● | ● | ● | ● |
+| Azure OpenAI | | ● | ● | | ● | ● | | |
+| Azure AI Search | | | ● | | ● | ● | | |
+| Prompt Engineering | | ● | | ● | ● | ● | | |
+| Docker/Containers | | | | | | | ● | |
+| Azure Deployment | | | | | | | ● | |
+| MCP Protocol | | | ● | | | | | ● |
+
+### Azure Service Requirements
+
+Labs 00-03 and 06 can run entirely in **mock mode** without Azure credentials. Labs 04, 05, and 07 require live Azure OpenAI for their core learning objectives.
+
+| Requirement | Lab 00 | Lab 01 | Lab 02 | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 |
+|-------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+| Mock Mode OK | ✓ | ✓ | ✓ | ✓ | | | ✓ | |
+| Azure OpenAI (GPT-4o) | | | | | **Required** | **Required** | | **Required** |
+| Azure AI Search | | | | | **Required** | **Required** | | |
+
+> **Cost-Saving Tip**: Run Labs 00-03 with `USE_MOCK_MODE=true` to validate your setup before provisioning Azure services. Switch to live Azure OpenAI starting in Lab 04 when you build the RAG pipeline.
+
+**Coach Materials**: [coach-guide/](./coach-guide/) | **Participant Guide**: [docs/hackathon/](./docs/hackathon/)
 
 ---
 
@@ -226,7 +287,7 @@ npm run test:e2e  # E2E tests
 ## Project Structure
 
 ```
-hiedcab_frontdoor_agent/
+47doors/
 ├── backend/           # FastAPI Python backend
 │   ├── app/
 │   │   ├── agents/   # QueryAgent, RouterAgent, ActionAgent
@@ -239,10 +300,22 @@ hiedcab_frontdoor_agent/
 │   │   ├── components/
 │   │   └── services/
 │   └── tests/
+├── labs/              # Hackathon curriculum (8 labs)
+│   ├── 00-setup/
+│   ├── 01-understanding-agents/
+│   ├── 02-azure-mcp-setup/
+│   ├── 03-spec-driven-development/
+│   ├── 04-build-rag-pipeline/
+│   ├── 05-agent-orchestration/
+│   ├── 06-deploy-with-azd/
+│   └── 07-mcp-server/
+├── coach-guide/       # Facilitation materials
+├── shared/            # Common resources (constitution, schemas)
 ├── docs/              # Documentation
 │   ├── architecture/ # Diagrams
 │   ├── customization/
 │   ├── deployment/
+│   ├── hackathon/    # Participant guides
 │   └── specs/        # Feature specifications
 ├── infra/             # Azure Bicep templates
 ├── docker-compose.yml
