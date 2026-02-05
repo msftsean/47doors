@@ -10,7 +10,7 @@ import {
   ExclamationCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import type { TicketSummary, TicketStatusResponse, Department, TicketStatus, Priority } from '../types';
+import type { TicketSummary, TicketStatusResponse, Department, Priority } from '../types';
 
 const DEPARTMENT_LABELS: Record<Department, string> = {
   IT: 'IT Support',

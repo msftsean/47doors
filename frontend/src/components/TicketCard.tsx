@@ -28,7 +28,7 @@ const DEPARTMENT_LABELS: Record<Department, string> = {
 export function TicketCard({
   ticketId,
   department,
-  status,
+  status: _status,
   estimatedResponseTime,
   escalated,
 }: TicketCardProps) {

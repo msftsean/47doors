@@ -22,8 +22,6 @@ test.describe('Accessibility Compliance', () => {
   test('should have proper heading hierarchy', async ({ page }) => {
     // Check that headings follow proper hierarchy
     const h1 = await page.locator('h1').count();
-    const h2 = await page.locator('h2').count();
-    const h3 = await page.locator('h3').count();
 
     // Should have at least one main heading
     expect(h1).toBeGreaterThanOrEqual(0); // May be in header

@@ -165,6 +165,7 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
 /**
  * Hook to access branding context.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useBranding(): BrandingContextType {
   const context = useContext(BrandingContext);
   if (context === undefined) {

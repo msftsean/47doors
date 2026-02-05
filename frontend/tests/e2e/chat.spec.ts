@@ -112,7 +112,6 @@ test.describe('Accessibility', () => {
     await contrastButton.click();
 
     // Check that high-contrast class is applied
-    const body = page.locator('body');
     // The high-contrast class should be on a parent element
     await expect(page.locator('.high-contrast')).toBeVisible();
 
