@@ -2,6 +2,7 @@
 
 **Feature Branch**: `1-front-door-agent`
 **Created**: 2026-01-20
+**Last Updated**: 2026-02-06
 **Status**: Draft
 **Input**: User description: "Universal Front Door Support Agent - Three-agent system for routing student support requests to correct departments, creating tickets, retrieving knowledge, and escalating complex issues to humans"
 
@@ -29,6 +30,7 @@ A student has a common support issue (password reset, transcript request, facili
 2. **Given** a student submits "The elevator in Smith Hall is broken", **When** processed, **Then** the system extracts "Smith Hall" as a building entity and routes to Facilities with appropriate priority.
 3. **Given** a student submits "I need a transcript for grad school", **When** processed, **Then** the system routes to Registrar and provides knowledge articles about transcript requests.
 4. **Given** a student submits a request after business hours, **When** processed, **Then** the system still creates a ticket, provides knowledge articles, and sets appropriate SLA expectations.
+5. **Given** a student submits a common query with a high-relevance knowledge base match (relevance >= 0.5) and low/medium priority, **When** processed, **Then** the system MAY return knowledge articles without creating a ticket (self-service resolution via KB).
 
 ---
 
@@ -60,6 +62,7 @@ A student has previously submitted a request and wants to check its status witho
 
 1. **Given** a student previously received ticket TKT-IT-123, **When** they ask "What's the status of my ticket?", **Then** the system retrieves the current status from the ticketing system.
 2. **Given** a student has multiple open tickets, **When** they ask about status, **Then** the system lists all their recent tickets with status.
+3. **Given** a student navigates to the My Tickets view, **When** the view loads, **Then** the system displays all their tickets with current status, department, priority, and timestamps in a master/detail layout.
 
 ---
 
@@ -73,7 +76,7 @@ A student submits a vague request that could apply to multiple departments and n
 
 **Acceptance Scenarios**:
 
-1. **Given** a student submits "I need help with my account", **When** the confidence score is below 0.70, **Then** the system asks "Are you referring to your university login account, your financial account, or something else?"
+1. **Given** a student submits "I need help with my account", **When** the confidence score is below 0.70, **Then** the system asks a clarifying question (e.g., "Are you referring to your university login account, your financial account, or something else?").
 2. **Given** a student provides clarification after being asked, **When** the clarified intent is processed, **Then** the system routes to the correct department with the full conversation context preserved.
 3. **Given** the system cannot resolve ambiguity after 3 clarification attempts, **When** this threshold is reached, **Then** it escalates to human triage.
 
@@ -94,6 +97,23 @@ A student explicitly wants to speak with a human rather than interact with the a
 
 ---
 
+### User Story 6 - Administer Support System (Priority: P6)
+
+An administrator needs to manage incoming tickets, update their status, and configure the system's branding to match their institution.
+
+**Why this priority**: Administrative capabilities are essential for operational management but are secondary to student-facing features.
+
+**Independent Test**: Can be tested by navigating to the Admin view, filtering tickets, updating a ticket status, and modifying branding settings.
+
+**Acceptance Scenarios**:
+
+1. **Given** an administrator opens the Admin dashboard, **When** the view loads, **Then** the system displays all tickets with filtering by status and department.
+2. **Given** an administrator selects a ticket, **When** they update its status, assignee, or resolution, **Then** the changes are persisted and reflected immediately.
+3. **Given** an administrator navigates to the Branding settings tab, **When** they update the logo URL, primary color, institution name, or tagline, **Then** the changes are applied dynamically across the entire application with a live preview.
+4. **Given** an administrator deletes a ticket, **When** confirmed, **Then** the ticket is removed from the system.
+
+---
+
 ### Edge Cases
 
 - What happens when a query contains PII (social security numbers, financial data)?
@@ -108,39 +128,42 @@ A student explicitly wants to speak with a human rather than interact with the a
   - System gracefully degrades: provides best available information and logs for retry, informs user of limited functionality
 - What happens if SSO authentication is unavailable?
   - System allows read-only knowledge base browsing; ticket creation and personalized features are blocked until authentication is restored
+- What happens when the knowledge base has a highly relevant answer for a low-priority query?
+  - System returns KB articles without creating a ticket (KB self-service mode), avoiding unnecessary ticket volume
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 **Intent Detection & Entity Extraction**
-- **FR-001**: System MUST analyze natural language queries and detect intent from 30+ categories including: password_reset, transcript_request, financial_aid_inquiry, facilities_issue, grade_appeal, course_enrollment, parking_permit (using LLM-based classification with few-shot prompting)
-- **FR-002**: System MUST extract entities from queries including: building names, course codes, dates, urgency indicators
+- **FR-001**: System MUST analyze natural language queries and detect intent from 28+ categories including: password_reset, login_issues, account_locked, transcript_request, grade_inquiry, enrollment_verification, financial_aid_inquiry, tuition_payment, refund_request, facilities_issue, maintenance_request, room_booking, course_enrollment, add_drop, registration_hold, parking_permit, id_card, housing, grade_appeal, withdrawal_request, waiver_request, work_study, general_question, department_contact, ticket_status, request_followup, request_human, speak_to_person (using LLM-based classification with few-shot prompting)
+- **FR-002**: System MUST extract entities from queries including: building names, course codes (pattern: 2-4 uppercase letters + 3-4 digits), dates, urgency indicators, and system names (Canvas, Blackboard, Banner, Workday, Outlook, VPN)
 - **FR-003**: System MUST calculate a confidence score (0.0-1.0) for each intent detection
-- **FR-004**: System MUST detect PII in queries and flag for secure handling (not logged in plain text)
-- **FR-005**: System MUST analyze sentiment to detect frustrated or urgent tones
+- **FR-004**: System MUST detect PII in queries (SSN, email, phone, credit card, date of birth) and flag for secure handling (not logged in plain text)
+- **FR-005**: System MUST analyze sentiment to detect frustrated or urgent tones (classifying as NEUTRAL, FRUSTRATED, URGENT, or SATISFIED)
 
 **Routing & Decision Making**
 - **FR-006**: System MUST route queries to one of these departments: IT, HR, Registrar, Financial Aid, Facilities, Student Affairs, Campus Safety, or ESCALATE_TO_HUMAN
-- **FR-007**: System MUST escalate to human when confidence score is below 0.70
+- **FR-007**: System MUST escalate to human when confidence score is below 0.70 and clarification attempts have been exhausted (max 3)
 - **FR-008**: System MUST escalate to human when policy keywords are detected: appeal, waiver, exception, override, refund, withdrawal deadline
 - **FR-009**: System MUST escalate to human for sensitive topics: Title IX, mental health crisis, threat assessment, discrimination
 - **FR-010**: System MUST escalate to human when multi-department coordination is needed
-- **FR-011**: System MUST escalate to human when user explicitly requests human contact
+- **FR-011**: System MUST escalate to human when user explicitly requests human contact (supporting 13+ trigger phrases including "talk to a person", "speak to someone", "human agent", etc.)
 - **FR-012**: System MUST escalate to human after 3 failed clarification attempts
-- **FR-013**: System MUST assign priority levels (low, medium, high, urgent) based on urgency indicators and sentiment
-- **FR-014**: System MUST set appropriate SLA expectations based on department and priority
+- **FR-013**: System MUST assign priority levels (LOW, MEDIUM, HIGH, URGENT) based on escalation status, sentiment, urgency indicators, and confidence
+- **FR-014**: System MUST set SLA expectations based on priority: URGENT=1 hour, HIGH=4 hours, MEDIUM=24 hours, LOW=72 hours
 
 **Ticket Creation & Knowledge Retrieval**
-- **FR-015**: System MUST create tickets in the university ticketing system with: ticket ID (format: TKT-{DEPT}-{YYYYMMDD}-{SEQ}), department, priority, description, student context
+- **FR-015**: System MUST create tickets in the university ticketing system with: ticket ID (format: TKT-{DEPT}-{YYYYMMDD}-{SEQ}, validated by pattern `^TKT-[A-Z]{2,3}-\d{8}-\d{4}$`), department, priority, description, student context
 - **FR-016**: System MUST retrieve top 3 relevant knowledge base articles for each query
+- **FR-016a**: System MAY skip ticket creation for LOW/MEDIUM priority queries when a knowledge base article with relevance score >= 0.5 provides self-service resolution (KB-only mode)
 - **FR-017**: System MUST display knowledge articles with title, URL, and relevance indicator
 
 **Session & Audit**
-- **FR-018**: System MUST maintain session context across multi-turn conversations (stateful)
-- **FR-019**: System MUST store session history including: student_id (hashed), conversation intents, ticket IDs created
-- **FR-020**: System MUST log audit trail: user_id, query timestamp, detected intent, routed department, ticket_id, PII flag, escalation status
-- **FR-021**: System MUST NOT log raw query text containing PII beyond audit requirements
+- **FR-018**: System MUST maintain session context across multi-turn conversations (stateful), with a maximum of 50 conversation turns per session
+- **FR-019**: System MUST store session history including: student_id (SHA-256 hashed, 64-character), conversation intents, ticket IDs created
+- **FR-020**: System MUST log audit trail: user_id (hashed), query timestamp, detected intent, confidence score, routed department, ticket_id, PII flag, escalation status, escalation reason (required when escalated), sentiment, response time (ms)
+- **FR-021**: System MUST NOT log raw query text containing PII beyond audit requirements; PII-containing messages MUST be excluded from ticket descriptions
 
 **Boundaries (What System Must NOT Do)**
 - **FR-022**: System MUST NOT approve refunds, waivers, or policy exceptions
@@ -151,28 +174,46 @@ A student explicitly wants to speak with a human rather than interact with the a
 
 **User Interface**
 - **FR-027**: System MUST provide a web chat interface accessible 24/7
-- **FR-028**: System MUST display ticket ID prominently with ability to copy
-- **FR-029**: System MUST always display option to speak to a human
-- **FR-030**: System MUST provide high-contrast mode for accessibility (WCAG compliance)
+- **FR-028**: System MUST display ticket ID prominently with ability to copy to clipboard
+- **FR-029**: System MUST always display option to speak to a human (persistent "Talk to a Human" button in the application header)
+- **FR-030**: System MUST provide high-contrast mode toggle for accessibility (WCAG 2.1 AA compliance), with system preference detection and persistence via localStorage
 - **FR-031**: System MUST be responsive for mobile devices
-- **FR-032**: System MUST show typing indicators during processing
+- **FR-032**: System MUST show typing indicators during processing (client-side animation while awaiting response)
+- **FR-033**: System MUST provide a My Tickets dashboard view where students can see all their tickets with status, department, priority, and timestamps in a master/detail layout
+- **FR-034**: System MUST provide skip-to-content navigation, ARIA roles/labels on all interactive elements, keyboard navigation (Enter to send, Shift+Enter for newline), and a screen reader live region for chat messages
+
+**Administration**
+- **FR-035**: System MUST provide an admin dashboard for viewing, filtering (by status and department), updating, and deleting support tickets
+- **FR-036**: System MUST allow administrators to update ticket status, assignee, and resolution notes
+- **FR-037**: System MUST provide a branding configuration system allowing administrators to customize: institution logo URL, primary color, institution name, and tagline — with changes applied dynamically via CSS variables and live preview
+- **FR-038**: System MUST provide a health check endpoint reporting per-service status (LLM, ticketing, knowledge base, session store)
+- **FR-039**: System MUST provide a direct knowledge base search endpoint for querying articles by search term, department, and result limit
+
+**Service Architecture**
+- **FR-040**: System MUST implement a three-agent pipeline architecture: QueryAgent (intent analysis) → RouterAgent (routing decisions) → ActionAgent (ticket creation and KB retrieval), with each agent having bounded authority (QueryAgent CANNOT create tickets; RouterAgent CANNOT create tickets; ActionAgent CANNOT approve policies)
+- **FR-041**: All external service integrations (LLM, ticketing, knowledge base, session store, audit log, branding) MUST be abstracted behind interfaces with a dependency injection container, supporting both mock and production implementations
+- **FR-042**: System MUST support a mock mode for all services, enabling demo and development without external dependencies, controlled via a single configuration toggle
 
 ### Non-Functional Requirements
 
 - **NFR-001**: System MUST respond with ticket ID and initial guidance within 30 seconds
 - **NFR-002**: System MUST be available 24/7 (target 99.9% uptime during pilot)
 - **NFR-003**: System MUST support students: undergraduate, graduate, online, continuing education
-- **NFR-004**: Session history MUST be retained for 90 days before anonymization for analytics
-- **NFR-005**: System MUST handle 500 concurrent users during peak registration periods
+- **NFR-004**: Session history MUST be retained for 90 days (TTL: 7,776,000 seconds) before anonymization for analytics. Persistent storage (e.g., Cosmos DB) is required for production; in-memory mock storage is acceptable for development/demo only.
+- **NFR-005**: System MUST handle 500 concurrent users during peak registration periods. Rate limiting MUST be enforced (target: 100 requests per 60-second window per user).
+- **NFR-006**: System MUST be containerized (Docker) with multi-stage builds and non-root user execution for security
+- **NFR-007**: System MUST support deployment to Azure (Container Apps for backend, Static Web Apps for frontend) via Azure Developer CLI (azd) and Bicep infrastructure-as-code
 
 ### Key Entities
 
-- **Session**: Represents a student's conversation context including session_id, student_id (hashed for privacy), creation timestamp, last activity timestamp, and conversation history (list of turns with intents and ticket IDs)
-- **AuditLog**: Represents an immutable record of each interaction including log_id, timestamp, student_id (hashed), detected intent, routed department, ticket_id, escalation status, PII detection flag, and sentiment classification
-- **QueryResult**: Represents the output of intent analysis including detected intent, suggested department, extracted entities, confidence score, escalation flag, PII detection flag, and sentiment
-- **RoutingDecision**: Represents the routing determination including target department, priority level, escalation flag with reason, and suggested SLA
-- **ActionResult**: Represents the outcome of executing a request including ticket_id, department, status, knowledge articles retrieved, estimated response time, escalation status, and user-facing message
-- **KnowledgeArticle**: Represents a relevant help article including title, URL, and relevance score
+- **Session**: Represents a student's conversation context including session_id (UUID), student_id_hash (SHA-256, 64-char), creation timestamp, last activity timestamp, conversation_history (list of ConversationTurn, max 50 turns), clarification_attempts (0-3), and TTL (default 90 days)
+- **ConversationTurn**: Represents a single turn in a conversation including turn_number, detected intent, routed department, ticket_id (if created), and timestamp
+- **AuditLog**: Represents an immutable record of each interaction including log_id (UUID), timestamp, student_id_hash (64-char), session_id (UUID), detected_intent, confidence_score (0.0-1.0), routed_department, ticket_id, escalated (boolean), escalation_reason (required if escalated), pii_detected, sentiment, and response_time_ms
+- **QueryResult**: Represents the output of intent analysis including detected intent (IntentCategory), confidence score (0.0-1.0), extracted entities (dict), pii_detected (boolean), pii_types (list), sentiment (Sentiment enum), urgency_indicators (list), and requires_escalation flag
+- **RoutingDecision**: Represents the routing determination including target department (Department enum), priority (Priority enum), escalation flag with reason (EscalationReason enum), SLA (string), and needs_clarification flag
+- **ActionResult**: Represents the outcome of executing a request including ticket_id, department, status (ActionStatus: created/escalated/pending_clarification/kb_only/error), knowledge_articles (list, max 3), estimated_response_time, escalation status, and user-facing message
+- **KnowledgeArticle**: Represents a relevant help article including title, URL, and relevance score (0.0-1.0)
+- **BrandingConfig**: Represents institution branding including logo_url, primary_color, institution_name, and tagline — applied dynamically via CSS variables
 
 ## Success Criteria *(mandatory)*
 
@@ -190,22 +231,25 @@ A student explicitly wants to speak with a human rather than interact with the a
 
 ## Assumptions
 
-- Students authenticate via existing university SSO before accessing the support agent
-- ServiceNow (or equivalent ticketing system) API is available for ticket creation
-- University knowledge base content is available and indexed for search
+- Students authenticate via existing university SSO before accessing the support agent (v1 uses a demo student stub for development/demo; production requires SSO integration)
+- ServiceNow (or equivalent ticketing system) API is available for ticket creation (v1 uses mock implementation)
+- University knowledge base content is available and indexed for search (v1 uses mock implementation with sample articles; production targets Azure AI Search)
 - All external service integrations (ticketing, knowledge base, LLM) are abstracted behind interfaces with mock implementations for demo/testing mode
 - Student ID can be obtained from authenticated session context
 - Departments have defined SLAs that can be referenced for response time estimates
 - v1 scope is English language only; multilingual support deferred to v2
 - v1 scope is students only; faculty and staff support deferred to v2 and v3
+- Azure OpenAI is the production LLM provider (accessed via REST API with httpx)
+- Cosmos DB is the target production store for sessions, audit logs, and branding (v1 uses in-memory mocks)
 
 ## Dependencies
 
-- University authentication system (SSO/OAuth)
-- Ticketing system API (ServiceNow or equivalent)
-- Knowledge base and search infrastructure
-- Session storage infrastructure for stateful conversations
-- Audit logging infrastructure
+- University authentication system (SSO/OAuth) — **v1: demo stub**
+- Ticketing system API (ServiceNow or equivalent) — **v1: mock implementation**
+- Knowledge base and search infrastructure (Azure AI Search) — **v1: mock implementation**
+- Session storage infrastructure for stateful conversations (Cosmos DB) — **v1: in-memory mock**
+- Audit logging infrastructure (Cosmos DB) — **v1: in-memory mock**
+- LLM service (Azure OpenAI) — **v1: production implementation available; mock fallback for offline dev**
 
 ## Clarifications
 
@@ -217,6 +261,13 @@ A student explicitly wants to speak with a human rather than interact with the a
 - Q: Should external integrations support mock mode for demo/testing? → A: Yes, dual-mode with abstracted services and mock implementations
 - Q: What format should ticket IDs use? → A: Structured format TKT-{DEPT}-{YYYYMMDD}-{SEQ} (e.g., TKT-IT-20260121-0042)
 
+### Session 2026-02-06
+
+- Q: Should the system always create a ticket for every query? → A: No. For LOW/MEDIUM priority queries where the knowledge base provides a highly relevant answer (relevance >= 0.5), the system may return KB articles without creating a ticket (KB-only self-service mode).
+- Q: What administrative capabilities are needed? → A: Full ticket triage (list, filter by status/department, update status/assignee/resolution, delete) plus institution branding customization (logo, color, name, tagline) with live preview.
+- Q: How should branding changes be applied? → A: Dynamically via CSS variables so changes take effect immediately without page reload.
+- Q: What is the three-agent architecture? → A: QueryAgent (analyzes intent, extracts entities, detects PII/sentiment) → RouterAgent (routes to department, assigns priority, determines escalation) → ActionAgent (creates tickets, retrieves KB articles, generates response). Each agent has bounded authority and cannot perform actions outside its scope.
+
 ## Out of Scope (v1)
 
 - Faculty and staff support (v2, v3)
@@ -225,3 +276,10 @@ A student explicitly wants to speak with a human rather than interact with the a
 - Sentiment-based crisis detection with automatic emergency escalation
 - Integration with grant databases or research systems
 - Voice/phone channel support
+- Server-side streaming / real-time typing indicators (v1 uses client-side animation)
+- Production SSO/OAuth middleware (v1 uses demo student stub)
+- Production ServiceNow integration (v1 uses mock)
+- Production Azure AI Search integration (v1 uses mock)
+- Production Cosmos DB integration for sessions/audit/branding (v1 uses in-memory mocks)
+- Rate limiting middleware enforcement (v1 has configuration only)
+- Campus Safety department routing (no intent categories currently map to this department)
