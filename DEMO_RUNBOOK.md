@@ -10,7 +10,7 @@
 
 ```
 Demo Readiness  [████████████████████] 100%  ✅ All systems go
-Mock Mode       [████████████████████] 100%  ✅ No Azure credentials required
+Azure Live      [████████████████████] 100%  ✅ Connected to Azure OpenAI (MOCK_MODE=false)
 Test Coverage   [███████████████░░░░░]  76%  🟡 76 backend tests passing
 ```
 
@@ -95,16 +95,17 @@ Overall Readiness  [░░░░░░░░░░░░░░░░░░░░
 |---|---|---|---|
 | 1️⃣ | 🌐 **Browser open** | Chrome 90+, Firefox 85+, or Edge 90+ | ☐ |
 | 2️⃣ | 🎙️ **Microphone tested** | Settings → Privacy → Microphone → Allow | ☐ |
-| 3️⃣ | 🖥️ **Backend running** | `uvicorn` on **port 8000** · `/api/health` returns `healthy` | ☐ |
-| 4️⃣ | 🖼️ **Frontend running** | Vite dev server on **port 5173** · UI loads | ☐ |
-| 5️⃣ | 🔧 **Mock mode active** | `MODE=mock` in `backend/.env` · no Azure creds needed | ☐ |
-| 6️⃣ | 🔊 **Audio output working** | System volume up · headset or speakers confirmed | ☐ |
-| 7️⃣ | 🛡️ **Fallback ready** | If voice fails → text chat **always** works · stay calm | ☐ |
+| 3️⃣ | ☁️ **Azure Container App deployed** | `azd up` completed · `${AZURE_CONTAINERAPP_URL}/api/health` returns `healthy` | ☐ |
+| 4️⃣ | 🖼️ **Frontend reachable** | Container App URL loads the UI (or Vite dev if running locally) | ☐ |
+| 5️⃣ | 🔑 **Azure subscription active** | `az account show` confirms sub `28fbebcb-…` · `azd auth login` completed | ☐ |
+| 6️⃣ | 🤖 **Azure OpenAI connected** | `MOCK_MODE=false` in `backend/.env` · live `oai-47doors-voice` deployment | ☐ |
+| 7️⃣ | 🔊 **Audio output working** | System volume up · headset or speakers confirmed | ☐ |
+| 8️⃣ | 🛡️ **Fallback ready** | If voice fails → text chat **always** works · stay calm | ☐ |
 
 ```
-✅ All 7 checked?  [████████████████████] 100%  🟢 Ready to demo!
-⚠️  5-6 checked?  [████████████████░░░░]  80%  🟡 Proceed with caution
-❌  <5 checked?   [████████░░░░░░░░░░░░]  40%  🔴 Stop — fix issues first
+✅ All 8 checked?  [████████████████████] 100%  🟢 Ready to demo!
+⚠️  6-7 checked?  [████████████████░░░░]  80%  🟡 Proceed with caution
+❌  <6 checked?   [████████░░░░░░░░░░░░]  40%  🔴 Stop — fix issues first
 ```
 
 > 💡 **Codespaces?** Leave `VITE_API_BASE_URL` blank — Vite proxies `/api` to `127.0.0.1:8000` automatically. Both port **5173** and port **8000** must be forwarded.
@@ -114,21 +115,55 @@ Overall Readiness  [░░░░░░░░░░░░░░░░░░░░
 ## 🚀 Start Commands
 
 ```
-┌──────────────────────────────────────────────┐
-│  🚀  LAUNCH SEQUENCE — CHOOSE YOUR PATH      │
-├──────────────────────────────────────────────┤
-│  Option A  ── 💻 Local Dev (Recommended)     │
-│  Option B  ── 🐳 Docker (One command)        │
-│  Option C  ── ☁️  GitHub Codespaces           │
-└──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  🚀  LAUNCH SEQUENCE — CHOOSE YOUR PATH              │
+├──────────────────────────────────────────────────────┤
+│  Option A  ── ☁️  Azure Container Apps (Recommended) │
+│  Option B  ── 🐳 Docker (local alternative)          │
+│  Option C  ── 💻 Local Dev (debugging fallback)      │
+│  Option D  ── ☁️  GitHub Codespaces (cloud dev)       │
+└──────────────────────────────────────────────────────┘
 ```
 
-### 💻 Option A — Local Development *(Recommended for Demos)*
+### ☁️ Option A — Azure Container Apps *(Recommended)*
+
+This is the **primary demo path**. Azure resources are live: `oai-47doors-voice` in `rg-47doors-voice` (eastus2).
+
+```bash
+# 1️⃣  Authenticate (once per machine)
+azd auth login
+
+# 2️⃣  Provision + deploy everything (first time, ~5 min)
+azd up
+
+# 2b️⃣  Subsequent deploys (code changes only)
+azd deploy
+
+# 3️⃣  Get the live URL
+azd env get-values | grep AZURE_CONTAINERAPP_URL
+```
+
+```bash
+# The frontend SPA is served from the same Container App host.
+# Use the URL returned above — e.g. https://ca-47doors-xxxx.eastus2.azurecontainerapps.io
+```
+
+> 💡 **Subscription**: `28fbebcb-147f-4171-aeb4-6bac79cfb589` · **Tenant**: `f28d1115-47bb-4435-a518-e5ef2b4ba0f1`
+
+### 🐳 Option B — Docker *(Local Alternative)*
+
+```bash
+docker-compose up
+# 🖼️ Frontend: http://localhost:5173
+# 🖥️ Backend:  http://localhost:8000
+```
+
+### 💻 Option C — Local Dev *(Debugging Fallback)*
 
 ```bash
 # 🖥️ Terminal 1 — Backend
 cd backend
-cp .env.example .env          # MODE=mock is already set
+cp .env.example .env          # Set MOCK_MODE=false + Azure creds for live mode
 pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -140,18 +175,10 @@ npm install
 npm run dev                   # Opens http://localhost:5173
 ```
 
-### 🐳 Option B — Docker *(One Command)*
+### ☁️ Option D — GitHub Codespaces
 
 ```bash
-docker-compose up
-# 🖼️ Frontend: http://localhost:5173
-# 🖥️ Backend:  http://localhost:8000
-```
-
-### ☁️ Option C — GitHub Codespaces
-
-```bash
-# Same as Option A — Vite proxy handles /api routing
+# Same as Option C — Vite proxy handles /api routing
 # ⚠️  DO NOT set VITE_API_BASE_URL to a localhost URL inside Codespaces
 # Leave it as empty string in frontend/.env.local:
 echo "VITE_API_BASE_URL=" > frontend/.env.local
@@ -159,18 +186,25 @@ echo "VITE_API_BASE_URL=" > frontend/.env.local
 
 ### 🩺 Health Check *(Verify before demoing)*
 
+> 💡 Replace `${AZURE_CONTAINERAPP_URL}` with your actual Container App URL from `azd env get-values`.
+
 ```bash
-curl http://localhost:8000/api/health
+# ☁️ Azure (primary)
+curl ${AZURE_CONTAINERAPP_URL}/api/health
 # ✅ Expected: { "status": "healthy", "services": { "realtime_api": "available" } }
 
-curl http://localhost:8000/api/realtime/health
-# ✅ Expected: { "realtime_available": true, "mock_mode": true }
+curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
+# ✅ Expected: { "realtime_available": true, "mock_mode": false }
+
+# 💻 Local fallback
+# curl http://localhost:8000/api/health
+# curl http://localhost:8000/api/realtime/health
 ```
 
 ```
 Backend  Health  [████████████████████] ✅  healthy
-Realtime Health  [████████████████████] ✅  available  (mock_mode: true)
-Frontend Load    [████████████████████] ✅  http://localhost:5173
+Realtime Health  [████████████████████] ✅  available  (mock_mode: false — Azure Live)
+Frontend Load    [████████████████████] ✅  ${AZURE_CONTAINERAPP_URL}
 ```
 
 ---
@@ -273,13 +307,13 @@ Student types  ──►  🧠 Intent Detection  ──►  🗺️ Router  ─�
 
 > *"University IT teams ask: 'How do we know what the AI is doing? How do we audit it?' Great question."*
 
-1. 🌐 **Open a new browser tab**, navigate to `http://localhost:8000/api/realtime/health`
+1. 🌐 **Open a new browser tab**, navigate to `${AZURE_CONTAINERAPP_URL}/api/realtime/health`
    ```json
-   { "realtime_available": true, "mock_mode": true }
+   { "realtime_available": true, "mock_mode": false }
    ```
    > *"This endpoint tells the frontend whether voice is available. If it returns false, the mic button never even appears — there's no broken state to deal with."*
 
-2. 🌐 **Navigate to** `http://localhost:8000/api/health`
+2. 🌐 **Navigate to** `${AZURE_CONTAINERAPP_URL}/api/health`
    > *"Full health check — every service, including the Realtime API, has a status entry."*
 
 3. 📜 **Back in the chat**, scroll through the conversation history
@@ -305,7 +339,12 @@ Student types  ──►  🧠 Intent Detection  ──►  🗺️ Router  ─�
 
 > *"The most important thing about a feature like this is what happens when it doesn't work."*
 
-1. 🔧 **Temporarily disable voice**: In `backend/.env`, set `VOICE_ENABLED=false`, restart uvicorn
+1. 🔧 **Temporarily disable voice**: In the Azure Container App, set environment variable `VOICE_ENABLED=false` via the portal or:
+   ```bash
+   az containerapp update --name <app-name> --resource-group rg-47doors-voice \
+     --set-env-vars VOICE_ENABLED=false
+   ```
+   *(If running locally: set `VOICE_ENABLED=false` in `backend/.env` and restart uvicorn)*
 2. 🔄 **Refresh the frontend** — mic button is **gone entirely**
    > *"When voice isn't available, we don't show a broken button — we remove it. The student sees a normal, fully functional text chat."*
 
@@ -316,7 +355,7 @@ Student types  ──►  🧠 Intent Detection  ──►  🗺️ Router  ─�
 3. ⌨️ **Type** a message and get a response
    > *"Text chat is completely unaffected. Voice uses separate WebRTC and WebSocket connections — there's zero coupling to the text pipeline."*
 
-4. ✅ **Re-enable**: Set `VOICE_ENABLED=true`, restart — mic button reappears
+4. ✅ **Re-enable**: Restore `VOICE_ENABLED=true` on the Container App (or in `.env` locally) — mic button reappears
 
 ```
 Voice OFF:  💬 Text [████████████████████] ✅  🎤 Voice [░░░░░░░░░░] hidden
@@ -333,21 +372,21 @@ Voice ON:   💬 Text [███████████████████
 
 **🎙️ Talk track:**
 
-> *"What you just saw is the MVP — running in mock mode, which means no Azure credentials required. Here's what the path to production looks like."*
+> *"What you just saw is running live on Azure — connected to Azure OpenAI GPT-4o Realtime API in East US 2. Here's what the path forward looks like."*
 
 ```
-MVP → Production Path:
-[████████████████████] Phase 1-3  ✅ Complete (Demo-ready)
+Current State → Production Hardening:
+[████████████████████] Phase 1-3  ✅ Complete (Live on Azure)
 [████████████░░░░░░░░] Phase 4-6  🟡 In progress
 [░░░░░░░░░░░░░░░░░░░░] Phase 7-8  📋 Planned
 ```
 
-1. 🏭 **Production deployment**: Swap `MODE=production` + Azure OpenAI Realtime API deployment (`gpt-4o-realtime-preview`) — Bicep templates in `infra/` already include it
-2. ♿ **Accessibility hardening**: WCAG 2.1 AA audit, screen reader testing with JAWS/NVDA
-3. ⚡ **Real Azure Realtime API**: Sub-2-second voice response latency with live WebRTC transport
+1. 🏭 **Production hardening**: WCAG 2.1 AA audit, screen reader testing with JAWS/NVDA — the Bicep templates in `infra/` already include the full deployment
+2. ♿ **Accessibility hardening**: Complete WCAG 2.1 AA audit pass
+3. ⚡ **Sub-2-second latency**: Fine-tune Azure Container App scaling + WebRTC transport for optimal response times
 4. 📊 **Analytics**: Voice vs. text resolution rate comparison, VAD tuning per environment
 
-> *"The architecture is already there. The tests are green — 76 backend tests pass. Turning this on in production is a **configuration change**, not a code change."*
+> *"The architecture is already live. The tests are green — 76 backend tests pass. Scaling this to production tenants is a **configuration change**, not a code change."*
 
 ---
 
@@ -367,13 +406,17 @@ MVP → Production Path:
 | 🔌 WebSocket closes `4002` | 🔴 | `session_id` not found | Verify UUID in query params matches a live session; reload |
 | 🔇 No audio output | 🔴 | System volume muted / wrong output device | Check system audio; try a headset |
 | 🌊 VAD not triggering / false triggers | 🟡 | Background noise | Use headset in quiet room; adjust `REALTIME_VAD_THRESHOLD_MS` in `.env` |
-| 🎤 "Voice unavailable" banner | 🟡 | Backend not running or voice disabled | Confirm `uvicorn` on port 8000; check `VOICE_ENABLED=true` in `.env` |
-| 🚫 `503` on `POST /session` | 🔴 | `VOICE_ENABLED=false` in config | Set `VOICE_ENABLED=true` in `backend/.env` → restart uvicorn |
-| 🎤 Mic button not shown | 🟡 | `realtime_available: false` from health check | `GET /api/realtime/health`; confirm backend running + `MODE=mock` |
+| 🎤 "Voice unavailable" banner | 🟡 | Backend not running or voice disabled | Confirm Container App is running; check `VOICE_ENABLED=true` env var |
+| 🚫 `503` on `POST /session` | 🔴 | `VOICE_ENABLED=false` in config | Set `VOICE_ENABLED=true` on Container App → restart revision |
+| 🎤 Mic button not shown | 🟡 | `realtime_available: false` from health check | `GET ${AZURE_CONTAINERAPP_URL}/api/realtime/health`; confirm Container App running |
 | 📝 Transcript not appearing | 🟡 | Voice components not rendered | Confirm `ChatContainer.tsx` imports `VoiceTranscript`; check console |
 | 💬 Text chat broken after voice | 🔴 | Should not happen (separate connections) | Hard-reload; file a bug if persists — check `ChatContainer.tsx` state isolation |
-| 🔒 WebRTC ICE failure (live mode) | 🔴 | Azure endpoint/region misconfigured | Verify `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_REALTIME_DEPLOYMENT` in `.env` |
+| 🔒 WebRTC ICE failure | 🔴 | Azure endpoint/region misconfigured | Verify `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_REALTIME_DEPLOYMENT` in Container App env vars |
 | 🌐 Codespaces: API calls fail | 🔴 | `VITE_API_BASE_URL` set to localhost | Clear `VITE_API_BASE_URL` — Vite proxy handles `/api` routing |
+| 📦 Container App not starting | 🔴 | Image build failure or missing env vars | `azd deploy --debug`; check Container App logs in Azure Portal |
+| 🛑 `azd up` failure | 🔴 | Quota, permissions, or Bicep error | Check `azd` output; verify subscription `28fbebcb-…` and role assignments |
+| 🤖 Azure OpenAI quota exceeded | 🔴 | TPM/RPM limit hit on `oai-47doors-voice` | Check quota in Azure Portal → `rg-47doors-voice` → OpenAI resource → Deployments |
+| 🐌 Cold start delay (first request) | 🟡 | Container App scaling from zero | Wait 10–15 s; send a warm-up request to `/api/health` before the demo |
 
 ```
 Legend:  🔴 Blocking — demo cannot continue without fix
@@ -424,7 +467,7 @@ Voice makes this colleague feel **present** — not like filling out a form, but
 
 ### 🌍 Applicable to Any University
 
-This architecture is institution-agnostic. The 3-agent pipeline (`QueryAgent → RouterAgent → ActionAgent`) maps to any university's department taxonomy. The mock mode means any institution can demo it today — with **zero Azure spend** — and decide on production deployment after seeing it work for their specific use cases.
+This architecture is institution-agnostic. The 3-agent pipeline (`QueryAgent → RouterAgent → ActionAgent`) maps to any university's department taxonomy. With live Azure deployment via `azd up`, any institution can demo it today against real Azure OpenAI — and scale to production deployment after seeing it work for their specific use cases.
 
 > 💬 **The close**: *"You're not buying a chatbot. You're giving every student a trusted digital colleague who is always available, always accurate, and always gets them to the right place — whether they type or talk."*
 
@@ -434,6 +477,6 @@ This architecture is institution-agnostic. The 3-agent pipeline (`QueryAgent →
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║  📋  Runbook maintained by the 47 Doors engineering team                    ║
 ║  🐛  Issues? Open a GitHub issue on branch: 002-voice-interaction           ║
-║  🟢  Mock mode: zero Azure credentials required for demo                    ║
+║  ☁️   Azure-first: `azd up` → live on Azure OpenAI (MOCK_MODE=false)         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
