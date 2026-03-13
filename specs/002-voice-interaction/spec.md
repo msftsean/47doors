@@ -6,7 +6,7 @@
 **Status**: Active — aligned with Constitution v1.1.0
 **Constitution**: v1.1.0 (voice-specific principles in III, VI, VII)
 **Input**: User description: "Add real-time voice conversation using Azure OpenAI GPT-4o Realtime API via WebRTC, enabling students to speak naturally with the support agent instead of typing"
-**MVP Scope**: User Stories P1 (Core Voice) + P5 (Degradation) + Eval Pack
+**MVP Scope**: User Stories P1 (Core Voice) + P5 (Degradation) + Eval Pack — Azure Container Apps deployment (local dev as fallback)
 
 ## Problem Statement
 
@@ -150,12 +150,18 @@ When the Realtime API is unavailable, the microphone fails, or network condition
 - **VFR-019**: Voice feature MUST be toggleable via a `voice_enabled` configuration flag (defaults to `true` when a Realtime API deployment is configured)
 - **VFR-020**: When the Realtime API is unavailable or WebRTC connection fails, the system MUST fall back to text-only mode with a user-visible notification
 - **VFR-021**: The backend MUST provide a voice-specific health check (`GET /api/health` should include `realtime_api` service status)
-- **VFR-022**: Mock mode MUST support voice interactions via a mock Realtime service that simulates tool calls and returns canned audio responses (or text-only simulation with a "voice simulation" indicator)
+- **VFR-022**: Mock mode MUST be available for development and testing via `MOCK_MODE=true`, simulating tool calls and returning canned responses. Production and demo environments MUST use live Azure OpenAI connections (`MOCK_MODE=false`)
 
 **Infrastructure**
 - **VFR-023**: The Azure infrastructure (Bicep) MUST include a `gpt-4o-realtime-preview` model deployment in the Azure OpenAI resource
 - **VFR-024**: The backend MUST expose a `POST /api/realtime/session` endpoint that creates an ephemeral session token for WebRTC authentication
 - **VFR-025**: The backend MUST expose a WebSocket endpoint (`/api/realtime/ws`) for relaying tool call execution between the Realtime API session and the existing agent pipeline
+
+**Deployment**
+- **VFR-026**: The PRIMARY deployment target MUST be Azure Container Apps via `azd up`, with environment variables configured in the Container App
+- **VFR-027**: Local development MUST be supported as a secondary path for debugging and development, using `uvicorn` directly
+- **VFR-028**: The system MUST support both Azure-hosted and local deployment without code changes — only environment variable differences
+- **VFR-029**: Health check endpoints (`/api/health`, `//api/realtime/health`) MUST work identically in both Azure and local environments
 
 ### Non-Functional Requirements
 
@@ -185,6 +191,7 @@ When the Realtime API is unavailable, the microphone fails, or network condition
 ## Assumptions
 
 - Azure OpenAI `gpt-4o-realtime-preview` model is available for deployment in the same region as the existing `gpt-4o` deployment
+- Azure Container Apps is the primary deployment target; the backend is deployed via `azd up` with environment variables set in the Container App configuration
 - WebRTC is supported in all target browsers without polyfills
 - The existing 3-agent pipeline (QueryAgent → RouterAgent → ActionAgent) can be invoked synchronously within a WebSocket tool call handler
 - Students have access to a microphone (built-in or external) on their device
@@ -194,6 +201,7 @@ When the Realtime API is unavailable, the microphone fails, or network condition
 ## Dependencies
 
 - Azure OpenAI `gpt-4o-realtime-preview` model deployment — **required for production voice**
+- Azure Container Apps — **primary deployment target** (via `azd up` and Bicep in `infra/`)
 - Browser WebRTC API (`RTCPeerConnection`) — **native, no library needed**
 - Backend WebSocket support — **FastAPI native (Starlette WebSocket)**
 - Existing 3-agent pipeline — **already implemented, will be wrapped as tools**
