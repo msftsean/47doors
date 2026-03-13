@@ -2,25 +2,31 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 
-from app.core.dependencies import RealtimeServiceDep
+from app.core.dependencies import get_realtime_service
 from app.models.voice_schemas import (
     RealtimeSessionRequest,
     RealtimeSessionResponse,
     ToolCallRequest,
     ToolCallResponse,
 )
+from app.services.interfaces import RealtimeServiceInterface
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
+def _resolve_realtime_service() -> RealtimeServiceInterface:
+    """Wrapper avoids FastAPI interpreting Settings as a body sub-dependency."""
+    return get_realtime_service()
+
+
 @router.post("/session", response_model=RealtimeSessionResponse)
 async def create_realtime_session(
     request: RealtimeSessionRequest,
-    realtime_service: RealtimeServiceDep,
+    realtime_service: RealtimeServiceInterface = Depends(_resolve_realtime_service),
 ):
     """Create an ephemeral realtime session with a short-lived token.
 
@@ -63,11 +69,10 @@ async def websocket_tool_relay(
     - 4002: Session not found
     - 1011: Server error
     """
-    from app.core.dependencies import get_realtime_service
-
-    realtime_service = get_realtime_service()
+    realtime_service = _resolve_realtime_service()
 
     if not token or len(token) < 10:
+        await websocket.accept()
         await websocket.close(code=4001, reason="Invalid token")
         return
 

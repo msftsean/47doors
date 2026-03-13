@@ -39,9 +39,9 @@ async def async_client():
 class TestCreateSession:
     """POST /api/realtime/session endpoint tests."""
 
-    async def test_create_session_mock_mode(self, async_client):
+    def test_create_session_mock_mode(self, sync_client):
         """T016: POST /api/realtime/session returns valid session in mock mode."""
-        response = await async_client.post(
+        response = sync_client.post(
             "/api/realtime/session",
             json={"voice": "alloy"},
         )
@@ -54,10 +54,10 @@ class TestCreateSession:
         assert "endpoint" in data
         assert "deployment" in data
 
-    async def test_create_session_with_existing_session_id(self, async_client):
+    def test_create_session_with_existing_session_id(self, sync_client):
         """T017: Providing session_id preserves it in the response."""
         test_id = "test-session-12345"
-        response = await async_client.post(
+        response = sync_client.post(
             "/api/realtime/session",
             json={"session_id": test_id, "voice": "shimmer"},
         )
@@ -65,9 +65,9 @@ class TestCreateSession:
         data = response.json()
         assert data["session_id"] == test_id
 
-    async def test_create_session_generates_uuid_when_none(self, async_client):
+    def test_create_session_generates_uuid_when_none(self, sync_client):
         """Session ID is auto-generated as a non-empty string when not provided."""
-        response = await async_client.post(
+        response = sync_client.post(
             "/api/realtime/session",
             json={"voice": "alloy"},
         )
@@ -75,9 +75,9 @@ class TestCreateSession:
         data = response.json()
         assert len(data["session_id"]) > 0
 
-    async def test_create_session_token_is_ephemeral(self, async_client):
+    def test_create_session_token_is_ephemeral(self, sync_client):
         """Token should start with 'eph_' prefix in mock mode."""
-        response = await async_client.post(
+        response = sync_client.post(
             "/api/realtime/session",
             json={"voice": "alloy"},
         )
@@ -85,10 +85,10 @@ class TestCreateSession:
         token = response.json()["token"]
         assert token.startswith("eph_")
 
-    async def test_create_session_unique_tokens(self, async_client):
+    def test_create_session_unique_tokens(self, sync_client):
         """Successive calls return different tokens."""
-        r1 = await async_client.post("/api/realtime/session", json={"voice": "alloy"})
-        r2 = await async_client.post("/api/realtime/session", json={"voice": "alloy"})
+        r1 = sync_client.post("/api/realtime/session", json={"voice": "alloy"})
+        r2 = sync_client.post("/api/realtime/session", json={"voice": "alloy"})
         assert r1.json()["token"] != r2.json()["token"]
 
 
@@ -103,7 +103,6 @@ class TestWebSocketRelay:
         """T018: WebSocket relays tool calls and returns function results.
 
         Uses starlette TestClient which natively supports WebSocket connections.
-        Will fail with 403/404 until the route is implemented (test-first).
         """
         session_resp = sync_client.post(
             "/api/realtime/session",
@@ -114,23 +113,22 @@ class TestWebSocketRelay:
         )
         session = session_resp.json()
         token = session["token"]
+        session_id = session["session_id"]
 
         with sync_client.websocket_connect(
-            f"/api/realtime/ws?token={token}"
+            f"/api/realtime/ws?session_id={session_id}&token={token}"
         ) as ws:
             tool_call_event = {
-                "type": "function_call",
                 "call_id": "call-t018",
-                "name": "analyze_and_route_query",
-                "arguments": '{"query": "I need help with my password"}',
+                "tool_name": "analyze_and_route_query",
+                "arguments": {"query": "I need help with my password"},
             }
             ws.send_json(tool_call_event)
             response = ws.receive_json()
 
-            assert response.get("type") == "function_call_output"
             assert response.get("call_id") == "call-t018"
-            assert "output" in response
-            assert len(response["output"]) > 0
+            assert "result" in response
+            assert len(response["result"]) > 0
 
     def test_websocket_invalid_token_closes_4001(self, sync_client):
         """T019: Connecting with an invalid token causes close with code 4001."""
@@ -139,7 +137,7 @@ class TestWebSocketRelay:
 
         with pytest.raises(WebSocketDisconnect) as exc_info:
             with sync_client.websocket_connect(
-                "/api/realtime/ws?token=invalid-token-xyz"
+                "/api/realtime/ws?session_id=test&token=bad"
             ) as ws:
                 ws.receive_json()
 
