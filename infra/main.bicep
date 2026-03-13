@@ -69,6 +69,23 @@ resource openAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023
   }
 }
 
+resource openAiRealtimeDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-10-01-preview' = {
+  parent: openAi
+  name: 'gpt-4o-realtime-preview'
+  dependsOn: [openAiDeployment]
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-4o-realtime-preview'
+      version: '2025-04-01'
+    }
+  }
+  sku: {
+    name: 'Standard'
+    capacity: 1
+  }
+}
+
 // ============================================================================
 // Azure Cosmos DB
 // ============================================================================
@@ -303,6 +320,7 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
 // ============================================================================
 output AZURE_OPENAI_ENDPOINT string = openAi.properties.endpoint
 output AZURE_OPENAI_DEPLOYMENT string = openAiDeployment.name
+output AZURE_OPENAI_REALTIME_DEPLOYMENT string = openAiRealtimeDeployment.name
 output AZURE_COSMOS_ENDPOINT string = mockMode ? '' : cosmosAccount.properties.documentEndpoint
 output AZURE_COSMOS_DATABASE string = mockMode ? 'frontdoor' : cosmosDatabase.name
 output AZURE_SEARCH_ENDPOINT string = 'https://${searchService.name}.search.windows.net'

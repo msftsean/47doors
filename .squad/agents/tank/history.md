@@ -38,3 +38,22 @@
 - Service interface goes in `backend/app/services/interfaces.py` (extend existing file, same ABC pattern)
 - Config additions go in `backend/app/core/config.py` under a new `# Voice / Realtime Settings` section
 - Frontend types go in `frontend/src/types/voice.ts`
+
+### 2026-03-14 — Phase 1 Setup (T001, T002, T003)
+
+**Config changes (T001)**
+
+- Added 6 voice fields to `Settings` in `backend/app/core/config.py` under a `# Voice / Realtime API Settings` section.
+- Used `model_validator(mode="after")` (Pydantic v2) to auto-set `voice_enabled=False` when `azure_openai_realtime_deployment` is empty AND `mock_mode=False`. Validator confirmed working: mock_mode=True keeps voice_enabled=True, mock_mode=False with empty deployment flips it to False.
+- `max_voice_session_duration` added (600 s default) as requested in the task brief; tasks.md did not list it but the spec and user instructions both required it.
+
+**Env stubs (T002)**
+
+- Appended 6 voice vars to `backend/.env.example` with a `# Voice / Realtime API Configuration` comment block.
+- Used `gpt-4o-realtime-preview` as the deployment stub value (matches tasks.md; user task brief used `gpt-4o-realtime` — tasks.md value preferred as canonical).
+
+**Bicep (T003)**
+
+- Added `openAiRealtimeDeployment` resource inside the Azure OpenAI resource block in `infra/main.bicep`, model `gpt-4o-realtime-preview`, version `2025-04-01`, sku Standard, capacity 1.
+- Added `dependsOn: [openAiDeployment]` to sequence deployments and avoid throttle conflicts during provisioning.
+- Added output `AZURE_OPENAI_REALTIME_DEPLOYMENT` so azd wires the deployment name into app settings automatically.
