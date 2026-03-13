@@ -21,6 +21,18 @@
 
 **Rationale:** User directive to plan for live Azure testing, not just mock mode. Infrastructure is in place and ready for Phase 3+ endpoint validation.
 
+### Azure-First Deployment Strategy
+**Timestamp:** 2026-03-13T18:46:00Z  
+**Authority:** User (msftsean via Morpheus)  
+**Decision:** Spec update to make Azure Container Apps the primary deployment target.
+
+- **VFR-026**: Azure Container Apps via `azd up` is PRIMARY
+- **VFR-027**: Local dev as secondary path via `uvicorn`
+- **VFR-028**: No code changes needed between deployments
+- **VFR-029**: Health checks work identically in both environments
+
+**Rationale:** User directive — production and demo environments should run on Azure, not locally. Mock mode repositioned as development/testing tool.
+
 ### Phase 1 Setup — Voice Config, Env, Bicep
 **Timestamp:** 2026-03-14  
 **Authority:** Tank (Backend Dev)  

@@ -9,3 +9,18 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+## Work Log
+
+### 2026-03-13T18:46:00Z — Azure-First Spec Update (Morpheus)
+Updated `specs/002-voice-interaction/spec.md` to prioritize Azure Container Apps as primary deployment target.
+
+**Changes:**
+- MVP scope: Added "Azure Container Apps deployment"
+- VFR-026–029: Deployment requirements (Azure primary, local dev secondary, parity)
+- Updated assumptions and dependencies to reflect Azure-first strategy
+- Mock mode clarified as dev/test tool, not demo default
+
+**Commit:** `71a91d6`
+
+**Cross-agent impact:** Tank's Phase 1 deployment config must align with these requirements.
