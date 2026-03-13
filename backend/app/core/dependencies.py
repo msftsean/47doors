@@ -14,6 +14,7 @@ from app.services.interfaces import (
     BrandingServiceInterface,
     KnowledgeServiceInterface,
     LLMServiceInterface,
+    RealtimeServiceInterface,
     SessionStoreInterface,
     TicketServiceInterface,
 )
@@ -113,6 +114,25 @@ def get_branding_service(settings: Settings | None = None) -> BrandingServiceInt
         return MockBrandingService()
 
 
+@lru_cache
+def get_realtime_service(settings: Settings | None = None) -> RealtimeServiceInterface:
+    """Get realtime service instance (mock or production)."""
+    if settings is None:
+        settings = get_settings()
+
+    if settings.use_mock_services:
+        from app.services.mock.realtime import MockRealtimeService
+        return MockRealtimeService()
+    else:
+        from app.services.azure.realtime import AzureRealtimeService
+        return AzureRealtimeService(
+            endpoint=settings.azure_openai_endpoint,
+            api_key=settings.azure_openai_api_key,
+            deployment=settings.azure_openai_realtime_deployment,
+            api_version=settings.azure_openai_realtime_api_version,
+        )
+
+
 # FastAPI dependency annotations
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 LLMServiceDep = Annotated[LLMServiceInterface, Depends(get_llm_service)]
@@ -121,6 +141,7 @@ KnowledgeServiceDep = Annotated[KnowledgeServiceInterface, Depends(get_knowledge
 SessionStoreDep = Annotated[SessionStoreInterface, Depends(get_session_store)]
 AuditLogDep = Annotated[AuditLogInterface, Depends(get_audit_log)]
 BrandingServiceDep = Annotated[BrandingServiceInterface, Depends(get_branding_service)]
+RealtimeServiceDep = Annotated[RealtimeServiceInterface, Depends(get_realtime_service)]
 
 
 def clear_service_caches() -> None:
@@ -131,3 +152,4 @@ def clear_service_caches() -> None:
     get_session_store.cache_clear()
     get_audit_log.cache_clear()
     get_branding_service.cache_clear()
+    get_realtime_service.cache_clear()
