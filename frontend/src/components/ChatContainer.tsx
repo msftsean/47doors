@@ -2,10 +2,15 @@
  * Main chat container component.
  */
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { TypingIndicator } from './TypingIndicator';
+import { VoiceMicButton } from './VoiceMicButton';
+import { VoiceStatusIndicator } from './VoiceStatusIndicator';
+import { VoiceTranscript } from './VoiceTranscript';
+import { useVoice } from '../hooks/useVoice';
+import { VoiceUIState } from '../types/voice';
 import type { Message } from '../types';
 
 interface ChatContainerProps {
@@ -24,10 +29,22 @@ export function ChatContainer({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRegionRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  const { voiceState, transcript, startVoice, stopVoice, isVoiceSupported } = useVoice({
+    sessionId: sessionId ?? undefined,
+  });
+
+  const handleVoiceToggle = useCallback(() => {
+    if (voiceState === VoiceUIState.Idle || voiceState === VoiceUIState.Error) {
+      startVoice();
+    } else {
+      stopVoice();
+    }
+  }, [voiceState, startVoice, stopVoice]);
+
+  // Auto-scroll to bottom when new messages or transcript entries arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, transcript, isLoading]);
 
   // Announce new messages to screen readers
   useEffect(() => {
@@ -41,6 +58,13 @@ export function ChatContainer({
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-80px)]">
+      {/* Voice status banner (hidden when idle) */}
+      {voiceState !== VoiceUIState.Idle && (
+        <div className="flex justify-center px-4 pt-2">
+          <VoiceStatusIndicator voiceState={voiceState} />
+        </div>
+      )}
+
       {/* Messages area */}
       <div
         ref={chatRegionRef}
@@ -54,6 +78,9 @@ export function ChatContainer({
           <MessageBubble key={message.id} message={message} />
         ))}
 
+        {/* Voice transcript appears inline after text messages */}
+        <VoiceTranscript messages={transcript} />
+
         {isLoading && <TypingIndicator />}
 
         <div ref={messagesEndRef} />
@@ -61,7 +88,18 @@ export function ChatContainer({
 
       {/* Input area */}
       <div className="border-t border-gray-200 bg-white px-4 py-4">
-        <ChatInput onSend={onSendMessage} disabled={isLoading} />
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <ChatInput onSend={onSendMessage} disabled={isLoading} />
+          </div>
+          {isVoiceSupported && (
+            <VoiceMicButton
+              voiceState={voiceState}
+              onToggle={handleVoiceToggle}
+              disabled={isLoading}
+            />
+          )}
+        </div>
 
         {/* Session indicator */}
         {sessionId && (
