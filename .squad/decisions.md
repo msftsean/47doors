@@ -104,6 +104,33 @@
 
 **Rationale:** EDU/Microsoft audience context. SWA built-in auth requires no app-level middleware. Restricts runbook access (internal tooling, demo sequences) to authenticated Microsoft accounts. Local dev parity via graceful `/.auth/me` fallback.
 
+### Realtime API Authentication Fix
+**Timestamp:** 2026-03-14  
+**Authority:** Tank (Backend Dev)  
+**Status:** Requires user decision  
+**Decision:** Diagnosed and fixed 503 error on `/api/realtime/session`; awaiting auth configuration choice
+
+**Problem:**
+- Frontend getting 503 when calling `POST /api/realtime/session`
+- Root cause: Wrong Azure OpenAI Realtime API endpoint URL → 404 (fixed)
+- Secondary issue: Azure OpenAI resource has `disableLocalAuth: true` → 403 (pending)
+
+**Code Fixes Applied:**
+1. Changed endpoint URL from `/openai/deployments/{deployment}/realtime/sessions` to `/openai/v1/realtime/client_secrets`
+2. Updated request body to nested session configuration structure per Microsoft docs
+3. Updated response parsing to extract token from `data.get("value")`
+4. Attempted to add `disableLocalAuth: false` to bicep (didn't take effect)
+
+**Resolution Options:**
+1. **Quick fix:** Run `az resource update --set properties.disableLocalAuth=false` to enable API key auth
+2. **Secure fix:** Modify `AzureRealtimeService` to use `DefaultAzureCredential` for Entra ID authentication
+
+**Recommendation:** Option 1 for immediate unblock; Option 2 for production security best practices.
+
+**Affected Files:**
+- `backend/app/services/azure/realtime.py` — Fixed session creation endpoint
+- `infra/main.bicep` — Added disableLocalAuth property (didn't work)
+
 ## Governance
 
 - All meaningful changes require team consensus
