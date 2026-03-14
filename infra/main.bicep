@@ -284,6 +284,18 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
           name: 'acr-password'
           value: containerRegistry.listCredentials().passwords[0].value
         }
+        {
+          name: 'azure-openai-api-key'
+          value: openAi.listKeys().key1
+        }
+        {
+          name: 'cosmos-db-key'
+          value: mockMode ? 'mock' : cosmosAccount.listKeys().primaryMasterKey
+        }
+        {
+          name: 'search-api-key'
+          value: searchService.listAdminKeys().primaryKey
+        }
       ]
       registries: [
         {
@@ -302,6 +314,46 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
             {
               name: 'MOCK_MODE'
               value: string(mockMode)
+            }
+            {
+              name: 'AZURE_OPENAI_ENDPOINT'
+              value: openAi.properties.endpoint
+            }
+            {
+              name: 'AZURE_OPENAI_API_KEY'
+              secretRef: 'azure-openai-api-key'
+            }
+            {
+              name: 'AZURE_OPENAI_DEPLOYMENT'
+              value: openAiDeployment.name
+            }
+            {
+              name: 'AZURE_OPENAI_REALTIME_DEPLOYMENT'
+              value: openAiRealtimeDeployment.name
+            }
+            {
+              name: 'AZURE_OPENAI_API_VERSION'
+              value: '2025-04-01-preview'
+            }
+            {
+              name: 'AZURE_COSMOS_ENDPOINT'
+              value: mockMode ? '' : cosmosAccount.properties.documentEndpoint
+            }
+            {
+              name: 'AZURE_COSMOS_KEY'
+              secretRef: 'cosmos-db-key'
+            }
+            {
+              name: 'AZURE_COSMOS_DATABASE'
+              value: mockMode ? 'frontdoor' : cosmosDatabase.name
+            }
+            {
+              name: 'AZURE_SEARCH_ENDPOINT'
+              value: 'https://${searchService.name}.search.windows.net'
+            }
+            {
+              name: 'AZURE_SEARCH_KEY'
+              secretRef: 'search-api-key'
             }
           ]
           resources: {
