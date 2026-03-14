@@ -14,6 +14,7 @@ Voice-specific instructions:
 - Acknowledge the student's concern before providing solutions.
 """
 
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -21,7 +22,6 @@ from uuid import uuid4
 
 import httpx
 from azure.core.credentials import AccessToken
-from azure.identity.aio import DefaultAzureCredential
 
 from app.models.voice_schemas import RealtimeSessionResponse, ToolCallResponse, ToolDefinition
 from app.services.interfaces import RealtimeServiceInterface
@@ -41,21 +41,31 @@ class AzureRealtimeService(RealtimeServiceInterface):
         deployment: str,
         api_version: str = "2025-04-01-preview",
         api_key: Optional[str] = None,
-        credential: Optional[DefaultAzureCredential] = None,
+        credential: Optional["DefaultAzureCredential"] = None,
     ) -> None:
         self.endpoint = endpoint.rstrip("/")
         self.deployment = deployment
         self.api_version = api_version
         self.api_key = api_key
-        self.credential = credential or DefaultAzureCredential()
+        self.credential = credential  # Don't create DefaultAzureCredential eagerly
         self._client = httpx.AsyncClient(timeout=30.0)
         self._token: Optional[AccessToken] = None
+        self._credential_lock = asyncio.Lock()  # Protect lazy credential initialization
 
     async def _get_auth_header(self) -> dict[str, str]:
         """Get authentication header using managed identity or API key fallback."""
         # Prefer API key if explicitly provided (for local development)
         if self.api_key:
             return {"api-key": self.api_key}
+        
+        # Lazy credential initialization - only import and create when needed
+        # Use lock to prevent race condition where concurrent requests both create credentials
+        if not self.credential:
+            async with self._credential_lock:
+                # Double-check inside lock in case another coroutine initialized it
+                if not self.credential:
+                    from azure.identity.aio import DefaultAzureCredential
+                    self.credential = DefaultAzureCredential()
         
         # Use managed identity with token refresh (refresh 5 minutes before expiry)
         REFRESH_BUFFER_SECONDS = 300
