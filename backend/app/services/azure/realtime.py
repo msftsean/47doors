@@ -16,6 +16,7 @@ Voice-specific instructions:
 
 import asyncio
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
@@ -25,6 +26,8 @@ from azure.core.credentials import AccessToken
 
 from app.models.voice_schemas import RealtimeSessionResponse, ToolCallResponse, ToolDefinition
 from app.services.interfaces import RealtimeServiceInterface
+
+logger = logging.getLogger(__name__)
 
 
 class VoiceUnavailableError(Exception):
@@ -41,33 +44,30 @@ class AzureRealtimeService(RealtimeServiceInterface):
         deployment: str,
         api_version: str = "2025-04-01-preview",
         api_key: Optional[str] = None,
-        credential: Optional["DefaultAzureCredential"] = None,
+        credential: Optional[object] = None,
     ) -> None:
         self.endpoint = endpoint.rstrip("/")
         self.deployment = deployment
         self.api_version = api_version
         self.api_key = api_key
-        self.credential = credential  # Don't create DefaultAzureCredential eagerly
+        self.credential = credential
         self._client = httpx.AsyncClient(timeout=30.0)
         self._token: Optional[AccessToken] = None
-        self._credential_lock = asyncio.Lock()  # Protect lazy credential initialization
+        self._credential_lock = asyncio.Lock()
 
     async def _get_auth_header(self) -> dict[str, str]:
         """Get authentication header using managed identity or API key fallback."""
-        # Prefer API key if explicitly provided (for local development)
         if self.api_key:
+            logger.info("Realtime auth: using API key")
             return {"api-key": self.api_key}
         
-        # Lazy credential initialization - only import and create when needed
-        # Use lock to prevent race condition where concurrent requests both create credentials
         if not self.credential:
             async with self._credential_lock:
-                # Double-check inside lock in case another coroutine initialized it
                 if not self.credential:
-                    from azure.identity.aio import DefaultAzureCredential
-                    self.credential = DefaultAzureCredential()
+                    from azure.identity.aio import ManagedIdentityCredential
+                    self.credential = ManagedIdentityCredential()
+                    logger.info("Realtime auth: created ManagedIdentityCredential")
         
-        # Use managed identity with token refresh (refresh 5 minutes before expiry)
         REFRESH_BUFFER_SECONDS = 300
         needs_refresh = (
             not self._token 
@@ -79,9 +79,11 @@ class AzureRealtimeService(RealtimeServiceInterface):
         if needs_refresh:
             try:
                 self._token = await self.credential.get_token("https://cognitiveservices.azure.com/.default")
+                logger.info(f"Realtime auth: token acquired, expires_on={self._token.expires_on}")
             except Exception as exc:
+                logger.error(f"Realtime auth: token acquisition failed: {exc}")
                 raise VoiceUnavailableError(
-                    f"Failed to acquire Azure AD token for managed identity: {exc}"
+                    f"Failed to acquire managed identity token: {exc}"
                 ) from exc
         
         return {"Authorization": f"Bearer {self._token.token}"}
@@ -104,12 +106,14 @@ class AzureRealtimeService(RealtimeServiceInterface):
                 f"Authentication setup failed: {exc}"
             ) from exc
         
+        auth_type = "Bearer" if "Authorization" in auth_header else "api-key"
+        logger.info(f"Realtime create_session: url={url}, auth_type={auth_type}, deployment={self.deployment}")
+        
         headers = {
             **auth_header,
             "Content-Type": "application/json",
         }
         
-        # Build session configuration per Azure OpenAI WebRTC API spec
         session_config = {
             "session": {
                 "type": "realtime",
@@ -131,16 +135,16 @@ class AzureRealtimeService(RealtimeServiceInterface):
         except httpx.HTTPStatusError as exc:
             error_detail = exc.response.text
             status_code = exc.response.status_code
+            logger.error(f"Realtime API error: status={status_code}, auth_type={auth_type}, detail={error_detail}")
             
-            # Provide specific error messages based on status code
             if status_code == 401:
-                error_msg = f"Authentication failed (401): Azure OpenAI rejected credentials. Check managed identity role assignment or API key. Details: {error_detail}"
+                error_msg = f"Authentication failed (401): Credentials rejected. auth_type={auth_type}. Details: {error_detail}"
             elif status_code == 403:
-                error_msg = f"Authorization failed (403): Managed identity lacks 'Cognitive Services OpenAI User' role or API key auth is disabled. Details: {error_detail}"
+                error_msg = f"Authorization failed (403): auth_type={auth_type}. Details: {error_detail}"
             elif status_code == 404:
-                error_msg = f"Endpoint not found (404): Check deployment name '{self.deployment}' and endpoint URL. Details: {error_detail}"
+                error_msg = f"Endpoint not found (404): deployment='{self.deployment}', url={url}. Details: {error_detail}"
             elif status_code >= 500:
-                error_msg = f"Azure OpenAI service unavailable ({status_code}): Temporary service issue. Details: {error_detail}"
+                error_msg = f"Azure OpenAI service error ({status_code}): {error_detail}"
             else:
                 error_msg = f"Azure OpenAI Realtime API error ({status_code}): {error_detail}"
             

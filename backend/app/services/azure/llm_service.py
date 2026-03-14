@@ -4,6 +4,7 @@ Azure OpenAI LLM service for production intent classification and response gener
 
 import asyncio
 import json
+import logging
 import re
 import time
 from datetime import datetime, timezone
@@ -16,6 +17,8 @@ from app.models.enums import Department, IntentCategory, Sentiment
 from app.models.schemas import QueryResult
 from app.services.interfaces import LLMServiceInterface
 
+logger = logging.getLogger(__name__)
+
 
 class AzureOpenAILLMService(LLMServiceInterface):
     """Production implementation of LLM service using Azure OpenAI with managed identity."""
@@ -26,35 +29,31 @@ class AzureOpenAILLMService(LLMServiceInterface):
         deployment: str,
         api_version: str = "2024-05-01-preview",
         api_key: Optional[str] = None,
-        credential: Optional["DefaultAzureCredential"] = None,
+        credential: Optional[object] = None,
     ) -> None:
         """Initialize Azure OpenAI client."""
         self.endpoint = endpoint.rstrip("/")
         self.api_key = api_key
         self.deployment = deployment
         self.api_version = api_version
-        self.credential = credential  # Don't create DefaultAzureCredential eagerly
+        self.credential = credential
         self._client = httpx.AsyncClient(timeout=30.0)
         self._token: Optional[AccessToken] = None
-        self._credential_lock = asyncio.Lock()  # Protect lazy credential initialization
+        self._credential_lock = asyncio.Lock()
 
     async def _get_auth_header(self) -> dict[str, str]:
         """Get authentication header using managed identity or API key fallback."""
-        # Prefer API key if explicitly provided (for local development)
         if self.api_key:
+            logger.info("LLM auth: using API key")
             return {"api-key": self.api_key}
         
-        # Lazy credential initialization - only import and create when needed
-        # Use lock to prevent race condition where concurrent requests both create credentials
         if not self.credential:
             async with self._credential_lock:
-                # Double-check inside lock in case another coroutine initialized it
                 if not self.credential:
-                    from azure.identity.aio import DefaultAzureCredential
-                    self.credential = DefaultAzureCredential()
+                    from azure.identity.aio import ManagedIdentityCredential
+                    self.credential = ManagedIdentityCredential()
+                    logger.info("LLM auth: created ManagedIdentityCredential")
         
-        # Use managed identity with token refresh (refresh 5 minutes before expiry)
-        # Lock protects against thundering herd on concurrent token refresh
         REFRESH_BUFFER_SECONDS = 300
         
         async with self._credential_lock:
@@ -68,9 +67,11 @@ class AzureOpenAILLMService(LLMServiceInterface):
             if needs_refresh:
                 try:
                     self._token = await self.credential.get_token("https://cognitiveservices.azure.com/.default")
+                    logger.info(f"LLM auth: token acquired, expires_on={self._token.expires_on}")
                 except Exception as exc:
+                    logger.error(f"LLM auth: token acquisition failed: {exc}")
                     raise RuntimeError(
-                        f"Failed to acquire Azure AD token for managed identity: {exc}"
+                        f"Failed to acquire managed identity token: {exc}"
                     ) from exc
         
         return {"Authorization": f"Bearer {self._token.token}"}
