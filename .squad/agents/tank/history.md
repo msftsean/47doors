@@ -159,15 +159,20 @@
   - Changed URL from `/openai/realtime/sessions?api-version=...` to `/openai/v1/realtime/client_secrets`
   - Changed request body structure to match Azure's session configuration format
   - Changed response parsing to extract token from `data.get("value", "")`
-- Committed: `ecf372d` — "fix(voice): Correct Azure OpenAI Realtime API endpoint path"
+- Committed: `ecf372d`, `65a4ea3` — "fix(voice): Correct Azure OpenAI Realtime API endpoint path"
+- Deployed backend with code fix
+- Testing confirmed: 404 errors fixed, now getting 403 `AuthenticationTypeDisabled` (expected)
 
 **Outstanding issue**
 
 - API key auth is disabled on the Azure OpenAI resource (`disableLocalAuth: true`).
-- **Two options:**
+- Attempted to add `disableLocalAuth: false` to `infra/main.bicep` — property didn't take effect after `azd provision`.
+- **Two options documented in `.squad/decisions.md`:**
   1. **Enable API key auth** (simpler): Run `az resource update --ids "/subscriptions/.../frontdoor-6wfum6gndxawy-openai" --set properties.disableLocalAuth=false`
   2. **Switch to Entra ID tokens** (more secure): Modify `AzureRealtimeService` to use `DefaultAzureCredential` and `Authorization: Bearer {token}` header instead of `api-key: {key}`
 
 **Key file paths**
 
-- `backend/app/services/azure/realtime.py` — Fixed session creation endpoint
+- `backend/app/services/azure/realtime.py` — Fixed session creation endpoint (deployed)
+- `infra/main.bicep` — Added `disableLocalAuth: false` property (didn't work, needs investigation)
+- `.squad/decisions.md` — Documented diagnosis and two resolution options
