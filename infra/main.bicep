@@ -84,7 +84,7 @@ resource openAiRealtimeDeployment 'Microsoft.CognitiveServices/accounts/deployme
     }
   }
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 1
   }
 }
