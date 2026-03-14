@@ -53,7 +53,7 @@ class AzureRealtimeService(RealtimeServiceInterface):
         instructions: Optional[str] = None,
     ) -> RealtimeSessionResponse:
         """Create an ephemeral realtime session via the Azure OpenAI API."""
-        url = f"{self.endpoint}/openai/realtime/sessions?api-version={self.api_version}"
+        url = f"{self.endpoint}/openai/deployments/{self.deployment}/realtime/sessions?api-version={self.api_version}"
         headers = {
             "api-key": self.api_key,
             "Content-Type": "application/json",
