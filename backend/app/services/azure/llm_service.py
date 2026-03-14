@@ -2,12 +2,15 @@
 Azure OpenAI LLM service for production intent classification and response generation.
 """
 
+import asyncio
 import json
 import re
 import time
+from datetime import datetime, timezone
 from typing import Optional
 
 import httpx
+from azure.core.credentials import AccessToken
 
 from app.models.enums import Department, IntentCategory, Sentiment
 from app.models.schemas import QueryResult
@@ -15,21 +18,62 @@ from app.services.interfaces import LLMServiceInterface
 
 
 class AzureOpenAILLMService(LLMServiceInterface):
-    """Production implementation of LLM service using Azure OpenAI."""
+    """Production implementation of LLM service using Azure OpenAI with managed identity."""
 
     def __init__(
         self,
         endpoint: str,
-        api_key: str,
         deployment: str,
         api_version: str = "2024-05-01-preview",
+        api_key: Optional[str] = None,
+        credential: Optional["DefaultAzureCredential"] = None,
     ) -> None:
         """Initialize Azure OpenAI client."""
         self.endpoint = endpoint.rstrip("/")
         self.api_key = api_key
         self.deployment = deployment
         self.api_version = api_version
+        self.credential = credential  # Don't create DefaultAzureCredential eagerly
         self._client = httpx.AsyncClient(timeout=30.0)
+        self._token: Optional[AccessToken] = None
+        self._credential_lock = asyncio.Lock()  # Protect lazy credential initialization
+
+    async def _get_auth_header(self) -> dict[str, str]:
+        """Get authentication header using managed identity or API key fallback."""
+        # Prefer API key if explicitly provided (for local development)
+        if self.api_key:
+            return {"api-key": self.api_key}
+        
+        # Lazy credential initialization - only import and create when needed
+        # Use lock to prevent race condition where concurrent requests both create credentials
+        if not self.credential:
+            async with self._credential_lock:
+                # Double-check inside lock in case another coroutine initialized it
+                if not self.credential:
+                    from azure.identity.aio import DefaultAzureCredential
+                    self.credential = DefaultAzureCredential()
+        
+        # Use managed identity with token refresh (refresh 5 minutes before expiry)
+        # Lock protects against thundering herd on concurrent token refresh
+        REFRESH_BUFFER_SECONDS = 300
+        
+        async with self._credential_lock:
+            needs_refresh = (
+                not self._token 
+                or datetime.now(timezone.utc) >= datetime.fromtimestamp(
+                    self._token.expires_on - REFRESH_BUFFER_SECONDS, tz=timezone.utc
+                )
+            )
+            
+            if needs_refresh:
+                try:
+                    self._token = await self.credential.get_token("https://cognitiveservices.azure.com/.default")
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"Failed to acquire Azure AD token for managed identity: {exc}"
+                    ) from exc
+        
+        return {"Authorization": f"Bearer {self._token.token}"}
 
     async def _call_openai(
         self,
@@ -40,9 +84,10 @@ class AzureOpenAILLMService(LLMServiceInterface):
         """Make a call to Azure OpenAI API."""
         url = f"{self.endpoint}/openai/deployments/{self.deployment}/chat/completions?api-version={self.api_version}"
 
+        auth_header = await self._get_auth_header()
         headers = {
             "Content-Type": "application/json",
-            "api-key": self.api_key,
+            **auth_header,
         }
 
         payload = {
@@ -303,5 +348,7 @@ Provide a helpful response that directly addresses the student's question using 
             return False, latency_ms, str(e)
 
     async def close(self) -> None:
-        """Close the HTTP client."""
+        """Close the HTTP client and credential."""
         await self._client.aclose()
+        if hasattr(self.credential, 'close'):
+            await self.credential.close()

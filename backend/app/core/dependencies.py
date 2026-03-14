@@ -31,11 +31,13 @@ def get_llm_service(settings: Settings | None = None) -> LLMServiceInterface:
         return MockLLMService()
     else:
         from app.services.azure.llm_service import AzureOpenAILLMService
+        # Pass API key only if explicitly set (for local dev), otherwise use managed identity
+        api_key = settings.azure_openai_api_key if settings.azure_openai_api_key else None
         return AzureOpenAILLMService(
             endpoint=settings.azure_openai_endpoint,
-            api_key=settings.azure_openai_api_key,
             deployment=settings.azure_openai_deployment,
             api_version=settings.azure_openai_api_version,
+            api_key=api_key,
         )
 
 

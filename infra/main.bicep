@@ -53,7 +53,7 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2023-10-01-preview' = {
   properties: {
     customSubDomainName: '${prefix}-openai'
     publicNetworkAccess: 'Enabled'
-    disableLocalAuth: false  // Enable API key auth for realtime API compatibility
+    disableLocalAuth: true  // Managed identity only - no API key auth
   }
 }
 
@@ -224,14 +224,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 // Store secrets
-resource openAiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'azure-openai-api-key'
-  properties: {
-    value: openAi.listKeys().key1
-  }
-}
-
 resource cosmosKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!mockMode) {
   parent: keyVault
   name: 'cosmos-db-key'
@@ -296,13 +288,6 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
           name: 'search-api-key'
           value: searchService.listAdminKeys().primaryKey
         }
-        // TODO: Remove this API key secret once managed identity is tested and working
-        // For now, using API key as quickest unblock per user decision 2026-01-15
-        // To use managed identity: remove this secret + AZURE_OPENAI_API_KEY env var
-        {
-          name: 'azure-openai-api-key'
-          value: openAi.listKeys().key1
-        }
       ]
       registries: [
         {
@@ -325,14 +310,6 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
             {
               name: 'AZURE_OPENAI_ENDPOINT'
               value: openAi.properties.endpoint
-            }
-            // TODO: Remove this env var once managed identity is verified working
-            // Currently using API key as temporary unblock (decision: 2026-01-15)
-            // Managed identity is already configured (role assignment exists) but untested
-            // To switch: remove this env var + the secret above, service will fall back to MI
-            {
-              name: 'AZURE_OPENAI_API_KEY'
-              secretRef: 'azure-openai-api-key'
             }
             {
               name: 'AZURE_OPENAI_DEPLOYMENT'

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "7837416509144871915"
+      "templateHash": "767179505999262238"
     }
   },
   "parameters": {
@@ -93,7 +93,7 @@
       "properties": {
         "customSubDomainName": "[format('{0}-openai', variables('prefix'))]",
         "publicNetworkAccess": "Enabled",
-        "disableLocalAuth": false
+        "disableLocalAuth": true
       }
     },
     {
@@ -278,18 +278,6 @@
       }
     },
     {
-      "type": "Microsoft.KeyVault/vaults/secrets",
-      "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), 'azure-openai-api-key')]",
-      "properties": {
-        "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('prefix'))), '2023-10-01-preview').key1]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('prefix')))]"
-      ]
-    },
-    {
       "condition": "[not(parameters('mockMode'))]",
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-07-01",
@@ -356,10 +344,6 @@
             {
               "name": "search-api-key",
               "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('prefix'))), '2023-11-01').primaryKey]"
-            },
-            {
-              "name": "azure-openai-api-key",
-              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('prefix'))), '2023-10-01-preview').key1]"
             }
           ],
           "registries": [
@@ -383,10 +367,6 @@
                 {
                   "name": "AZURE_OPENAI_ENDPOINT",
                   "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('prefix'))), '2023-10-01-preview').endpoint]"
-                },
-                {
-                  "name": "AZURE_OPENAI_API_KEY",
-                  "secretRef": "azure-openai-api-key"
                 },
                 {
                   "name": "AZURE_OPENAI_DEPLOYMENT",
