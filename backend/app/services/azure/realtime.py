@@ -20,6 +20,8 @@ from typing import Optional
 from uuid import uuid4
 
 import httpx
+from azure.core.credentials import AccessToken
+from azure.identity.aio import DefaultAzureCredential
 
 from app.models.voice_schemas import RealtimeSessionResponse, ToolCallResponse, ToolDefinition
 from app.services.interfaces import RealtimeServiceInterface
@@ -31,20 +33,48 @@ class VoiceUnavailableError(Exception):
 
 
 class AzureRealtimeService(RealtimeServiceInterface):
-    """Production implementation using the Azure OpenAI Realtime API."""
+    """Production implementation using the Azure OpenAI Realtime API with managed identity."""
 
     def __init__(
         self,
         endpoint: str,
-        api_key: str,
         deployment: str,
         api_version: str = "2025-04-01-preview",
+        api_key: Optional[str] = None,
+        credential: Optional[DefaultAzureCredential] = None,
     ) -> None:
         self.endpoint = endpoint.rstrip("/")
-        self.api_key = api_key
         self.deployment = deployment
         self.api_version = api_version
+        self.api_key = api_key
+        self.credential = credential or DefaultAzureCredential()
         self._client = httpx.AsyncClient(timeout=30.0)
+        self._token: Optional[AccessToken] = None
+
+    async def _get_auth_header(self) -> dict[str, str]:
+        """Get authentication header using managed identity or API key fallback."""
+        # Prefer API key if explicitly provided (for local development)
+        if self.api_key:
+            return {"api-key": self.api_key}
+        
+        # Use managed identity with token refresh (refresh 5 minutes before expiry)
+        REFRESH_BUFFER_SECONDS = 300
+        needs_refresh = (
+            not self._token 
+            or datetime.now(timezone.utc) >= datetime.fromtimestamp(
+                self._token.expires_on - REFRESH_BUFFER_SECONDS, tz=timezone.utc
+            )
+        )
+        
+        if needs_refresh:
+            try:
+                self._token = await self.credential.get_token("https://cognitiveservices.azure.com/.default")
+            except Exception as exc:
+                raise VoiceUnavailableError(
+                    f"Failed to acquire Azure AD token for managed identity: {exc}"
+                ) from exc
+        
+        return {"Authorization": f"Bearer {self._token.token}"}
 
     async def create_session(
         self,
@@ -54,8 +84,18 @@ class AzureRealtimeService(RealtimeServiceInterface):
     ) -> RealtimeSessionResponse:
         """Create an ephemeral realtime session via the Azure OpenAI API."""
         url = f"{self.endpoint}/openai/v1/realtime/client_secrets"
+        
+        try:
+            auth_header = await self._get_auth_header()
+        except VoiceUnavailableError:
+            raise
+        except Exception as exc:
+            raise VoiceUnavailableError(
+                f"Authentication setup failed: {exc}"
+            ) from exc
+        
         headers = {
-            "api-key": self.api_key,
+            **auth_header,
             "Content-Type": "application/json",
         }
         
@@ -79,12 +119,25 @@ class AzureRealtimeService(RealtimeServiceInterface):
             response = await self._client.post(url, headers=headers, json=session_config)
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            raise VoiceUnavailableError(
-                f"Azure OpenAI Realtime API returned {exc.response.status_code}: {exc.response.text}"
-            ) from exc
+            error_detail = exc.response.text
+            status_code = exc.response.status_code
+            
+            # Provide specific error messages based on status code
+            if status_code == 401:
+                error_msg = f"Authentication failed (401): Azure OpenAI rejected credentials. Check managed identity role assignment or API key. Details: {error_detail}"
+            elif status_code == 403:
+                error_msg = f"Authorization failed (403): Managed identity lacks 'Cognitive Services OpenAI User' role or API key auth is disabled. Details: {error_detail}"
+            elif status_code == 404:
+                error_msg = f"Endpoint not found (404): Check deployment name '{self.deployment}' and endpoint URL. Details: {error_detail}"
+            elif status_code >= 500:
+                error_msg = f"Azure OpenAI service unavailable ({status_code}): Temporary service issue. Details: {error_detail}"
+            else:
+                error_msg = f"Azure OpenAI Realtime API error ({status_code}): {error_detail}"
+            
+            raise VoiceUnavailableError(error_msg) from exc
         except httpx.RequestError as exc:
             raise VoiceUnavailableError(
-                f"Failed to reach Azure OpenAI Realtime API: {exc}"
+                f"Network error reaching Azure OpenAI Realtime API at {url}: {exc}"
             ) from exc
 
         data = response.json()
@@ -215,5 +268,7 @@ class AzureRealtimeService(RealtimeServiceInterface):
         return ToolCallResponse(call_id=call_id, result=result, error=None)
 
     async def close(self) -> None:
-        """Close the HTTP client."""
+        """Close the HTTP client and credential."""
         await self._client.aclose()
+        if hasattr(self.credential, 'close'):
+            await self.credential.close()

@@ -53,7 +53,7 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2023-10-01-preview' = {
   properties: {
     customSubDomainName: '${prefix}-openai'
     publicNetworkAccess: 'Enabled'
-    disableLocalAuth: false
+    disableLocalAuth: false  // Enable API key auth for realtime API compatibility
   }
 }
 
@@ -272,6 +272,9 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
   tags: union(tags, {
     'azd-service-name': 'backend'
   })
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
@@ -286,16 +289,19 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
           value: containerRegistry.listCredentials().passwords[0].value
         }
         {
-          name: 'azure-openai-api-key'
-          value: openAi.listKeys().key1
-        }
-        {
           name: 'cosmos-db-key'
           value: mockMode ? 'mock' : cosmosAccount.listKeys().primaryMasterKey
         }
         {
           name: 'search-api-key'
           value: searchService.listAdminKeys().primaryKey
+        }
+        // TODO: Remove this API key secret once managed identity is tested and working
+        // For now, using API key as quickest unblock per user decision 2026-01-15
+        // To use managed identity: remove this secret + AZURE_OPENAI_API_KEY env var
+        {
+          name: 'azure-openai-api-key'
+          value: openAi.listKeys().key1
         }
       ]
       registries: [
@@ -320,6 +326,10 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
               name: 'AZURE_OPENAI_ENDPOINT'
               value: openAi.properties.endpoint
             }
+            // TODO: Remove this env var once managed identity is verified working
+            // Currently using API key as temporary unblock (decision: 2026-01-15)
+            // Managed identity is already configured (role assignment exists) but untested
+            // To switch: remove this env var + the secret above, service will fall back to MI
             {
               name: 'AZURE_OPENAI_API_KEY'
               secretRef: 'azure-openai-api-key'
@@ -368,6 +378,24 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
         maxReplicas: 2
       }
     }
+  }
+}
+
+// ============================================================================
+// Role Assignments for Managed Identity
+// ============================================================================
+
+// Cognitive Services OpenAI User role definition ID (Azure built-in role)
+var cognitiveServicesOpenAIUserRoleId = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+
+// Grant backend container app access to Azure OpenAI via managed identity
+resource backendOpenAIRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(openAi.id, backendContainerApp.id, cognitiveServicesOpenAIUserRoleId)
+  scope: openAi
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
+    principalId: backendContainerApp.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 

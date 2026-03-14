@@ -104,6 +104,42 @@
 
 **Rationale:** EDU/Microsoft audience context. SWA built-in auth requires no app-level middleware. Restricts runbook access (internal tooling, demo sequences) to authenticated Microsoft accounts. Local dev parity via graceful `/.auth/me` fallback.
 
+### Azure OpenAI Managed Identity Authentication
+**Timestamp:** 2026-03-13T23:00Z  
+**Authority:** Anvil (Production Fix)  
+**Decision:** Use system-assigned managed identity for Azure OpenAI authentication instead of API keys
+
+**Key Decisions:**
+- **Backend Authentication:**
+  - `AzureRealtimeService` uses `DefaultAzureCredential` from `azure-identity` for token-based auth
+  - API key support retained as fallback for local development (optional parameter)
+  - Token auto-refresh before expiration (checks `expires_on` timestamp)
+  
+- **Infrastructure Changes (`infra/main.bicep`):**
+  - Set `disableLocalAuth: true` on Azure OpenAI resource (enforce managed identity)
+  - Removed `azure-openai-api-key` secret from backend container app
+  - Added `identity: { type: 'SystemAssigned' }` to backend container app
+  - Created role assignment: `Cognitive Services OpenAI User` role for backend managed identity
+  - Removed `AZURE_OPENAI_API_KEY` environment variable injection
+
+- **Error Handling:**
+  - Status-code-specific error messages (401: auth failed, 403: missing role, 404: deployment not found, 5xx: service unavailable)
+  - Network errors surfaced with endpoint URL for debugging
+  - All errors wrapped in `VoiceUnavailableError` with detailed context
+
+- **Configuration:**
+  - `azure_openai_api_key` now optional in `config.py` (description updated)
+  - `dependencies.py` passes `api_key=None` when unset, triggering managed identity path
+  - Mock mode unaffected (no Azure credentials required)
+
+**Affected Files:**
+- `backend/app/services/azure/realtime.py` — Token-based auth with credential refresh
+- `backend/app/core/config.py` — Made API key optional
+- `backend/app/core/dependencies.py` — Pass None for API key when unset
+- `infra/main.bicep` — System-assigned identity + RBAC role assignment
+
+**Rationale:** Deployed frontend was hitting 503 errors because Azure OpenAI had `disableLocalAuth: true` (API key auth rejected with 403). Managed identity is Azure best practice for container apps — no secrets in config, auto-rotated tokens, and RBAC-controlled access. API key fallback preserves local dev workflow without Azure credentials.
+
 ### Realtime API Authentication Fix
 **Timestamp:** 2026-03-14  
 **Authority:** Tank (Backend Dev)  

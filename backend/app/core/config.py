@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     )
     azure_openai_api_key: str = Field(
         default="",
-        description="Azure OpenAI API key"
+        description="Azure OpenAI API key (optional - uses managed identity if not provided)"
     )
     azure_openai_deployment: str = Field(
         default="gpt-4o",
