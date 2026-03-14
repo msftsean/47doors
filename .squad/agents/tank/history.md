@@ -74,3 +74,23 @@
 - **Subscription**: `ME-MngEnvMCAP262307-segayle-1`
 - Health checks verified: `/api/health` → LLM connecting (ticketing, knowledge_base, session_store up); `/api/realtime/health` → realtime_available: true, mock_mode: false, voice_enabled: true
 - Updated DEMO_RUNBOOK.md and docs/index.html: replaced all placeholder `${AZURE_CONTAINERAPP_URL}` and old resource group/subscription references with live values. Runbook is now Azure-first throughout.
+
+### 2026-03-14 — Frontend Container App Deployment
+
+**Architecture decisions**
+
+- Frontend deployed as a separate Container App alongside the backend, both in the same Container App Environment.
+- nginx reverse-proxies `/api/` requests to the backend, making all API calls same-origin from the browser's perspective — eliminates CORS issues entirely.
+- `BACKEND_URL` is injected via env var and resolved at container startup using `envsubst` (only `${BACKEND_URL}` is substituted; nginx variables like `$host`, `$uri` are preserved).
+- Dockerfile default `BACKEND_URL=http://backend:8000` preserves docker-compose backward compatibility.
+- Added WebSocket upgrade headers (`Upgrade`, `Connection`) and long read timeout (86400s) to nginx `/api/` location for voice relay WebSocket support.
+- Frontend Container App: 0.25 vCPU, 0.5Gi memory, 1-2 replicas — lightweight since it only serves static files + proxies.
+- Backend Container App retains external ingress (health checks, direct API access); frontend also gets external ingress (user-facing).
+- New Bicep output `AZURE_FRONTEND_URL` for the frontend's public URL.
+
+**Key file paths**
+
+- `azure.yaml` — `frontend` service registered alongside `backend`
+- `infra/main.bicep` — `frontendContainerApp` resource (lines ~375-427)
+- `frontend/Dockerfile` — envsubst templating for BACKEND_URL at startup
+- `frontend/nginx.conf` — configurable `${BACKEND_URL}` + WebSocket headers
