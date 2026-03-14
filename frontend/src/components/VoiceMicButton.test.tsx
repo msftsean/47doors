@@ -5,8 +5,9 @@
  * Stub assertions verify the test infrastructure is wired correctly;
  * behaviour tests are marked .todo as pending implementation work.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+// render, screen, fireEvent imported when component is implemented
+// import { render, screen, fireEvent } from '@testing-library/react';
 import { VoiceUIState } from '../types/voice';
 
 // ---------------------------------------------------------------------------

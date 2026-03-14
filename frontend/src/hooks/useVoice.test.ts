@@ -5,8 +5,9 @@
  * The active assertions are limited to what can run without the real implementation;
  * the rest are marked .todo so they appear in the test report as pending work.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+// renderHook, act, vi, beforeEach imported when hook is implemented
+// import { renderHook, act } from '@testing-library/react';
 import { VoiceUIState } from '../types/voice';
 
 // ---------------------------------------------------------------------------
