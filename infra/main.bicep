@@ -16,6 +16,9 @@ param openAiModel string = 'gpt-4o'
 @description('OpenAI model version')
 param openAiModelVersion string = '2024-05-13'
 
+@description('GPT-4o Realtime model version')
+param realtimeModelVersion string = '2024-12-17'
+
 @description('Enable mock mode (no external service connections)')
 param mockMode bool = false
 
@@ -77,7 +80,7 @@ resource openAiRealtimeDeployment 'Microsoft.CognitiveServices/accounts/deployme
     model: {
       format: 'OpenAI'
       name: 'gpt-4o-realtime-preview'
-      version: '2025-04-01'
+      version: realtimeModelVersion
     }
   }
   sku: {
