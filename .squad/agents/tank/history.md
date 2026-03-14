@@ -94,3 +94,80 @@
 - `infra/main.bicep` — `frontendContainerApp` resource (lines ~375-427)
 - `frontend/Dockerfile` — envsubst templating for BACKEND_URL at startup
 - `frontend/nginx.conf` — configurable `${BACKEND_URL}` + WebSocket headers
+
+### 2026-03-14 — Fix 502 Bad Gateway on Frontend → Backend Proxy
+
+**Root cause**
+
+- nginx was proxying to the backend via HTTPS (`proxy_pass https://backend-fqdn`) but NOT sending TLS SNI (Server Name Indication).
+- Azure Container Apps uses a shared reverse proxy within each environment. All apps in the same environment share internal IPs (100.100.x.x range). Azure's proxy uses SNI to route TLS connections to the correct container app.
+- Without SNI, Azure's proxy couldn't determine which app owned the connection → reset during SSL handshake → nginx logged `peer closed connection in SSL handshake (104: Connection reset by peer)`.
+- Secondary issue: `proxy_set_header Host $host` was forwarding the frontend's FQDN as the Host header to the backend. After TLS termination, Azure would use the Host header for HTTP routing — the wrong FQDN could misroute the request.
+
+**Fix applied**
+
+- Added `proxy_ssl_server_name on;` to nginx.conf — enables SNI so Azure can identify the target container app.
+- Changed `proxy_set_header Host $host;` → `proxy_set_header Host $proxy_host;` — sends the backend's FQDN as the Host header, matching the intended destination.
+
+**Azure Container Apps networking lesson**
+
+- When Container App A proxies to Container App B via the external FQDN inside the same environment, the FQDN resolves to an internal IP (100.100.x.x), not the public IP. TLS is still required, and **SNI is mandatory** for Azure's shared proxy to route correctly.
+- For any nginx proxy_pass to an HTTPS upstream on Azure Container Apps, always use `proxy_ssl_server_name on;`.
+
+### 2026-03-14 — Fix 503 Error on Realtime Session Endpoint
+
+**Root cause**
+
+- Frontend was getting 503 errors when calling `POST /api/realtime/session`.
+- Backend logs showed: `Azure OpenAI Realtime API returned 404: {"error":{"code":"404","message": "Resource not found"}}`
+- The code was using the wrong Azure OpenAI Realtime API endpoint path.
+
+**Investigation**
+
+- Initial code used: `/openai/realtime/sessions?api-version={version}` (404)
+- First fix attempt: `/openai/deployments/{deployment}/realtime/sessions?api-version={version}` (404)
+- Discovered Azure OpenAI has TWO different endpoint patterns for Realtime API:
+  - **Region-based endpoint** (preview): `https://{region}.realtimeapi-preview.ai.azure.com/v1/realtime/sessions` (requires Bearer token)
+  - **Resource-based endpoint** (current): `https://{resource}.openai.azure.com/openai/v1/realtime/client_secrets` (requires api-key OR Bearer token)
+
+**Correct endpoint pattern per Microsoft Learn documentation**
+
+- URL: `{endpoint}/openai/v1/realtime/client_secrets` (no deployment in path, no api-version query param)
+- Method: POST
+- Body: Session configuration with nested structure:
+  ```json
+  {
+    "session": {
+      "type": "realtime",
+      "model": "{deployment_name}",
+      "audio": { "output": { "voice": "alloy" } },
+      "instructions": "..." (optional)
+    }
+  }
+  ```
+- Response: `{ "value": "{ephemeral_token}" }` (60s TTL)
+
+**Secondary issue discovered**
+
+- Azure OpenAI resource had `disableLocalAuth: true` set, blocking API key authentication.
+- This means the Realtime API endpoint requires **Microsoft Entra ID (Azure AD) Bearer tokens**, not API keys.
+- Current `AzureRealtimeService` uses `api-key` header authentication.
+
+**Fix applied**
+
+- Updated `backend/app/services/azure/realtime.py`:
+  - Changed URL from `/openai/realtime/sessions?api-version=...` to `/openai/v1/realtime/client_secrets`
+  - Changed request body structure to match Azure's session configuration format
+  - Changed response parsing to extract token from `data.get("value", "")`
+- Committed: `ecf372d` — "fix(voice): Correct Azure OpenAI Realtime API endpoint path"
+
+**Outstanding issue**
+
+- API key auth is disabled on the Azure OpenAI resource (`disableLocalAuth: true`).
+- **Two options:**
+  1. **Enable API key auth** (simpler): Run `az resource update --ids "/subscriptions/.../frontdoor-6wfum6gndxawy-openai" --set properties.disableLocalAuth=false`
+  2. **Switch to Entra ID tokens** (more secure): Modify `AzureRealtimeService` to use `DefaultAzureCredential` and `Authorization: Bearer {token}` header instead of `api-key: {key}`
+
+**Key file paths**
+
+- `backend/app/services/azure/realtime.py` — Fixed session creation endpoint

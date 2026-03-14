@@ -53,17 +53,30 @@ class AzureRealtimeService(RealtimeServiceInterface):
         instructions: Optional[str] = None,
     ) -> RealtimeSessionResponse:
         """Create an ephemeral realtime session via the Azure OpenAI API."""
-        url = f"{self.endpoint}/openai/deployments/{self.deployment}/realtime/sessions?api-version={self.api_version}"
+        url = f"{self.endpoint}/openai/v1/realtime/client_secrets"
         headers = {
             "api-key": self.api_key,
             "Content-Type": "application/json",
         }
-        body: dict = {"model": self.deployment, "voice": voice}
+        
+        # Build session configuration per Azure OpenAI WebRTC API spec
+        session_config = {
+            "session": {
+                "type": "realtime",
+                "model": self.deployment,
+                "audio": {
+                    "output": {
+                        "voice": voice,
+                    },
+                },
+            },
+        }
+        
         if instructions:
-            body["instructions"] = instructions
+            session_config["session"]["instructions"] = instructions
 
         try:
-            response = await self._client.post(url, headers=headers, json=body)
+            response = await self._client.post(url, headers=headers, json=session_config)
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             raise VoiceUnavailableError(
@@ -75,9 +88,10 @@ class AzureRealtimeService(RealtimeServiceInterface):
             ) from exc
 
         data = response.json()
+        # Azure returns the token in the 'value' field
         return RealtimeSessionResponse(
             session_id=session_id,
-            token=data.get("client_secret", {}).get("value", data.get("token", "")),
+            token=data.get("value", ""),
             expires_at=datetime.now(timezone.utc) + timedelta(seconds=60),
             endpoint=self.endpoint,
             deployment=self.deployment,
