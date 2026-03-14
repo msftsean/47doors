@@ -6,7 +6,7 @@
 ```
 
 > 🌿 **Branch**: `002-voice-interaction` &nbsp;|&nbsp; 👥 **Audience**: EDU customers, stakeholders, internal demos
-> 📅 **Last updated**: 2026-03-13 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: READY
+> 📅 **Last updated**: 2026-03-14 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: LIVE ON AZURE
 
 ```
 Demo Readiness  [████████████████████] 100%  ✅ All systems go
@@ -95,10 +95,10 @@ Overall Readiness  [░░░░░░░░░░░░░░░░░░░░
 |---|---|---|---|
 | 1️⃣ | 🌐 **Browser open** | Chrome 90+, Firefox 85+, or Edge 90+ | ☐ |
 | 2️⃣ | 🎙️ **Microphone tested** | Settings → Privacy → Microphone → Allow | ☐ |
-| 3️⃣ | ☁️ **Azure Container App deployed** | `azd up` completed · `${AZURE_CONTAINERAPP_URL}/api/health` returns `healthy` | ☐ |
-| 4️⃣ | 🖼️ **Frontend reachable** | Container App URL loads the UI (or Vite dev if running locally) | ☐ |
-| 5️⃣ | 🔑 **Azure subscription active** | `az account show` confirms sub `28fbebcb-…` · `azd auth login` completed | ☐ |
-| 6️⃣ | 🤖 **Azure OpenAI connected** | `MOCK_MODE=false` in `backend/.env` · live `oai-47doors-voice` deployment | ☐ |
+| 3️⃣ | ☁️ **Azure Container App deployed** | `azd up` completed · `https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health` returns `healthy` | ☐ |
+| 4️⃣ | 🖼️ **Frontend reachable** | [Container App URL](https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io) loads the UI (or Vite dev if running locally) | ☐ |
+| 5️⃣ | 🔑 **Azure subscription active** | `az account show` confirms sub `ME-MngEnvMCAP262307-segayle-1` · `azd auth login` completed | ☐ |
+| 6️⃣ | 🤖 **Azure OpenAI connected** | `MOCK_MODE=false` · live `gpt-4o` + `gpt-4o-realtime-preview` deployments on `frontdoor-6wfum6gndxawy-openai` | ☐ |
 | 7️⃣ | 🔊 **Audio output working** | System volume up · headset or speakers confirmed | ☐ |
 | 8️⃣ | 🛡️ **Fallback ready** | If voice fails → text chat **always** works · stay calm | ☐ |
 
@@ -127,7 +127,26 @@ Overall Readiness  [░░░░░░░░░░░░░░░░░░░░
 
 ### ☁️ Option A — Azure Container Apps *(Recommended)*
 
-This is the **primary demo path**. Azure resources are live: `oai-47doors-voice` in `rg-47doors-voice` (eastus2).
+This is the **primary demo path**. Azure resources are live and verified.
+
+```
+┌───────────────────────────────────────────────────────────────────────────────┐
+│  ☁️  LIVE AZURE INFRASTRUCTURE                                                │
+├───────────────────────────────────────────────────────────────────────────────┤
+│  🌐 Container App   https://frontdoor-6wfum6gndxawy-backend                  │
+│                     .blackflower-446b9850.eastus2.azurecontainerapps.io       │
+│  📦 Resource Group   rg-vvoice                                                │
+│  🧠 OpenAI Endpoint  frontdoor-6wfum6gndxawy-openai.openai.azure.com         │
+│  🤖 GPT-4o Deploy    gpt-4o                                                  │
+│  🎤 Realtime Deploy  gpt-4o-realtime-preview                                 │
+│  🗄️ Cosmos DB        frontdoor-zfyhb6f72odyg-cosmos.documents.azure.com      │
+│  🔍 AI Search        frontdoor-6wfum6gndxawy-search.search.windows.net       │
+│  🐳 Container Reg    frontdoor6wfum6gndxawyacr.azurecr.io                    │
+│  📍 Region           eastus2                                                  │
+│  💳 Subscription     ME-MngEnvMCAP262307-segayle-1                            │
+│  🔧 Mock Mode        false                                                    │
+└───────────────────────────────────────────────────────────────────────────────┘
+```
 
 ```bash
 # 1️⃣  Authenticate (once per machine)
@@ -145,10 +164,11 @@ azd env get-values | grep AZURE_CONTAINERAPP_URL
 
 ```bash
 # The frontend SPA is served from the same Container App host.
-# Use the URL returned above — e.g. https://ca-47doors-xxxx.eastus2.azurecontainerapps.io
+# Live URL:
+# https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io
 ```
 
-> 💡 **Subscription**: `28fbebcb-147f-4171-aeb4-6bac79cfb589` · **Tenant**: `f28d1115-47bb-4435-a518-e5ef2b4ba0f1`
+> 💡 **Subscription**: `ME-MngEnvMCAP262307-segayle-1` · **Region**: `eastus2`
 
 ### 🐳 Option B — Docker *(Local Alternative)*
 
@@ -186,15 +206,15 @@ echo "VITE_API_BASE_URL=" > frontend/.env.local
 
 ### 🩺 Health Check *(Verify before demoing)*
 
-> 💡 Replace `${AZURE_CONTAINERAPP_URL}` with your actual Container App URL from `azd env get-values`.
+> 💡 The live Container App URL is hardcoded below. Both endpoints have been verified ✅.
 
 ```bash
-# ☁️ Azure (primary)
-curl ${AZURE_CONTAINERAPP_URL}/api/health
-# ✅ Expected: { "status": "healthy", "services": { "realtime_api": "available" } }
+# ☁️ Azure (primary — LIVE)
+curl https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health
+# ✅ Verified: LLM connecting, services up: ticketing, knowledge_base, session_store
 
-curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
-# ✅ Expected: { "realtime_available": true, "mock_mode": false }
+curl https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health
+# ✅ Verified: { "realtime_available": true, "mock_mode": false, "voice_enabled": true }
 
 # 💻 Local fallback
 # curl http://localhost:8000/api/health
@@ -202,9 +222,9 @@ curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
 ```
 
 ```
-Backend  Health  [████████████████████] ✅  healthy
-Realtime Health  [████████████████████] ✅  available  (mock_mode: false — Azure Live)
-Frontend Load    [████████████████████] ✅  ${AZURE_CONTAINERAPP_URL}
+Backend  Health  [████████████████████] ✅  healthy (ticketing ✅ · knowledge_base ✅ · session_store ✅)
+Realtime Health  [████████████████████] ✅  available  (mock_mode: false · voice_enabled: true — Azure Live)
+Frontend Load    [████████████████████] ✅  frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io
 ```
 
 ---
@@ -307,13 +327,13 @@ Student types  ──►  🧠 Intent Detection  ──►  🗺️ Router  ─�
 
 > *"University IT teams ask: 'How do we know what the AI is doing? How do we audit it?' Great question."*
 
-1. 🌐 **Open a new browser tab**, navigate to `${AZURE_CONTAINERAPP_URL}/api/realtime/health`
+1. 🌐 **Open a new browser tab**, navigate to `https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health`
    ```json
-   { "realtime_available": true, "mock_mode": false }
+   { "realtime_available": true, "mock_mode": false, "voice_enabled": true }
    ```
    > *"This endpoint tells the frontend whether voice is available. If it returns false, the mic button never even appears — there's no broken state to deal with."*
 
-2. 🌐 **Navigate to** `${AZURE_CONTAINERAPP_URL}/api/health`
+2. 🌐 **Navigate to** `https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health`
    > *"Full health check — every service, including the Realtime API, has a status entry."*
 
 3. 📜 **Back in the chat**, scroll through the conversation history
@@ -341,7 +361,7 @@ Student types  ──►  🧠 Intent Detection  ──►  🗺️ Router  ─�
 
 1. 🔧 **Temporarily disable voice**: In the Azure Container App, set environment variable `VOICE_ENABLED=false` via the portal or:
    ```bash
-   az containerapp update --name <app-name> --resource-group rg-47doors-voice \
+   az containerapp update --name frontdoor-6wfum6gndxawy-backend --resource-group rg-vvoice \
      --set-env-vars VOICE_ENABLED=false
    ```
    *(If running locally: set `VOICE_ENABLED=false` in `backend/.env` and restart uvicorn)*
@@ -408,14 +428,14 @@ Current State → Production Hardening:
 | 🌊 VAD not triggering / false triggers | 🟡 | Background noise | Use headset in quiet room; adjust `REALTIME_VAD_THRESHOLD_MS` in `.env` |
 | 🎤 "Voice unavailable" banner | 🟡 | Backend not running or voice disabled | Confirm Container App is running; check `VOICE_ENABLED=true` env var |
 | 🚫 `503` on `POST /session` | 🔴 | `VOICE_ENABLED=false` in config | Set `VOICE_ENABLED=true` on Container App → restart revision |
-| 🎤 Mic button not shown | 🟡 | `realtime_available: false` from health check | `GET ${AZURE_CONTAINERAPP_URL}/api/realtime/health`; confirm Container App running |
+| 🎤 Mic button not shown | 🟡 | `realtime_available: false` from health check | `GET https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health`; confirm Container App running |
 | 📝 Transcript not appearing | 🟡 | Voice components not rendered | Confirm `ChatContainer.tsx` imports `VoiceTranscript`; check console |
 | 💬 Text chat broken after voice | 🔴 | Should not happen (separate connections) | Hard-reload; file a bug if persists — check `ChatContainer.tsx` state isolation |
 | 🔒 WebRTC ICE failure | 🔴 | Azure endpoint/region misconfigured | Verify `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_REALTIME_DEPLOYMENT` in Container App env vars |
 | 🌐 Codespaces: API calls fail | 🔴 | `VITE_API_BASE_URL` set to localhost | Clear `VITE_API_BASE_URL` — Vite proxy handles `/api` routing |
 | 📦 Container App not starting | 🔴 | Image build failure or missing env vars | `azd deploy --debug`; check Container App logs in Azure Portal |
-| 🛑 `azd up` failure | 🔴 | Quota, permissions, or Bicep error | Check `azd` output; verify subscription `28fbebcb-…` and role assignments |
-| 🤖 Azure OpenAI quota exceeded | 🔴 | TPM/RPM limit hit on `oai-47doors-voice` | Check quota in Azure Portal → `rg-47doors-voice` → OpenAI resource → Deployments |
+| 🛑 `azd up` failure | 🔴 | Quota, permissions, or Bicep error | Check `azd` output; verify subscription `ME-MngEnvMCAP262307-segayle-1` and role assignments |
+| 🤖 Azure OpenAI quota exceeded | 🔴 | TPM/RPM limit hit on `frontdoor-6wfum6gndxawy-openai` | Check quota in Azure Portal → `rg-vvoice` → OpenAI resource → Deployments |
 | 🐌 Cold start delay (first request) | 🟡 | Container App scaling from zero | Wait 10–15 s; send a warm-up request to `/api/health` before the demo |
 
 ```

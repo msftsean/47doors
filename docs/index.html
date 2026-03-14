@@ -228,9 +228,9 @@
     <div class="hero-meta">
       <span class="badge">🌿 <strong>Branch:</strong> 002-voice-interaction</span>
       <span class="badge">👥 <strong>Audience:</strong> EDU customers &amp; stakeholders</span>
-      <span class="badge">📅 <strong>Updated:</strong> 2026-03-13</span>
+      <span class="badge">📅 <strong>Updated:</strong> 2026-03-14</span>
       <span class="badge">⏱️ <strong>Demo time:</strong> 12–15 min</span>
-      <span class="badge">🟢 <strong>Status:</strong> READY</span>
+      <span class="badge">🟢 <strong>Status:</strong> LIVE ON AZURE</span>
     </div>
     <div class="progress-group">
       <div class="progress-row">
@@ -350,10 +350,10 @@
         <tbody>
           <tr><td>1️⃣</td><td>🌐 <strong>Browser open</strong></td><td>Chrome 90+, Firefox 85+, or Edge 90+</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
           <tr><td>2️⃣</td><td>🎙️ <strong>Microphone tested</strong></td><td>Settings → Privacy → Microphone → Allow</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
-          <tr><td>3️⃣</td><td>☁️ <strong>Azure Container App deployed</strong></td><td><code>azd up</code> completed · <code>${AZURE_CONTAINERAPP_URL}/api/health</code> returns <code>healthy</code></td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>3️⃣</td><td>☁️ <strong>Azure Container App deployed</strong></td><td><code>azd up</code> completed · <a href="https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health" target="_blank"><code>/api/health</code></a> returns <code>healthy</code></td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
           <tr><td>4️⃣</td><td>🖼️ <strong>Frontend reachable</strong></td><td>Container App URL loads the UI (or Vite dev if running locally)</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
-          <tr><td>5️⃣</td><td>🔑 <strong>Azure subscription active</strong></td><td><code>az account show</code> confirms sub <code>28fbebcb-…</code> · <code>azd auth login</code> completed</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
-          <tr><td>6️⃣</td><td>🤖 <strong>Azure OpenAI connected</strong></td><td><code>MOCK_MODE=false</code> in <code>backend/.env</code> · live <code>oai-47doors-voice</code> deployment</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>5️⃣</td><td>🔑 <strong>Azure subscription active</strong></td><td><code>az account show</code> confirms sub <code>ME-MngEnvMCAP262307-segayle-1</code> · <code>azd auth login</code> completed</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>6️⃣</td><td>🤖 <strong>Azure OpenAI connected</strong></td><td><code>MOCK_MODE=false</code> · live <code>gpt-4o</code> + <code>gpt-4o-realtime-preview</code> on <code>frontdoor-6wfum6gndxawy-openai</code></td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
           <tr><td>7️⃣</td><td>🔊 <strong>Audio output working</strong></td><td>System volume up · headset or speakers confirmed</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
           <tr><td>8️⃣</td><td>🛡️ <strong>Fallback ready</strong></td><td>If voice fails → text chat <strong>always</strong> works · stay calm</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
         </tbody>
@@ -398,7 +398,7 @@
     </div>
 
     <h3>☁️ Option A — Azure Container Apps <em>(Recommended)</em></h3>
-    <p>This is the <strong>primary demo path</strong>. Azure resources are live: <code>oai-47doors-voice</code> in <code>rg-47doors-voice</code> (eastus2).</p>
+    <p>This is the <strong>primary demo path</strong>. Azure resources are live and verified in <code>rg-vvoice</code> (eastus2).</p>
 <pre><code><span class="cm"># 1️⃣  Authenticate (once per machine)</span>
 azd auth login
 
@@ -411,8 +411,8 @@ azd deploy
 <span class="cm"># 3️⃣  Get the live URL</span>
 azd env get-values | grep AZURE_CONTAINERAPP_URL</code></pre>
 <pre><code><span class="cm"># The frontend SPA is served from the same Container App host.</span>
-<span class="cm"># Use the URL returned above — e.g. https://ca-47doors-xxxx.eastus2.azurecontainerapps.io</span></code></pre>
-    <blockquote><p>💡 <strong>Subscription</strong>: <code>28fbebcb-147f-4171-aeb4-6bac79cfb589</code> · <strong>Tenant</strong>: <code>f28d1115-47bb-4435-a518-e5ef2b4ba0f1</code></p></blockquote>
+<span class="cm"># Use the URL returned above — e.g. https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io</span></code></pre>
+    <blockquote><p>💡 <strong>Subscription</strong>: <code>ME-MngEnvMCAP262307-segayle-1</code> · <strong>Region</strong>: <code>eastus2</code></p></blockquote>
 
     <h3>🐳 Option B — Docker <em>(Local Alternative)</em></h3>
 <pre><code>docker-compose up
@@ -437,13 +437,13 @@ npm run dev                   <span class="cm"># Opens http://localhost:5173</sp
 echo "VITE_API_BASE_URL=" > frontend/.env.local</code></pre>
 
     <h3>🩺 Health Check <em>(Verify before demoing)</em></h3>
-    <blockquote><p>💡 Replace <code>${AZURE_CONTAINERAPP_URL}</code> with your actual Container App URL from <code>azd env get-values</code>.</p></blockquote>
-<pre><code><span class="cm"># ☁️ Azure (primary)</span>
-curl ${AZURE_CONTAINERAPP_URL}/api/health
-<span class="cm"># ✅ Expected: { "status": "healthy", "services": { "realtime_api": "available" } }</span>
+    <blockquote><p>💡 The live Container App URL is hardcoded below. Both endpoints have been verified ✅.</p></blockquote>
+<pre><code><span class="cm"># ☁️ Azure (primary — LIVE)</span>
+curl https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health
+<span class="cm"># ✅ Verified: LLM connecting, services up: ticketing, knowledge_base, session_store</span>
 
-curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
-<span class="cm"># ✅ Expected: { "realtime_available": true, "mock_mode": false }</span>
+curl https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health
+<span class="cm"># ✅ Verified: { "realtime_available": true, "mock_mode": false, "voice_enabled": true }</span>
 
 <span class="cm"># 💻 Local fallback</span>
 <span class="cm"># curl http://localhost:8000/api/health</span>
@@ -454,19 +454,19 @@ curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
         <span class="progress-label">Backend Health</span>
         <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
         <span class="progress-pct green">✅</span>
-        <span class="progress-status">healthy</span>
+        <span class="progress-status">healthy (ticketing ✅ · knowledge_base ✅ · session_store ✅)</span>
       </div>
       <div class="progress-row">
         <span class="progress-label">Realtime Health</span>
         <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
         <span class="progress-pct green">✅</span>
-        <span class="progress-status">available (mock_mode: false — Azure Live)</span>
+        <span class="progress-status">available (mock_mode: false · voice_enabled: true — Azure Live)</span>
       </div>
       <div class="progress-row">
         <span class="progress-label">Frontend Load</span>
         <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
         <span class="progress-pct green">✅</span>
-        <span class="progress-status">${AZURE_CONTAINERAPP_URL}</span>
+        <span class="progress-status">frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io</span>
       </div>
     </div>
   </section>
@@ -581,13 +581,13 @@ curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
       <div class="talk-track">"University IT teams ask: 'How do we know what the AI is doing? How do we audit it?' Great question."</div>
       <ol>
         <li>
-          <div>🌐 <strong>Open a new browser tab</strong>, navigate to <code>${AZURE_CONTAINERAPP_URL}/api/realtime/health</code>
-<pre style="margin-top:12px;"><code>{ "realtime_available": true, "mock_mode": false }</code></pre>
+          <div>🌐 <strong>Open a new browser tab</strong>, navigate to <code><a href="https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health" target="_blank">/api/realtime/health</a></code>
+<pre style="margin-top:12px;"><code>{ "realtime_available": true, "mock_mode": false, "voice_enabled": true }</code></pre>
             <div class="talk-track" style="margin-top:10px;">"This endpoint tells the frontend whether voice is available. If it returns false, the mic button never even appears — there's no broken state to deal with."</div>
           </div>
         </li>
         <li>
-          <div>🌐 <strong>Navigate to</strong> <code>${AZURE_CONTAINERAPP_URL}/api/health</code>
+          <div>🌐 <strong>Navigate to</strong> <code><a href="https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health" target="_blank">/api/health</a></code>
             <div class="talk-track" style="margin-top:10px;">"Full health check — every service, including the Realtime API, has a status entry."</div>
           </div>
         </li>
@@ -615,7 +615,7 @@ curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
       <ol>
         <li>
           <div>🔧 <strong>Temporarily disable voice</strong>: In the Azure Container App, set environment variable <code>VOICE_ENABLED=false</code> via the portal or:
-<pre style="margin-top:12px;"><code>az containerapp update --name &lt;app-name&gt; --resource-group rg-47doors-voice \
+<pre style="margin-top:12px;"><code>az containerapp update --name frontdoor-6wfum6gndxawy-backend --resource-group rg-vvoice \
   --set-env-vars VOICE_ENABLED=false</code></pre>
             <p style="font-size:0.85rem;color:#94a3b8;margin-top:6px;">(If running locally: set <code>VOICE_ENABLED=false</code> in <code>backend/.env</code> and restart uvicorn)</p>
           </div>
@@ -711,8 +711,8 @@ curl ${AZURE_CONTAINERAPP_URL}/api/realtime/health
           <tr><td>🔒 WebRTC ICE failure</td><td style="text-align:center" class="red">🔴</td><td>Azure endpoint/region misconfigured</td><td>Verify <code>AZURE_OPENAI_ENDPOINT</code> + <code>AZURE_OPENAI_REALTIME_DEPLOYMENT</code> in env vars</td></tr>
           <tr><td>🌐 Codespaces: API calls fail</td><td style="text-align:center" class="red">🔴</td><td><code>VITE_API_BASE_URL</code> set to localhost</td><td>Clear <code>VITE_API_BASE_URL</code> — Vite proxy handles <code>/api</code> routing</td></tr>
           <tr><td>📦 Container App not starting</td><td style="text-align:center" class="red">🔴</td><td>Image build failure or missing env vars</td><td><code>azd deploy --debug</code>; check Container App logs in Azure Portal</td></tr>
-          <tr><td>🛑 <code>azd up</code> failure</td><td style="text-align:center" class="red">🔴</td><td>Quota, permissions, or Bicep error</td><td>Check <code>azd</code> output; verify subscription <code>28fbebcb-…</code> and role assignments</td></tr>
-          <tr><td>🤖 Azure OpenAI quota exceeded</td><td style="text-align:center" class="red">🔴</td><td>TPM/RPM limit hit on <code>oai-47doors-voice</code></td><td>Check quota in Azure Portal → <code>rg-47doors-voice</code> → OpenAI resource → Deployments</td></tr>
+          <tr><td>🛑 <code>azd up</code> failure</td><td style="text-align:center" class="red">🔴</td><td>Quota, permissions, or Bicep error</td><td>Check <code>azd</code> output; verify subscription <code>ME-MngEnvMCAP262307-segayle-1</code> and role assignments</td></tr>
+          <tr><td>🤖 Azure OpenAI quota exceeded</td><td style="text-align:center" class="red">🔴</td><td>TPM/RPM limit hit on <code>frontdoor-6wfum6gndxawy-openai</code></td><td>Check quota in Azure Portal → <code>rg-vvoice</code> → OpenAI resource → Deployments</td></tr>
           <tr><td>🐌 Cold start delay (first request)</td><td style="text-align:center" class="yellow">🟡</td><td>Container App scaling from zero</td><td>Wait 10–15 s; send a warm-up request to <code>/api/health</code> before the demo</td></tr>
         </tbody>
       </table>
