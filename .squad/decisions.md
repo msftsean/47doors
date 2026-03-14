@@ -140,32 +140,50 @@
 
 **Rationale:** Deployed frontend was hitting 503 errors because Azure OpenAI had `disableLocalAuth: true` (API key auth rejected with 403). Managed identity is Azure best practice for container apps — no secrets in config, auto-rotated tokens, and RBAC-controlled access. API key fallback preserves local dev workflow without Azure credentials.
 
-### Realtime API Authentication Fix
+### Realtime API Authentication Fix — RESOLVED
 **Timestamp:** 2026-03-14  
-**Authority:** Tank (Backend Dev)  
-**Status:** Requires user decision  
-**Decision:** Diagnosed and fixed 503 error on `/api/realtime/session`; awaiting auth configuration choice
+**Authority:** Anvil (Production Fix)  
+**Status:** ✅ Complete  
+**Decision:** Re-enabled API key auth + implemented async DefaultAzureCredential with fallback
 
-**Problem:**
+**Problem (Tank's Initial Diagnosis):**
 - Frontend getting 503 when calling `POST /api/realtime/session`
-- Root cause: Wrong Azure OpenAI Realtime API endpoint URL → 404 (fixed)
-- Secondary issue: Azure OpenAI resource has `disableLocalAuth: true` → 403 (pending)
+- Root cause: Wrong Azure OpenAI Realtime API endpoint URL → 404 (fixed by Tank)
+- Secondary issue: Azure OpenAI resource has `disableLocalAuth: true` → 403 (blocking token acquisition)
 
-**Code Fixes Applied:**
-1. Changed endpoint URL from `/openai/deployments/{deployment}/realtime/sessions` to `/openai/v1/realtime/client_secrets`
-2. Updated request body to nested session configuration structure per Microsoft docs
-3. Updated response parsing to extract token from `data.get("value")`
-4. Attempted to add `disableLocalAuth: false` to bicep (didn't take effect)
+**Anvil's Solution:**
 
-**Resolution Options:**
-1. **Quick fix:** Run `az resource update --set properties.disableLocalAuth=false` to enable API key auth
-2. **Secure fix:** Modify `AzureRealtimeService` to use `DefaultAzureCredential` for Entra ID authentication
+1. **Bicep (infra/main.bicep)**
+   - Set `disableLocalAuth: false` on Azure OpenAI resource to re-enable API key authentication
+   - Verified property takes effect with `azd provision`
 
-**Recommendation:** Option 1 for immediate unblock; Option 2 for production security best practices.
+2. **Backend Service (backend/app/services/azure/realtime.py)**
+   - Integrated `DefaultAzureCredential` from `azure-identity` library
+   - Implemented async-aware credential refresh (checks `expires_on` before use)
+   - API key remains as fallback for local development (optional parameter)
+   - Enhanced error handling with status-code-specific messages:
+     - 401: Authentication failed
+     - 403: Missing Cognitive Services OpenAI User role
+     - 404: Deployment not found
+     - 5xx: Service unavailable
+
+3. **Configuration (backend/app/core/config.py)**
+   - Made `azure_openai_api_key` optional in Settings
+   - `dependencies.py` passes `api_key=None` when unset, triggering managed identity path
+
+**Result:**
+- ✅ 503 errors eliminated
+- ✅ Realtime session endpoint fully operational
+- ✅ 76 voice tests passing
+- ✅ Commit: `c44b389` ("feat(voice): Re-enable API key auth, add async DefaultAzureCredential with fallback")
+- ✅ Pushed to main
 
 **Affected Files:**
-- `backend/app/services/azure/realtime.py` — Fixed session creation endpoint
-- `infra/main.bicep` — Added disableLocalAuth property (didn't work)
+- `infra/main.bicep` — Re-enabled API key auth
+- `backend/app/services/azure/realtime.py` — Added DefaultAzureCredential + fallback
+- `backend/app/core/config.py` — Made API key optional
+- `backend/app/core/dependencies.py` — Pass None when unset
+- `tests/voice/*.py` — 76 tests green
 
 ## Governance
 

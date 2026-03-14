@@ -176,3 +176,15 @@
 - `backend/app/services/azure/realtime.py` — Fixed session creation endpoint (deployed)
 - `infra/main.bicep` — Added `disableLocalAuth: false` property (didn't work, needs investigation)
 - `.squad/decisions.md` — Documented diagnosis and two resolution options
+
+### 2026-03-14 — Realtime Auth Fix (via Anvil)
+
+**Resolution completed by Anvil**
+
+- **Bicep patch** (`infra/main.bicep`): Re-enabled API key auth with `disableLocalAuth: false` (verified to take effect)
+- **Service enhancement** (`backend/app/services/azure/realtime.py`): Implemented async `DefaultAzureCredential` with API key fallback, auto-token-refresh before expiration
+- **Config update** (`backend/app/core/config.py`): Made `azure_openai_api_key` optional
+- **Error handling**: Status-code-specific messages (401: auth failed, 403: missing role, 5xx: service down)
+- **Result**: 503 errors eliminated, realtime session endpoint fully operational, 76 voice tests passing
+- **Commit**: `c44b389` — "feat(voice): Re-enable API key auth, add async DefaultAzureCredential with fallback"
+- **Pushed**: ✅ to main
