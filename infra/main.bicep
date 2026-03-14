@@ -371,6 +371,62 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
 }
 
 // ============================================================================
+// Frontend Container App
+// ============================================================================
+resource frontendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
+  name: '${prefix}-frontend'
+  location: location
+  tags: union(tags, {
+    'azd-service-name': 'frontend'
+  })
+  properties: {
+    managedEnvironmentId: containerAppEnv.id
+    configuration: {
+      ingress: {
+        external: true
+        targetPort: 80
+        transport: 'auto'
+      }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: containerRegistry.listCredentials().passwords[0].value
+        }
+      ]
+      registries: [
+        {
+          server: containerRegistry.properties.loginServer
+          username: containerRegistry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'frontend'
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          env: [
+            {
+              name: 'BACKEND_URL'
+              value: 'https://${backendContainerApp.properties.configuration.ingress.fqdn}'
+            }
+          ]
+          resources: {
+            cpu: json('0.25')
+            memory: '0.5Gi'
+          }
+        }
+      ]
+      scale: {
+        minReplicas: 1
+        maxReplicas: 2
+      }
+    }
+  }
+}
+
+// ============================================================================
 // Outputs for azd
 // ============================================================================
 output AZURE_OPENAI_ENDPOINT string = openAi.properties.endpoint
@@ -382,6 +438,7 @@ output AZURE_SEARCH_ENDPOINT string = 'https://${searchService.name}.search.wind
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.properties.loginServer
 output AZURE_CONTAINER_ENV_ID string = containerAppEnv.id
 output AZURE_CONTAINERAPP_URL string = 'https://${backendContainerApp.properties.configuration.ingress.fqdn}'
+output AZURE_FRONTEND_URL string = 'https://${frontendContainerApp.properties.configuration.ingress.fqdn}'
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output AZURE_KEY_VAULT_NAME string = keyVault.name
 output MOCK_MODE bool = mockMode

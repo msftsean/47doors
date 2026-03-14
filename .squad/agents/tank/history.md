@@ -57,3 +57,20 @@
 - Added `openAiRealtimeDeployment` resource inside the Azure OpenAI resource block in `infra/main.bicep`, model `gpt-4o-realtime-preview`, version `2025-04-01`, sku Standard, capacity 1.
 - Added `dependsOn: [openAiDeployment]` to sequence deployments and avoid throttle conflicts during provisioning.
 - Added output `AZURE_OPENAI_REALTIME_DEPLOYMENT` so azd wires the deployment name into app settings automatically.
+
+### 2026-03-14 — Live Azure Deployment (azd up)
+
+**Deployment verified and documented**
+
+- `azd up` completed successfully. All services running live on Azure (MOCK_MODE=false).
+- **Container App URL**: `https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io`
+- **Resource Group**: `rg-vvoice`
+- **Azure OpenAI Endpoint**: `https://frontdoor-6wfum6gndxawy-openai.openai.azure.com/`
+- **OpenAI Deployments**: `gpt-4o` (text) + `gpt-4o-realtime-preview` (voice/WebRTC)
+- **Cosmos DB**: `https://frontdoor-zfyhb6f72odyg-cosmos.documents.azure.com:443/`
+- **AI Search**: `https://frontdoor-6wfum6gndxawy-search.search.windows.net`
+- **Container Registry**: `frontdoor6wfum6gndxawyacr.azurecr.io`
+- **Region**: `eastus2`
+- **Subscription**: `ME-MngEnvMCAP262307-segayle-1`
+- Health checks verified: `/api/health` → LLM connecting (ticketing, knowledge_base, session_store up); `/api/realtime/health` → realtime_available: true, mock_mode: false, voice_enabled: true
+- Updated DEMO_RUNBOOK.md and docs/index.html: replaced all placeholder `${AZURE_CONTAINERAPP_URL}` and old resource group/subscription references with live values. Runbook is now Azure-first throughout.
