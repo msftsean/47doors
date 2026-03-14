@@ -46,6 +46,15 @@
     .nav-links a:hover { color: var(--purple-lite); background: var(--purple-dim); border-color: var(--purple-border); }
     .nav-links a.active { color: #fff; background: var(--purple); border-color: var(--purple); }
 
+    /* ─── Auth Bar ───────────────────────────────────────────────── */
+    .nav-auth { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; padding-left: 16px; }
+    .auth-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+    .auth-badge .auth-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 6px rgba(52,211,153,0.6); }
+    .auth-name { color: var(--text); font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .auth-signout { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; font-size: 0.73rem; font-weight: 500; color: var(--text-muted); text-decoration: none; border: 1px solid var(--purple-border); background: transparent; transition: all 0.2s ease; }
+    .auth-signout:hover { color: var(--purple-lite); background: var(--purple-dim); border-color: var(--purple); }
+    .auth-localdev { font-size: 0.72rem; color: var(--text-dim); font-style: italic; }
+
     /* ─── Layout ─────────────────────────────────────────────────── */
     main { max-width: 880px; margin: 0 auto; padding: calc(var(--nav-h) + 48px) 32px 80px; }
     section { scroll-margin-top: calc(var(--nav-h) + 24px); margin-bottom: 80px; }
@@ -201,6 +210,10 @@
     <a href="#demo-sequence">🎬 Demo</a>
     <a href="#troubleshooting">🔧 Troubleshoot</a>
     <a href="#edu-framing">🏫 EDU Framing</a>
+  </div>
+  <div class="nav-auth" id="nav-auth" style="display:none">
+    <span class="auth-badge"><span class="auth-dot"></span> 🔒 <span id="auth-name" class="auth-name"></span></span>
+    <a href="/.auth/logout" class="auth-signout">Sign Out ↩</a>
   </div>
 </nav>
 
@@ -822,6 +835,26 @@ Student → speaks or types → instant routing → right team → resolved ✅<
   }
   checks.forEach(c => c.addEventListener('change', updateChecklist));
   updateChecklist();
+
+  // Auth — fetch /.auth/me and show user info in nav
+  (async () => {
+    try {
+      const res = await fetch('/.auth/me', { cache: 'no-store' });
+      if (!res.ok) return; // local dev — hide silently
+      const data = await res.json();
+      const principal = data?.clientPrincipal;
+      if (!principal) return; // unauthenticated or local dev
+      const name = principal.userDetails || principal.userId || 'Authenticated';
+      const authNav = document.getElementById('nav-auth');
+      const authName = document.getElementById('auth-name');
+      if (authNav && authName) {
+        authName.textContent = name;
+        authNav.style.display = 'flex';
+      }
+    } catch (_) {
+      // /.auth/me unavailable locally — silent no-op
+    }
+  })();
 </script>
 </body>
 </html>
