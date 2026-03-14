@@ -85,6 +85,25 @@
 
 **Rationale:** Additive strategy reduces friction with parallel work. Discriminator pattern is simpler and aligns with existing session model. Explicit transience markers document the PII-safety constraint for future implementers.
 
+### Azure Static Web Apps Auth for Runbook Site
+**Timestamp:** 2026-03-14  
+**Authority:** Switch (Frontend Dev)  
+**Decision:** Use Azure Static Web Apps (SWA) with Azure AD (Microsoft Entra ID) authentication for docs runbook site
+
+**Key Decisions:**
+- **Identity provider:** Azure AD only (Microsoft login)
+- **Auth enforcement:** All routes require `authenticated` role; 401 auto-redirects to `/.auth/login/aad`
+- **User display:** `/.auth/me` endpoint surfaced in nav bar; degrades gracefully on local dev
+- **Blocked providers:** GitHub, Twitter (return 404)
+
+**Affected Files:**
+- `docs/staticwebapp.config.json` — SWA route rules and auth config
+- `docs/index.html` — `.nav-auth` bar + `/.auth/me` JS
+- `.github/workflows/deploy-docs-swa.yml` — CI/CD deployment
+- `docs/AZURE_SWA_SETUP.md` — Operator setup guide
+
+**Rationale:** EDU/Microsoft audience context. SWA built-in auth requires no app-level middleware. Restricts runbook access (internal tooling, demo sequences) to authenticated Microsoft accounts. Local dev parity via graceful `/.auth/me` fallback.
+
 ## Governance
 
 - All meaningful changes require team consensus

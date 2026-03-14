@@ -10,7 +10,25 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### 2026-03-13 — Voice API Artifacts (002-voice-interaction)
+### 2026-03-14 — Azure Static Web Apps Auth Migration (docs runbook)
+
+**Architecture decisions:**
+- Runbook site migrated from GitHub Pages → Azure Static Web Apps for built-in authentication.
+- Auth provider: Azure AD (Microsoft Entra ID) only — GitHub/Twitter providers explicitly blocked with 404.
+- `staticwebapp.config.json` route rules: `/.auth/login/aad` + `/.auth/logout` are `anonymous`; all other routes require `authenticated` role; 401 redirects to AAD login.
+- Auth bar integrated into existing sticky nav (right-aligned `.nav-auth` div) — uses `/.auth/me` fetch to show username; hidden on local dev when endpoint unavailable (silent catch).
+
+**Key file paths:**
+- SWA config: `docs/staticwebapp.config.json`
+- Setup guide: `docs/AZURE_SWA_SETUP.md`
+- GitHub Actions workflow: `.github/workflows/deploy-docs-swa.yml`
+- Deployment secret expected: `AZURE_STATIC_WEB_APPS_API_TOKEN` (user adds after SWA resource creation)
+
+**User preferences observed:**
+- Auth UI must be minimal — user said "don't distract from runbook content"
+- Dark theme, purple accent, Inter font — all auth elements use existing CSS variables
+- Setup docs use bash (not PowerShell) with emojis for readability
+- Local dev graceful degradation is a hard requirement (auth bar hides if `/.auth/me` unavailable)
 
 **Architecture decisions:**
 - Audio never transits the backend — WebRTC connects browser → Azure OpenAI directly. Backend only relays tool call results via `/api/realtime/ws`.
