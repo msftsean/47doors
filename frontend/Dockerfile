@@ -13,8 +13,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application (vite handles TS transpilation via esbuild;
+# tsc type-checking runs in CI/local dev, not Docker builds)
+RUN npx vite build
 
 # Production stage
 FROM nginx:alpine
