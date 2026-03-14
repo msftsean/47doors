@@ -1,3 +1,0 @@
-docs(squad): merge SWA auth decision
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
