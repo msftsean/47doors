@@ -114,14 +114,24 @@ class AzureRealtimeService(RealtimeServiceInterface):
             "Content-Type": "application/json",
         }
         
-        # Only type, model, and instructions are accepted in /client_secrets body.
-        # voice and input_audio_transcription must be configured via session.update
-        # on the WebRTC data channel (Azure returns 500 if included here).
+        # Use GA nested format for session config in /client_secrets body.
+        # Preview flat fields (voice, input_audio_transcription) cause 500;
+        # GA nested fields (audio.input.transcription, audio.output.voice) work.
         session_config = {
             "session": {
                 "type": "realtime",
                 "model": self.deployment,
                 "instructions": instructions or VOICE_SYSTEM_PROMPT,
+                "audio": {
+                    "input": {
+                        "transcription": {
+                            "model": "whisper-1",
+                        },
+                    },
+                    "output": {
+                        "voice": voice,
+                    },
+                },
             },
         }
 
