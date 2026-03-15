@@ -105,13 +105,20 @@ export function useVoice(options: UseVoiceOptions = {}) {
 
       dc.onopen = () => {
         // Configure voice and transcription via session.update after data channel opens.
-        // These cannot be set in /client_secrets body (Azure returns 500).
+        // Must use GA nested format (audio.input.transcription, audio.output.voice).
+        // Flat fields like input_audio_transcription are silently ignored by GA endpoint.
         dc.send(JSON.stringify({
           type: 'session.update',
           session: {
-            voice: options.voice ?? 'alloy',
-            input_audio_transcription: {
-              model: 'whisper-1',
+            audio: {
+              input: {
+                transcription: {
+                  model: 'whisper-1',
+                },
+              },
+              output: {
+                voice: options.voice ?? 'alloy',
+              },
             },
           },
         }));
