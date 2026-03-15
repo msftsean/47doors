@@ -155,22 +155,23 @@ class AzureRealtimeService(RealtimeServiceInterface):
             ) from exc
 
         data = response.json()
-        # Azure /client_secrets returns: {"client_secret": {"value": "eph_...", "expires_at_unix_epoch": ...}}
-        client_secret = data.get("client_secret", {})
-        token = client_secret.get("value", "") if isinstance(client_secret, dict) else ""
-        expires_epoch = client_secret.get("expires_at_unix_epoch") if isinstance(client_secret, dict) else None
+        # Azure /client_secrets returns: {"value": "eph_...", "expires_at": "...", "session": {...}}
+        token = data.get("value", "")
+        expires_at_str = data.get("expires_at")
         
         if not token:
             logger.error(f"Realtime: empty ephemeral token from API. Response keys: {list(data.keys())}")
             raise VoiceUnavailableError("Azure OpenAI returned empty ephemeral token")
         
-        logger.info(f"Realtime: ephemeral token acquired, len={len(token)}, expires_epoch={expires_epoch}")
+        logger.info(f"Realtime: ephemeral token acquired, len={len(token)}, expires_at={expires_at_str}")
         
-        expires_at = (
-            datetime.fromtimestamp(expires_epoch, tz=timezone.utc)
-            if expires_epoch
-            else datetime.now(timezone.utc) + timedelta(seconds=60)
-        )
+        if expires_at_str:
+            try:
+                expires_at = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                expires_at = datetime.now(timezone.utc) + timedelta(seconds=60)
+        else:
+            expires_at = datetime.now(timezone.utc) + timedelta(seconds=60)
         
         return RealtimeSessionResponse(
             session_id=session_id,
