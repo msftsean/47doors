@@ -155,11 +155,27 @@ class AzureRealtimeService(RealtimeServiceInterface):
             ) from exc
 
         data = response.json()
-        # Azure returns the token in the 'value' field
+        # Azure /client_secrets returns: {"client_secret": {"value": "eph_...", "expires_at_unix_epoch": ...}}
+        client_secret = data.get("client_secret", {})
+        token = client_secret.get("value", "") if isinstance(client_secret, dict) else ""
+        expires_epoch = client_secret.get("expires_at_unix_epoch") if isinstance(client_secret, dict) else None
+        
+        if not token:
+            logger.error(f"Realtime: empty ephemeral token from API. Response keys: {list(data.keys())}")
+            raise VoiceUnavailableError("Azure OpenAI returned empty ephemeral token")
+        
+        logger.info(f"Realtime: ephemeral token acquired, len={len(token)}, expires_epoch={expires_epoch}")
+        
+        expires_at = (
+            datetime.fromtimestamp(expires_epoch, tz=timezone.utc)
+            if expires_epoch
+            else datetime.now(timezone.utc) + timedelta(seconds=60)
+        )
+        
         return RealtimeSessionResponse(
             session_id=session_id,
-            token=data.get("value", ""),
-            expires_at=datetime.now(timezone.utc) + timedelta(seconds=60),
+            token=token,
+            expires_at=expires_at,
             endpoint=self.endpoint,
             deployment=self.deployment,
         )

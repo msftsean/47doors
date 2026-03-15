@@ -141,9 +141,9 @@ export function useVoice(options: UseVoiceOptions = {}) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // 7. Exchange SDP with Azure OpenAI Realtime API
+      // 7. Exchange SDP with Azure OpenAI Realtime API via WebRTC
       const sdpResponse = await fetch(
-        `${session.endpoint}?api-version=2025-04-01-preview&deployment=${session.deployment}`,
+        `${session.endpoint}/openai/v1/realtime/calls`,
         {
           method: 'POST',
           headers: {
