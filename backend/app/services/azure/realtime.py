@@ -130,35 +130,59 @@ class AzureRealtimeService(RealtimeServiceInterface):
                     },
                     "output": {
                         "voice": voice,
+                        "transcription": {
+                            "model": "whisper-1",
+                        },
                     },
                 },
             },
         }
 
-        try:
-            response = await self._client.post(url, headers=headers, json=session_config)
-            response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            error_detail = exc.response.text
-            status_code = exc.response.status_code
-            logger.error(f"Realtime API error: status={status_code}, auth_type={auth_type}, detail={error_detail}")
-            
-            if status_code == 401:
-                error_msg = f"Authentication failed (401): Credentials rejected. auth_type={auth_type}. Details: {error_detail}"
-            elif status_code == 403:
-                error_msg = f"Authorization failed (403): auth_type={auth_type}. Details: {error_detail}"
-            elif status_code == 404:
-                error_msg = f"Endpoint not found (404): deployment='{self.deployment}', url={url}. Details: {error_detail}"
-            elif status_code >= 500:
-                error_msg = f"Azure OpenAI service error ({status_code}): {error_detail}"
-            else:
-                error_msg = f"Azure OpenAI Realtime API error ({status_code}): {error_detail}"
-            
-            raise VoiceUnavailableError(error_msg) from exc
-        except httpx.RequestError as exc:
-            raise VoiceUnavailableError(
-                f"Network error reaching Azure OpenAI Realtime API at {url}: {exc}"
-            ) from exc
+        # Try with output transcription first; fall back without it if rejected.
+        # The frontend session.update also requests it as a backup.
+        response = None
+        for attempt, config in enumerate([session_config, None]):
+            if config is None:
+                # Build fallback config without audio.output.transcription
+                fallback = {
+                    "session": {
+                        **session_config["session"],
+                        "audio": {
+                            "input": session_config["session"]["audio"]["input"],
+                            "output": {"voice": voice},
+                        },
+                    },
+                }
+                config = fallback
+                logger.warning("Retrying /client_secrets without audio.output.transcription")
+
+            try:
+                response = await self._client.post(url, headers=headers, json=config)
+                response.raise_for_status()
+                break
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                error_detail = exc.response.text
+                # Retry on server error only on first attempt
+                if attempt == 0 and status_code >= 500:
+                    logger.warning(f"Realtime API rejected config (attempt 1): {status_code}")
+                    continue
+                logger.error(f"Realtime API error: status={status_code}, auth_type={auth_type}, detail={error_detail}")
+                if status_code == 401:
+                    error_msg = f"Authentication failed (401): Credentials rejected. auth_type={auth_type}. Details: {error_detail}"
+                elif status_code == 403:
+                    error_msg = f"Authorization failed (403): auth_type={auth_type}. Details: {error_detail}"
+                elif status_code == 404:
+                    error_msg = f"Endpoint not found (404): deployment='{self.deployment}', url={url}. Details: {error_detail}"
+                elif status_code >= 500:
+                    error_msg = f"Azure OpenAI service error ({status_code}): {error_detail}"
+                else:
+                    error_msg = f"Azure OpenAI Realtime API error ({status_code}): {error_detail}"
+                raise VoiceUnavailableError(error_msg) from exc
+            except httpx.RequestError as exc:
+                raise VoiceUnavailableError(
+                    f"Network error reaching Azure OpenAI Realtime API at {url}: {exc}"
+                ) from exc
 
         data = response.json()
         # Azure /client_secrets returns: {"value": "eph_...", "expires_at": "...", "session": {...}}

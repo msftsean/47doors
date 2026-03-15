@@ -105,8 +105,9 @@ export function useVoice(options: UseVoiceOptions = {}) {
 
       dc.onopen = () => {
         // Configure voice and transcription via session.update after data channel opens.
-        // Must use GA nested format (audio.input.transcription, audio.output.voice).
+        // Must use GA nested format (audio.input/output.transcription, audio.output.voice).
         // Flat fields like input_audio_transcription are silently ignored by GA endpoint.
+        // output.transcription enables response.audio_transcript.done events for agent text.
         dc.send(JSON.stringify({
           type: 'session.update',
           session: {
@@ -118,6 +119,9 @@ export function useVoice(options: UseVoiceOptions = {}) {
               },
               output: {
                 voice: options.voice ?? 'alloy',
+                transcription: {
+                  model: 'whisper-1',
+                },
               },
             },
           },
