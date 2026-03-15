@@ -5,7 +5,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-> 🌿 **Branch**: `002-voice-interaction` &nbsp;|&nbsp; 👥 **Audience**: EDU customers, stakeholders, internal demos
+> 👥 **Audience**: EDU customers, stakeholders, internal demos
 > 📅 **Last updated**: 2026-03-15 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: LIVE ON AZURE
 
 ```
@@ -303,7 +303,7 @@ Student types  ──►  🧠 Intent Detection  ──►  🗺️ Router  ─�
    ```
 
 5. 🔊 **When the agent responds** — point to the transcript bubble with 🔊 icon
-   > *"The agent speaks the answer back AND adds it to the chat thread with a speaker icon so there's always a written record. No audio is stored — only this PII-filtered transcript."*
+   > *"The agent speaks the answer back AND adds it to the chat thread with a speaker icon so there's always a written record. Notice transcripts appear inline in the chat thread — user speech with a 🎤 microphone icon and assistant responses with a 🔊 speaker icon. No audio is stored — only this PII-filtered transcript."*
 
    ```
    ✅ Response ready  [████████████████████]  🔊 Audio + 📝 Transcript delivered
@@ -396,7 +396,7 @@ Voice ON:   💬 Text [███████████████████
 
 ```
 Current State → Production Hardening:
-[████████████████████] Phase 1-3  ✅ Complete (Live on Azure)
+[████████████████████] Phase 1-3  ✅ Complete — Voice feature merged to main, live on Azure
 [████████████░░░░░░░░] Phase 4-6  🟡 In progress
 [░░░░░░░░░░░░░░░░░░░░] Phase 7-8  📋 Planned
 ```
@@ -429,7 +429,7 @@ Current State → Production Hardening:
 | 🎤 "Voice unavailable" banner | 🟡 | Backend not running or voice disabled | Confirm Container App is running; check `VOICE_ENABLED=true` env var |
 | 🚫 `503` on `POST /session` | 🔴 | `VOICE_ENABLED=false` in config | Set `VOICE_ENABLED=true` on Container App → restart revision |
 | 🎤 Mic button not shown | 🟡 | `realtime_available: false` from health check | `GET https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health`; confirm Container App running |
-| 📝 Transcript not appearing | 🟡 | Voice components not rendered | Confirm `ChatContainer.tsx` imports `VoiceTranscript`; check console |
+| 📝 Transcript not appearing | 🟡 | Azure OpenAI Realtime API requires explicit `input_audio_transcription` config | Verify `input_audio_transcription: {model: "whisper-1"}` is set in session config (backend `realtime.py`); check that `dc.onopen` sends `session.update` with transcription config (frontend `useVoice.ts`) |
 | 💬 Text chat broken after voice | 🔴 | Should not happen (separate connections) | Hard-reload; file a bug if persists — check `ChatContainer.tsx` state isolation |
 | 🔒 WebRTC ICE failure | 🔴 | Azure endpoint/region misconfigured | Verify `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_REALTIME_DEPLOYMENT` in Container App env vars |
 | 🔑 `AuthenticationTypeDisabled` | 🔴 | API key auth disabled by Azure policy (`disableLocalAuth: true`) | Use managed identity — Container App must have `Cognitive Services OpenAI User` role on Azure OpenAI resource |
@@ -499,7 +499,7 @@ This architecture is institution-agnostic. The 3-agent pipeline (`QueryAgent →
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║  📋  Runbook maintained by the 47 Doors engineering team                    ║
-║  🐛  Issues? Open a GitHub issue on branch: 002-voice-interaction           ║
+║  🐛  Issues? Open a GitHub issue on the repository                          ║
 ║  ☁️   Azure-first: `azd up` → live on Azure OpenAI (MOCK_MODE=false)         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
