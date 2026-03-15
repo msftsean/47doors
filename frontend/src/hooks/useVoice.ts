@@ -104,13 +104,16 @@ export function useVoice(options: UseVoiceOptions = {}) {
       dataChannelRef.current = dc;
 
       dc.onopen = () => {
-        // Configure voice and transcription via session.update after data channel opens.
-        // Must use GA nested format (audio.input/output.transcription, audio.output.voice).
-        // Flat fields like input_audio_transcription are silently ignored by GA endpoint.
-        // output.transcription enables response.audio_transcript.done events for agent text.
+        // Send session.update with BOTH GA nested format AND preview flat format.
+        // GA nested: audio.input.transcription, audio.output.voice
+        // Preview flat: output_audio_transcription (needed since GA may not support audio.output.transcription)
+        // The endpoint accepts what it supports and silently ignores the rest.
         dc.send(JSON.stringify({
           type: 'session.update',
           session: {
+            output_audio_transcription: {
+              model: 'whisper-1',
+            },
             audio: {
               input: {
                 transcription: {
@@ -119,9 +122,6 @@ export function useVoice(options: UseVoiceOptions = {}) {
               },
               output: {
                 voice: options.voice ?? 'marin',
-                transcription: {
-                  model: 'whisper-1',
-                },
               },
             },
           },
@@ -132,6 +132,11 @@ export function useVoice(options: UseVoiceOptions = {}) {
       dc.onmessage = async (event) => {
         try {
           const data = JSON.parse(event.data as string);
+
+          // Log all non-audio-delta events for debugging transcript issues
+          if (data.type !== 'response.audio.delta') {
+            console.log('[DC Event]', data.type);
+          }
 
           if (data.type === 'response.audio_transcript.done') {
             const message: VoiceMessage = {
@@ -151,6 +156,25 @@ export function useVoice(options: UseVoiceOptions = {}) {
             };
             dispatch({ type: 'ADD_TRANSCRIPT', message });
             onTranscriptRef.current?.(message);
+          } else if (data.type === 'response.output_item.done') {
+            // Fallback: extract assistant transcript from completed output item
+            // when response.audio_transcript.done is not sent
+            const item = data.item;
+            if (item?.type === 'message' && item?.role === 'assistant') {
+              const audioPart = item.content?.find(
+                (c: { type: string; transcript?: string }) => c.type === 'audio' && c.transcript
+              );
+              if (audioPart?.transcript) {
+                const message: VoiceMessage = {
+                  id: crypto.randomUUID(),
+                  content: audioPart.transcript,
+                  role: 'assistant',
+                  timestamp: new Date(),
+                };
+                dispatch({ type: 'ADD_TRANSCRIPT', message });
+                onTranscriptRef.current?.(message);
+              }
+            }
           } else if (data.type === 'response.function_call_arguments.done') {
             dispatch({ type: 'PROCESSING' });
           } else if (data.type === 'response.done') {
