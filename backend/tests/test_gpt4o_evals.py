@@ -24,42 +24,66 @@ from typing import Optional
 from dotenv import load_dotenv
 load_dotenv()
 
-# Skip all tests if Azure OpenAI is not configured
+# Skip all tests if Azure OpenAI endpoint is not configured
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("AZURE_OPENAI_ENDPOINT") or not os.environ.get("AZURE_OPENAI_API_KEY"),
-    reason="Azure OpenAI credentials not configured"
+    not os.environ.get("AZURE_OPENAI_ENDPOINT"),
+    reason="AZURE_OPENAI_ENDPOINT not configured"
 )
+
+# Module-level auth state populated by _verify_azure_openai_access
+_auth_mode: Optional[str] = None  # "api_key" or "credential"
 
 
 @pytest.fixture(scope="module", autouse=True)
 def _verify_azure_openai_access():
-    """Verify Azure OpenAI credentials actually work before running eval tests.
+    """Verify Azure OpenAI is reachable before running eval tests.
 
-    Env vars may be set (from .env) but the API key may be rejected if
-    the resource has disableLocalAuth=true (managed-identity-only).
+    Tries API key auth first, then falls back to DefaultAzureCredential
+    (which uses `az login`, VS Code credential, or managed identity).
     """
     import httpx
 
+    global _auth_mode
+
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "").rstrip("/")
-    api_key = os.environ.get("AZURE_OPENAI_API_KEY", "")
-    if not endpoint or not api_key:
-        pytest.skip("Azure OpenAI credentials not configured")
+    if not endpoint:
+        pytest.skip("AZURE_OPENAI_ENDPOINT not configured")
 
     api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
+    url = f"{endpoint}/openai/models?api-version={api_version}"
+
+    # Try API key auth first
+    api_key = os.environ.get("AZURE_OPENAI_API_KEY", "")
+    if api_key:
+        try:
+            resp = httpx.get(url, headers={"api-key": api_key}, timeout=10)
+            if resp.status_code == 200:
+                _auth_mode = "api_key"
+                return
+        except (httpx.ConnectError, httpx.TimeoutException):
+            pass
+
+    # Fall back to DefaultAzureCredential (az login, VS Code, managed identity)
     try:
+        from azure.identity import DefaultAzureCredential, CredentialUnavailableError
+        cred = DefaultAzureCredential()
+        token = cred.get_token("https://cognitiveservices.azure.com/.default")
         resp = httpx.get(
-            f"{endpoint}/openai/models?api-version={api_version}",
-            headers={"api-key": api_key},
+            url,
+            headers={"Authorization": f"Bearer {token.token}"},
             timeout=10,
         )
-        if resp.status_code in (401, 403):
-            pytest.skip(
-                f"Azure OpenAI API key rejected (HTTP {resp.status_code}). "
-                "Local auth may be disabled on this resource — "
-                "GPT-4o evals require a resource with API key auth enabled."
-            )
-    except (httpx.ConnectError, httpx.TimeoutException) as exc:
-        pytest.skip(f"Azure OpenAI endpoint not reachable: {exc}")
+        cred.close()
+        if resp.status_code == 200:
+            _auth_mode = "credential"
+            return
+    except (CredentialUnavailableError, httpx.ConnectError, httpx.TimeoutException):
+        pass
+
+    pytest.skip(
+        "Azure OpenAI not reachable — API key rejected and "
+        "DefaultAzureCredential failed. Run `az login` or set a valid API key."
+    )
 
 
 # =============================================================================
@@ -183,22 +207,34 @@ URGENCY_INDICATOR_CASES = [
 # =============================================================================
 
 @pytest.fixture
-def gpt4o_service():
-    """Create Azure OpenAI LLM service instance."""
+async def gpt4o_service():
+    """Create Azure OpenAI LLM service instance using the auth method
+    that was validated by _verify_azure_openai_access."""
     from app.services.azure.llm_service import AzureOpenAILLMService
 
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
-    api_key = os.environ.get("AZURE_OPENAI_API_KEY", "")
     deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
     api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
 
-    service = AzureOpenAILLMService(
-        endpoint=endpoint,
-        api_key=api_key,
-        deployment=deployment,
-        api_version=api_version,
-    )
-    yield service
+    if _auth_mode == "api_key":
+        service = AzureOpenAILLMService(
+            endpoint=endpoint,
+            api_key=os.environ.get("AZURE_OPENAI_API_KEY", ""),
+            deployment=deployment,
+            api_version=api_version,
+        )
+    else:
+        from azure.identity.aio import DefaultAzureCredential
+        service = AzureOpenAILLMService(
+            endpoint=endpoint,
+            deployment=deployment,
+            api_version=api_version,
+            credential=DefaultAzureCredential(),
+        )
+    try:
+        yield service
+    finally:
+        await service.close()
 
 
 @pytest.fixture
