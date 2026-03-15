@@ -27,7 +27,7 @@ Mock mode is the **default**. It simulates the Realtime API using the existing t
 ```bash
 # ── Terminal 1: Backend ──────────────────────────────────────────────────────
 cd backend
-cp .env.example .env      # MODE=mock is already set in .env.example
+cp .env.example .env      # MOCK_MODE=true is already set in .env.example
 pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -56,16 +56,21 @@ Add these to `backend/.env` (do **not** commit secrets):
 
 ```dotenv
 # Switch to live mode
-MODE=production
+MOCK_MODE=false
 
 # Azure OpenAI — existing deployment (used by text chat)
 AZURE_OPENAI_ENDPOINT=https://your-instance.openai.azure.com
-AZURE_OPENAI_API_KEY=your-api-key
 AZURE_OPENAI_DEPLOYMENT=gpt-4o
 
 # Realtime API — gpt-4o-realtime-preview deployment
 AZURE_OPENAI_REALTIME_DEPLOYMENT=gpt-4o-realtime-preview
 ```
+
+> ⚠️ **Managed Identity (Azure Container Apps)**: When deployed to Azure Container Apps via `azd up`, the backend uses `ManagedIdentityCredential` — no API key is needed. The Container App's system-assigned managed identity must have the `Cognitive Services OpenAI User` role on the Azure OpenAI resource. API key auth is disabled by Azure subscription policy (`disableLocalAuth: true`).
+>
+> **Local development**: For local development, set `AZURE_OPENAI_API_KEY` in `.env` if your Azure OpenAI resource allows API key auth. The current `AzureRealtimeService` uses `ManagedIdentityCredential` which only works in Azure Container Apps — for local dev, use mock mode (`MOCK_MODE=true`).
+>
+> **Docker**: Ensure `backend/.dockerignore` excludes `.env` to prevent secrets from being baked into container images.
 
 ### 3.2 Required Azure Deployment
 
@@ -218,9 +223,11 @@ Frontend test coverage areas:
 |---|---|
 | Mic button not shown | Check `GET /api/realtime/health` → `realtime_available` should be `true`. In mock mode this is always true. Check backend is running on port 8000. |
 | Mic permission dialog never appears | Expected in mock mode (no mic needed). In live mode, confirm the page is served over HTTPS or `localhost`. |
-| WebRTC connection fails | Check browser console for ICE errors. In live mode verify `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_REALTIME_DEPLOYMENT` are set. |
+| WebRTC connection fails | Check browser console for ICE errors. In live mode verify `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_REALTIME_DEPLOYMENT` are set. Ensure frontend uses `{endpoint}/openai/v1/realtime/calls` for WebRTC SDP exchange. |
+| Auth fails with `disableLocalAuth` | Your Azure subscription enforces managed identity. Remove `AZURE_OPENAI_API_KEY` from `.env`. Deploy to Azure Container Apps and ensure the MI has `Cognitive Services OpenAI User` role. |
+| `.env` overrides managed identity | Ensure `backend/.dockerignore` excludes `.env`. Rebuild: `azd deploy`. |
 | Tools not executing | Check uvicorn logs for WebSocket messages. Verify the 3-agent pipeline is healthy (`GET /api/health`). |
-| Mock mode not responding | Confirm `MODE=mock` in `backend/.env`. Restart uvicorn after `.env` changes. |
+| Mock mode not responding | Confirm `MOCK_MODE=true` in `backend/.env`. Restart uvicorn after `.env` changes. |
 | WS closes with code 4001 | Ephemeral token expired (TTL ≤ 60 s). Request a new token via `POST /api/realtime/session` before connecting. |
 | WS closes with code 4002 | `session_id` not found. Confirm the UUID in query params matches a live session. |
 | Text chat broken after voice | Should never happen — voice uses separate connections. File a bug and check `ChatContainer.tsx` state isolation. |

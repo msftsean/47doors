@@ -1,6 +1,6 @@
 # 🎤 Feature Summary: Voice Interaction (002-voice-interaction)
 
-> **Branch**: `002-voice-interaction` | **Status**: MVP Complete — 76/76 backend tests passing
+> **Branch**: `002-voice-interaction` | **Status**: ✅ MVP Live on Azure — 264 backend tests passing
 > **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Tasks**: [tasks.md](./tasks.md)
 
 ---
@@ -117,7 +117,7 @@ The MVP cutline is **P1 (Core Voice) + P5 (Degradation) + Eval Pack**.
 
 | Layer | Count | Details |
 |-------|-------|---------|
-| **Backend unit tests** | **76 / 76 ✅** | Config fields, Pydantic models, MockRealtimeService, API endpoints, PII filter |
+| **Backend unit tests** | **264 / 264 ✅** | Config fields, Pydantic models, MockRealtimeService, API endpoints, PII filter, plus existing pipeline tests |
 | **Frontend unit tests** | Vitest | `VoiceMicButton` (6 states, keyboard), `useVoice` (state machine, WS, degradation) |
 | **E2E tests** | Playwright | Full mock-mode voice session: click mic → speak → transcript → stop |
 | **Eval harness** | Prompt suite | 20 voice eval prompts; mock baseline; regression detection vs. text baseline |
@@ -160,13 +160,20 @@ The 47 Doors project constitution (v1.1.0) defines non-negotiable engineering pr
 
 ### Why You Can Trust It
 - **No audio stored** — raw audio travels browser↔Azure only; transcripts are PII-filtered before being written anywhere
-- **76 backend tests pass** — models, services, endpoints, and PII filter all verified
+- **264 backend tests pass** — voice models, services, endpoints, PII filter alongside all existing pipeline tests (excludes eval tests with pre-existing model variance failures)
 - **Mock mode works offline** — you just saw it run without any Azure credentials; production is a config flip
 
 ### What's Next
-- **Production deployment**: Add `gpt-4o-realtime-preview` deployment to Azure OpenAI (Bicep already updated in `infra/`) and set `MODE=production` in `.env`
+- **P2–P4 User Stories**: Voice escalation, hybrid text+voice, accessibility hardening
 - **Accessibility hardening**: WCAG 2.1 AA audit; JAWS/NVDA screen reader testing; VAD threshold tuning per environment
 - **Analytics**: Voice vs. text resolution rate comparison; per-department intent accuracy; session duration benchmarks
+
+### Deployment Notes (v1)
+- **Auth**: Managed identity (`ManagedIdentityCredential`) — API key auth is disabled by Azure subscription policy (`disableLocalAuth: true`)
+- **Ephemeral tokens**: Backend calls `/openai/v1/realtime/client_secrets` with Bearer token, returns top-level `value` field
+- **WebRTC**: Frontend connects to `{endpoint}/openai/v1/realtime/calls` with ephemeral token as Bearer auth
+- **Docker**: `.dockerignore` prevents `.env` from being baked into container images (critical for managed identity auth)
+- **Dependencies**: `aiohttp>=3.9.0` required for async credential acquisition
 
 ---
 

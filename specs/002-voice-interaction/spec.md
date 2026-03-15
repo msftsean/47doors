@@ -2,8 +2,8 @@
 
 **Feature Branch**: `002-voice-interaction`
 **Created**: 2026-02-06
-**Updated**: 2026-03-13
-**Status**: Active — aligned with Constitution v1.1.0
+**Updated**: 2026-03-15
+**Status**: ✅ MVP Live on Azure — P1 (Core Voice) + P5 (Degradation) deployed to Azure Container Apps
 **Constitution**: v1.1.0 (voice-specific principles in III, VI, VII)
 **Input**: User description: "Add real-time voice conversation using Azure OpenAI GPT-4o Realtime API via WebRTC, enabling students to speak naturally with the support agent instead of typing"
 **MVP Scope**: User Stories P1 (Core Voice) + P5 (Degradation) + Eval Pack — Azure Container Apps deployment (local dev as fallback)

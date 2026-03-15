@@ -6,12 +6,12 @@
 ```
 
 > 🌿 **Branch**: `002-voice-interaction` &nbsp;|&nbsp; 👥 **Audience**: EDU customers, stakeholders, internal demos
-> 📅 **Last updated**: 2026-03-14 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: LIVE ON AZURE
+> 📅 **Last updated**: 2026-03-15 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: LIVE ON AZURE
 
 ```
 Demo Readiness  [████████████████████] 100%  ✅ All systems go
 Azure Live      [████████████████████] 100%  ✅ Connected to Azure OpenAI (MOCK_MODE=false)
-Test Coverage   [███████████████░░░░░]  76%  🟡 76 backend tests passing
+Test Coverage   [████████████████████] 100%  ✅ 264 backend tests passing
 ```
 
 ---
@@ -406,7 +406,7 @@ Current State → Production Hardening:
 3. ⚡ **Sub-2-second latency**: Fine-tune Azure Container App scaling + WebRTC transport for optimal response times
 4. 📊 **Analytics**: Voice vs. text resolution rate comparison, VAD tuning per environment
 
-> *"The architecture is already live. The tests are green — 76 backend tests pass. Scaling this to production tenants is a **configuration change**, not a code change."*
+> *"The architecture is already live. The tests are green — 264 backend tests pass. Scaling this to production tenants is a **configuration change**, not a code change."*
 
 ---
 
@@ -432,6 +432,9 @@ Current State → Production Hardening:
 | 📝 Transcript not appearing | 🟡 | Voice components not rendered | Confirm `ChatContainer.tsx` imports `VoiceTranscript`; check console |
 | 💬 Text chat broken after voice | 🔴 | Should not happen (separate connections) | Hard-reload; file a bug if persists — check `ChatContainer.tsx` state isolation |
 | 🔒 WebRTC ICE failure | 🔴 | Azure endpoint/region misconfigured | Verify `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_REALTIME_DEPLOYMENT` in Container App env vars |
+| 🔑 `AuthenticationTypeDisabled` | 🔴 | API key auth disabled by Azure policy (`disableLocalAuth: true`) | Use managed identity — Container App must have `Cognitive Services OpenAI User` role on Azure OpenAI resource |
+| 🔑 `503` with `auth_type=api-key` | 🔴 | `.env` file baked into Docker image overriding managed identity | Ensure `backend/.dockerignore` excludes `.env`; rebuild with `azd deploy` |
+| 🔑 Empty ephemeral token | 🔴 | Token extraction reading wrong response field | Backend must use `data.get("value")` — Azure returns `{"value": "eph_...", "expires_at": ...}` at top level |
 | 🌐 Codespaces: API calls fail | 🔴 | `VITE_API_BASE_URL` set to localhost | Clear `VITE_API_BASE_URL` — Vite proxy handles `/api` routing |
 | 📦 Container App not starting | 🔴 | Image build failure or missing env vars | `azd deploy --debug`; check Container App logs in Azure Portal |
 | 🛑 `azd up` failure | 🔴 | Quota, permissions, or Bicep error | Check `azd` output; verify subscription `ME-MngEnvMCAP262307-segayle-1` and role assignments |

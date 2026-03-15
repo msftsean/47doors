@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Voice Interaction Feature** (`002-voice-interaction`): Real-time spoken conversation channel via Azure OpenAI GPT-4o Realtime API + WebRTC
+  - `POST /api/realtime/session` — ephemeral token issuance for WebRTC auth
+  - `WS /api/realtime/ws` — tool call relay to 3-agent pipeline
+  - `GET /api/realtime/health` — voice availability check
+  - `AzureRealtimeService` — production implementation with managed identity (`ManagedIdentityCredential`)
+  - `MockRealtimeService` — full simulation for demos and CI (no Azure credentials)
+  - Frontend: `useVoice` hook (WebRTC state machine), `VoiceMicButton` (6-state toggle), `VoiceTranscript`, `VoiceStatusIndicator`
+  - 4 voice tools: `analyze_and_route_query`, `check_ticket_status`, `search_knowledge_base`, `escalate_to_human`
+  - Graceful degradation: mic button hidden when voice unavailable, text chat unaffected
+  - Voice system prompt with PII filtering and natural speech output
+  - Bicep: `gpt-4o-realtime-preview` model deployment
+  - Demo runbook, feature summary, quickstart, manual smoke tests, eval harness
+
 - **Boot Camp Labs Curriculum** (`001-boot-camp-labs`): Complete 8-hour boot camp curriculum with 8 progressive lab exercises
   - Lab 00: Environment Setup (30 min) - Prerequisites verification and Azure configuration
   - Lab 01: Understanding AI Agents (90 min) - Three-agent pattern and intent classification
@@ -53,7 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated main README.md with boot camp curriculum section and lab links
-- Added `.dockerignore` for optimized container builds
+- Added `.dockerignore` for optimized container builds — prevents `.env` from leaking into Docker images
+- Switched Azure OpenAI auth to managed identity (`ManagedIdentityCredential`) — API key auth disabled by Azure policy
+- Added `aiohttp>=3.9.0` to both `requirements.txt` and `pyproject.toml` for async credential acquisition
 - Renamed all references from "hackathon" to "boot camp" across the codebase
 
 ### Fixed

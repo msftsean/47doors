@@ -1,8 +1,9 @@
 # Implementation Plan: Voice Interaction
 
-**Branch**: `002-voice-interaction` | **Date**: 2026-03-13 | **Spec**: [spec.md](./spec.md)
+**Branch**: `002-voice-interaction` | **Date**: 2026-03-15 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/002-voice-interaction/spec.md`
 **Constitution**: v1.1.0 (voice-specific principles in III, VI, VII)
+**Status**: ✅ MVP Live on Azure — Phases 1-3 + Phase 7 complete
 
 ## Summary
 
@@ -106,3 +107,21 @@ frontend/
 ## Complexity Tracking
 
 > No Constitution Check violations. No complexity justifications required.
+
+## Implementation Notes (Post-Deployment)
+
+### Authentication Pivot
+The original plan called for API key auth (`api-key` header). During deployment, Azure subscription policy `MngEnvMCAP262307` enforced `disableLocalAuth: true`, requiring a full pivot to managed identity:
+- `AzureRealtimeService` uses `ManagedIdentityCredential` (not `DefaultAzureCredential`)
+- Container App system-assigned MI has `Cognitive Services OpenAI User` role
+- Token scope: `https://cognitiveservices.azure.com/.default`
+- `backend/.dockerignore` created to prevent `.env` (containing stale API key) from leaking into Docker image
+
+### API Endpoint Discovery
+- Ephemeral token: `POST {endpoint}/openai/v1/realtime/client_secrets` (not `/openai/realtime/sessions`)
+- Response format: `{"value": "eph_...", "expires_at": "...", "session": {...}}` (top-level, not nested under `client_secret`)
+- WebRTC SDP exchange: `POST {endpoint}/openai/v1/realtime/calls` (not `?api-version=...&deployment=...`)
+
+### Dependencies Added
+- `aiohttp>=3.9.0` — required by `azure.identity.aio` for async credential acquisition
+- Must be added to BOTH `requirements.txt` AND `pyproject.toml`
