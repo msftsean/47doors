@@ -174,6 +174,10 @@ The 47 Doors project constitution (v1.1.0) defines non-negotiable engineering pr
 - **WebRTC**: Frontend connects to `{endpoint}/openai/v1/realtime/calls` with ephemeral token as Bearer auth
 - **Docker**: `.dockerignore` prevents `.env` from being baked into container images (critical for managed identity auth)
 - **Dependencies**: `aiohttp>=3.9.0` required for async credential acquisition
+- **Default voice**: `marin` (OpenAI recommended). Available: alloy, ash, ballad, coral, echo, sage, shimmer, verse, marin, cedar
+- **GA API format**: Session config uses nested `audio.input.transcription` / `audio.output.voice` (preview flat fields cause HTTP 500 in `/client_secrets`)
+- **Transcript events**: GA uses `response.output_audio_transcript.done` (not preview's `response.audio_transcript.done`); frontend has fallback extraction from `response.output_item.done`
+- **Fallback retry**: Backend retries `/client_secrets` without `audio.output.transcription` on 5xx (field rejected by GA endpoint)
 
 ---
 

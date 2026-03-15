@@ -229,7 +229,7 @@ Student (browser)
   - voice_enabled (bool)
   - azure_openai_realtime_deployment (str)
   - azure_openai_realtime_api_version (str, "2025-04-01-preview")
-  - realtime_voice (str, "alloy")
+  - realtime_voice (str, "marin")
   - realtime_vad_threshold (float, 0.5)
 
 - T002: RealtimeServiceInterface (services/interfaces.py)

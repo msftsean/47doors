@@ -2,8 +2,8 @@
 
 **Feature Branch**: `002-voice-interaction`
 **Created**: 2026-02-06
-**Updated**: 2026-03-15
-**Status**: ✅ MVP Live on Azure — P1 (Core Voice) + P5 (Degradation) deployed to Azure Container Apps
+**Updated**: 2026-03-16
+**Status**: ✅ MVP Live on Azure — P1 (Core Voice) + P5 (Degradation) deployed to Azure Container Apps, voice transcripts fully working
 **Constitution**: v1.1.0 (voice-specific principles in III, VI, VII)
 **Input**: User description: "Add real-time voice conversation using Azure OpenAI GPT-4o Realtime API via WebRTC, enabling students to speak naturally with the support agent instead of typing"
 **MVP Scope**: User Stories P1 (Core Voice) + P5 (Degradation) + Eval Pack — Azure Container Apps deployment (local dev as fallback)
@@ -197,6 +197,37 @@ When the Realtime API is unavailable, the microphone fails, or network condition
 - Students have access to a microphone (built-in or external) on their device
 - The Realtime API supports function/tool calling with custom tools
 - Ephemeral token authentication is supported for WebRTC connections to Azure OpenAI
+
+## Azure OpenAI Realtime API: GA vs Preview Format (Lessons Learned)
+
+The GA endpoint has significant differences from preview documentation. These discoveries were made during production deployment and are critical for future maintenance.
+
+### Endpoint Format (GA)
+- **Ephemeral token**: `POST {endpoint}/openai/v1/realtime/client_secrets` — no `api-version` param, no deployment in URL path
+- **Model/deployment**: Specified in request body as `"model": "{deployment_name}"`, not in URL
+- **WebRTC SDP exchange**: `POST {endpoint}/openai/v1/realtime/calls`
+
+### Session Config Format (GA uses nested structure)
+- **Preview (flat)**: `"input_audio_transcription": {"model": "whisper-1"}`, `"voice": "marin"`
+- **GA (nested)**: `"audio": {"input": {"transcription": {"model": "whisper-1"}}, "output": {"voice": "marin"}}`
+- Preview flat fields in `/client_secrets` body cause **HTTP 500** — they are silently ignored in `session.update`
+- `audio.output.transcription` in `/client_secrets` also causes **HTTP 500** — backend has a fallback retry that strips this field
+
+### Event Names (GA differs from preview)
+| Event | Preview Name | GA Name |
+|-------|-------------|---------|
+| Agent transcript done | `response.audio_transcript.done` | `response.output_audio_transcript.done` |
+| Agent transcript delta | `response.audio_transcript.delta` | `response.output_audio_transcript.delta` |
+| User transcript | `conversation.item.input_audio_transcription.completed` | Same in both |
+| Fallback transcript | N/A | `response.output_item.done` (contains transcript in `item.content[].transcript`) |
+
+### Default Voice
+- Default voice is **`marin`** (OpenAI recommended). Available voices: alloy, ash, ballad, coral, echo, sage, shimmer, verse, marin, cedar.
+
+### Authentication
+- Key-based auth is **disabled** by Azure policy (`disableLocalAuth: true`)
+- Must use managed identity with `Cognitive Services OpenAI User` role
+- Token scope: `https://cognitiveservices.azure.com/.default`
 
 ## Dependencies
 

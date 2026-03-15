@@ -122,6 +122,14 @@ The original plan called for API key auth (`api-key` header). During deployment,
 - Response format: `{"value": "eph_...", "expires_at": "...", "session": {...}}` (top-level, not nested under `client_secret`)
 - WebRTC SDP exchange: `POST {endpoint}/openai/v1/realtime/calls` (not `?api-version=...&deployment=...`)
 
+### GA vs Preview API Format (Critical)
+- **Session config**: GA uses nested `audio.input.transcription` / `audio.output.voice` (preview flat fields cause HTTP 500 in `/client_secrets`)
+- **`audio.output.transcription`**: Rejected by `/client_secrets` (HTTP 500). Backend retries without it on failure.
+- **Event names**: GA uses `response.output_audio_transcript.done` (NOT preview's `response.audio_transcript.done`)
+- **Fallback transcript**: Frontend extracts from `response.output_item.done` → `item.content[].transcript` when primary events missing
+- **`session.update` via data channel**: Preview flat `output_audio_transcription` works here as belt-and-suspenders safety net
+- **Default voice**: Changed from `alloy` to `marin` (OpenAI recommended)
+
 ### Dependencies Added
 - `aiohttp>=3.9.0` — required by `azure.identity.aio` for async credential acquisition
 - Must be added to BOTH `requirements.txt` AND `pyproject.toml`

@@ -24,6 +24,7 @@ The **Universal Front Door Support Agent** is a three-agent AI system that provi
 - 🎫 **Creates tickets** automatically in ServiceNow
 - 📚 **Retrieves knowledge** articles for self-service
 - 👤 **Escalates to humans** for policy-related requests
+- 🎤 **Voice interaction** via Azure OpenAI GPT-4o Realtime API with WebRTC — speak naturally with the same AI pipeline
 
 **🎯 Target Impact**: Increase first-contact resolution from **40%** to **65%**
 

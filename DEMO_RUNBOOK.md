@@ -6,7 +6,7 @@
 ```
 
 > 👥 **Audience**: EDU customers, stakeholders, internal demos
-> 📅 **Last updated**: 2026-03-15 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: LIVE ON AZURE
+> 📅 **Last updated**: 2026-03-16 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: LIVE ON AZURE
 
 ```
 Demo Readiness  [████████████████████] 100%  ✅ All systems go
@@ -429,7 +429,9 @@ Current State → Production Hardening:
 | 🎤 "Voice unavailable" banner | 🟡 | Backend not running or voice disabled | Confirm Container App is running; check `VOICE_ENABLED=true` env var |
 | 🚫 `503` on `POST /session` | 🔴 | `VOICE_ENABLED=false` in config | Set `VOICE_ENABLED=true` on Container App → restart revision |
 | 🎤 Mic button not shown | 🟡 | `realtime_available: false` from health check | `GET https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health`; confirm Container App running |
-| 📝 Transcript not appearing | 🟡 | Azure OpenAI Realtime API requires explicit `input_audio_transcription` config | Verify `input_audio_transcription: {model: "whisper-1"}` is set in session config (backend `realtime.py`); check that `dc.onopen` sends `session.update` with transcription config (frontend `useVoice.ts`) |
+| 📝 Transcript not appearing (user) | 🟡 | Azure OpenAI Realtime API requires explicit `input_audio_transcription` config | Verify `audio.input.transcription: {model: "whisper-1"}` is set in session config (GA nested format in backend `realtime.py`); check that `dc.onopen` sends `session.update` with transcription config (frontend `useVoice.ts`) |
+| 📝 Transcript not appearing (agent) | 🟡 | GA API uses different event name than preview docs | Frontend must handle `response.output_audio_transcript.done` (GA) not `response.audio_transcript.done` (preview); fallback: extract from `response.output_item.done` → `item.content[].transcript` |
+| 🔴 503 on `/client_secrets` with full config | 🔴 | GA API rejects preview flat fields and `audio.output.transcription` in `/client_secrets` body | Backend has automatic fallback: first request with full config, on 5xx retries without `audio.output.transcription`; preview flat fields (`voice`, `input_audio_transcription`) also cause 500 — use GA nested format |
 | 💬 Text chat broken after voice | 🔴 | Should not happen (separate connections) | Hard-reload; file a bug if persists — check `ChatContainer.tsx` state isolation |
 | 🔒 WebRTC ICE failure | 🔴 | Azure endpoint/region misconfigured | Verify `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_REALTIME_DEPLOYMENT` in Container App env vars |
 | 🔑 `AuthenticationTypeDisabled` | 🔴 | API key auth disabled by Azure policy (`disableLocalAuth: true`) | Use managed identity — Container App must have `Cognitive Services OpenAI User` role on Azure OpenAI resource |

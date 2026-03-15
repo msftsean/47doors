@@ -97,8 +97,8 @@ class RealtimeSessionRequest(BaseModel):
         description="Existing session ID. Auto-generated (UUID) if not provided."
     )
     voice: str = Field(
-        default="alloy",
-        description="Azure OpenAI voice name (alloy, echo, fable, onyx, nova, shimmer)"
+        default="marin",
+        description="Azure OpenAI voice name (alloy, ash, ballad, coral, echo, sage, shimmer, verse, marin, cedar)"
     )
     instructions: Optional[str] = Field(
         default=None,
