@@ -138,7 +138,10 @@ export function useVoice(options: UseVoiceOptions = {}) {
             console.log('[DC Event]', data.type);
           }
 
-          if (data.type === 'response.audio_transcript.done') {
+          if (
+            data.type === 'response.output_audio_transcript.done' ||
+            data.type === 'response.audio_transcript.done'
+          ) {
             const message: VoiceMessage = {
               id: crypto.randomUUID(),
               content: data.transcript || '',
