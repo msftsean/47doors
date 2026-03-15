@@ -49,3 +49,14 @@
 - All response models use Pydantic v2 schemas defined in `backend/app/models/`.
 - Health check pattern: always returns HTTP 200; use field values (`realtime_available`) for capability detection, not HTTP status.
 - WebSocket close code conventions: 4001 = invalid token, 4002 = session expired (custom range above 4000 for app-level errors).
+
+### 2026-03-14 — session.update via Data Channel for Transcription
+
+**What:** Added `dc.onopen` handler in `useVoice.ts` that sends a `session.update` event through the WebRTC data channel to enable `input_audio_transcription` (whisper-1 model). Without this, the Azure OpenAI Realtime API never emits `conversation.item.input_audio_transcription.completed` events — meaning user speech is never transcribed.
+
+**Why belt-and-suspenders:** The backend (Tank) is also being updated to include `input_audio_transcription` in the initial session config. The frontend `session.update` is a safety net — if the backend config is ever missing or the API ignores the initial config, the data-channel message ensures transcription is active before we start listening.
+
+**Side benefit:** Moved the `LISTENING` dispatch into `dc.onopen` instead of relying on `pc.onconnectionstatechange`. The data channel being open is the actual prerequisite for sending/receiving events — more semantically correct than peer connection state alone.
+
+**Key files:**
+- `frontend/src/hooks/useVoice.ts` — added `dc.onopen` handler (lines 106–116)

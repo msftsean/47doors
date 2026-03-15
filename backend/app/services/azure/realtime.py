@@ -123,11 +123,13 @@ class AzureRealtimeService(RealtimeServiceInterface):
                         "voice": voice,
                     },
                 },
+                "input_audio_transcription": {
+                    "model": "whisper-1",
+                },
             },
         }
         
-        if instructions:
-            session_config["session"]["instructions"] = instructions
+        session_config["session"]["instructions"] = instructions or VOICE_SYSTEM_PROMPT
 
         try:
             response = await self._client.post(url, headers=headers, json=session_config)

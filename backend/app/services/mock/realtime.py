@@ -9,6 +9,7 @@ from typing import Optional
 from uuid import uuid4
 
 from app.models.voice_schemas import RealtimeSessionResponse, ToolCallResponse, ToolDefinition
+from app.services.azure.realtime import VOICE_SYSTEM_PROMPT
 from app.services.interfaces import RealtimeServiceInterface
 
 
@@ -22,6 +23,15 @@ class MockRealtimeService(RealtimeServiceInterface):
         instructions: Optional[str] = None,
     ) -> RealtimeSessionResponse:
         """Return a mock ephemeral session token."""
+        self._last_session_config = {
+            "session": {
+                "type": "realtime",
+                "model": "gpt-4o-realtime-preview",
+                "audio": {"output": {"voice": voice}},
+                "input_audio_transcription": {"model": "whisper-1"},
+                "instructions": instructions or VOICE_SYSTEM_PROMPT,
+            },
+        }
         return RealtimeSessionResponse(
             session_id=session_id,
             token=f"eph_mock_{uuid4()}",

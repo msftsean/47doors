@@ -188,3 +188,24 @@
 - **Result**: 503 errors eliminated, realtime session endpoint fully operational, 76 voice tests passing
 - **Commit**: `c44b389` — "feat(voice): Re-enable API key auth, add async DefaultAzureCredential with fallback"
 - **Pushed**: ✅ to main
+
+### 2026-03-15 — Fix Voice Transcript Config (Session Config Patch)
+
+**Problem**
+
+- Voice feature was live but transcripts never appeared in the UI.
+- Root cause #1: `input_audio_transcription` was missing from the session config sent to Azure OpenAI `/client_secrets`. Without it, the Realtime API never emits `conversation.item.input_audio_transcription.completed` events — user speech is never transcribed.
+- Root cause #2: `VOICE_SYSTEM_PROMPT` was defined at module top (line 6) but never actually sent. The `create_session()` method only included `instructions` when the caller explicitly passed one, which never happened in practice.
+
+**Fix applied**
+
+1. **`backend/app/services/azure/realtime.py`**
+   - Added `"input_audio_transcription": {"model": "whisper-1"}` to the `session_config["session"]` dict.
+   - Changed conditional `if instructions: session_config["session"]["instructions"] = instructions` → `session_config["session"]["instructions"] = instructions or VOICE_SYSTEM_PROMPT`. Now the system prompt is always sent.
+
+2. **`backend/app/services/mock/realtime.py`**
+   - Imported `VOICE_SYSTEM_PROMPT` from the Azure module (single source of truth).
+   - Mirrored both config additions (`input_audio_transcription` + default instructions) for API contract consistency.
+   - Stored config in `self._last_session_config` for test introspection.
+
+**Verification:** 76 voice tests passing. Import checks clean for both Azure and mock services.

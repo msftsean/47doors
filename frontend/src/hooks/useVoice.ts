@@ -103,6 +103,18 @@ export function useVoice(options: UseVoiceOptions = {}) {
       const dc = pc.createDataChannel('oai-events');
       dataChannelRef.current = dc;
 
+      dc.onopen = () => {
+        dc.send(JSON.stringify({
+          type: 'session.update',
+          session: {
+            input_audio_transcription: {
+              model: 'whisper-1',
+            },
+          },
+        }));
+        dispatch({ type: 'LISTENING' });
+      };
+
       dc.onmessage = async (event) => {
         try {
           const data = JSON.parse(event.data as string);
