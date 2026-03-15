@@ -209,3 +209,7 @@
    - Stored config in `self._last_session_config` for test introspection.
 
 **Verification:** 76 voice tests passing. Import checks clean for both Azure and mock services.
+
+**Team Coordination:** Paired with Switch's frontend `session.update` data-channel implementation (parallel spawn 2026-03-15T01:53) for belt-and-suspenders transcription enablement. Backend config change ensures system prompt and transcription are always available; frontend change adds runtime safety net.
+
+**Orchestration Log:** `.squad/orchestration-log/2026-03-15T01-53-tank.md`

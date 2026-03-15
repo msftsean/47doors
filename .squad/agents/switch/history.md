@@ -60,3 +60,9 @@
 
 **Key files:**
 - `frontend/src/hooks/useVoice.ts` — added `dc.onopen` handler (lines 106–116)
+
+**Team Coordination:** Coordinated with Tank's parallel backend session config changes (spawn 2026-03-15T01:53). Both changes are idempotent and reinforce each other. Frontend ensures transcription is active; backend ensures system prompt is sent.
+
+**Verification:** TypeScript compiles clean. Code review passed (Morpheus).
+
+**Orchestration Log:** `.squad/orchestration-log/2026-03-15T01-53-switch.md`

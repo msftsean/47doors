@@ -185,6 +185,54 @@
 - `backend/app/core/dependencies.py` — Pass None when unset
 - `tests/voice/*.py` — 76 tests green
 
+### Voice Transcript Session Config
+**Timestamp:** 2026-03-15  
+**Authority:** Tank (Backend Dev)  
+**Status:** ✅ Applied
+
+**Problem:** Voice transcripts never appeared in the UI despite deployment. Two configuration gaps in Realtime API session config prevented transcription.
+
+**Decision:**
+
+1. **Enable `input_audio_transcription` in session config**
+   - Added `"input_audio_transcription": {"model": "whisper-1"}` to the session config sent to Azure OpenAI's `/client_secrets` endpoint
+   - Without this field, Azure's Realtime API does not emit `conversation.item.input_audio_transcription.completed` events — user speech is never converted to text
+
+2. **Default instructions to `VOICE_SYSTEM_PROMPT`**
+   - Changed `create_session()` to always include instructions, defaulting to `VOICE_SYSTEM_PROMPT` when not explicitly provided
+   - The prompt was defined at module top but never wired in; without it, voice model operates with no PII redaction rules, ticket conventions, or conversational guidance
+
+3. **Mock service parity**
+   - Mirrored both changes in `MockRealtimeService` for API contract consistency
+   - Mock imports `VOICE_SYSTEM_PROMPT` from Azure module (single source of truth)
+
+**Affected Files:**
+- `backend/app/services/azure/realtime.py` — Session config + instructions default
+- `backend/app/services/mock/realtime.py` — Matching config for test parity
+
+**Verification:** 76 voice tests passing. Import validation clean for both services.
+
+### Frontend session.update for Transcription Enablement
+**Timestamp:** 2026-03-15  
+**Authority:** Switch (Frontend Dev)  
+**Status:** ✅ Applied
+
+**Problem:** Azure OpenAI Realtime API requires `input_audio_transcription` to be explicitly enabled. Without it, API produces responses but never emits transcription events.
+
+**Decision:** Send a `session.update` event via WebRTC data channel (`dc.onopen`) immediately after it opens, enabling `input_audio_transcription` with `whisper-1`.
+
+**Belt-and-Suspenders Approach:**
+- **Backend (Tank):** Includes `input_audio_transcription` in initial session config
+- **Frontend (Switch):** Sends `session.update` through data channel as safety net
+- Both paths are idempotent — redundant messages cause no errors
+
+**Side Effect:** Moved `dispatch({ type: 'LISTENING' })` from `pc.onconnectionstatechange` into `dc.onopen`. Data channel being open is the actual prerequisite for event exchange — semantically more correct.
+
+**Affected Files:**
+- `frontend/src/hooks/useVoice.ts` — Added `dc.onopen` handler
+
+**Verification:** TypeScript compiles cleanly. Code review passed.
+
 ## Governance
 
 - All meaningful changes require team consensus
