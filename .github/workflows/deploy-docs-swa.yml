@@ -3,7 +3,7 @@ name: Deploy Docs to Azure Static Web Apps
 on:
   push:
     branches:
-      - 002-voice-interaction
+      - main
     paths:
       - "docs/**"
   workflow_dispatch:

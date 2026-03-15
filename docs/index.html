@@ -226,9 +226,8 @@
 ║              speak naturally · be heard · get answers                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝</code>
     <div class="hero-meta">
-      <span class="badge">🌿 <strong>Branch:</strong> 002-voice-interaction</span>
       <span class="badge">👥 <strong>Audience:</strong> EDU customers &amp; stakeholders</span>
-      <span class="badge">📅 <strong>Updated:</strong> 2026-03-14</span>
+      <span class="badge">📅 <strong>Updated:</strong> 2026-03-15</span>
       <span class="badge">⏱️ <strong>Demo time:</strong> 12–15 min</span>
       <span class="badge">🟢 <strong>Status:</strong> LIVE ON AZURE</span>
     </div>
@@ -706,7 +705,7 @@ curl https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurec
           <tr><td>🎤 "Voice unavailable" banner</td><td style="text-align:center" class="yellow">🟡</td><td>Backend not running or voice disabled</td><td>Confirm Container App is running; check <code>VOICE_ENABLED=true</code> env var</td></tr>
           <tr><td>🚫 <code>503</code> on <code>POST /session</code></td><td style="text-align:center" class="red">🔴</td><td><code>VOICE_ENABLED=false</code> in config</td><td>Set <code>VOICE_ENABLED=true</code> on Container App → restart revision</td></tr>
           <tr><td>🎤 Mic button not shown</td><td style="text-align:center" class="yellow">🟡</td><td><code>realtime_available: false</code> from health check</td><td><code>GET /api/realtime/health</code>; confirm Container App running</td></tr>
-          <tr><td>📝 Transcript not appearing</td><td style="text-align:center" class="yellow">🟡</td><td>Voice components not rendered</td><td>Confirm <code>ChatContainer.tsx</code> imports <code>VoiceTranscript</code>; check console</td></tr>
+          <tr><td>📝 Transcript not appearing</td><td style="text-align:center" class="yellow">🟡</td><td>Azure OpenAI Realtime API requires explicit <code>input_audio_transcription</code> config</td><td>Verify <code>input_audio_transcription: {model: "whisper-1"}</code> is set in session config (backend <code>realtime.py</code>); check that <code>dc.onopen</code> sends <code>session.update</code> with transcription config (frontend <code>useVoice.ts</code>)</td></tr>
           <tr><td>💬 Text chat broken after voice</td><td style="text-align:center" class="red">🔴</td><td>Should not happen (separate connections)</td><td>Hard-reload; file a bug if persists — check <code>ChatContainer.tsx</code> state isolation</td></tr>
           <tr><td>🔒 WebRTC ICE failure</td><td style="text-align:center" class="red">🔴</td><td>Azure endpoint/region misconfigured</td><td>Verify <code>AZURE_OPENAI_ENDPOINT</code> + <code>AZURE_OPENAI_REALTIME_DEPLOYMENT</code> in env vars</td></tr>
           <tr><td>🌐 Codespaces: API calls fail</td><td style="text-align:center" class="red">🔴</td><td><code>VITE_API_BASE_URL</code> set to localhost</td><td>Clear <code>VITE_API_BASE_URL</code> — Vite proxy handles <code>/api</code> routing</td></tr>
@@ -774,10 +773,10 @@ Student → speaks or types → instant routing → right team → resolved ✅<
 <footer>
   <code class="footer-ascii">╔══════════════════════════════════════════════════════════════════════════════╗
 ║  📋  Runbook maintained by the 47 Doors engineering team                    ║
-║  🐛  Issues? Open a GitHub issue on branch: 002-voice-interaction           ║
+║  🐛  Issues? Open a GitHub issue on the repository                          ║
 ║  ☁️   Azure-first: `azd up` → live on Azure OpenAI (MOCK_MODE=false)         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝</code>
-  <p>47 Doors Voice Runbook · Branch <a href="https://github.com/47doors/47doors/tree/002-voice-interaction">002-voice-interaction</a> · Styled with Anthropic/Claude design language</p>
+  <p>47 Doors Voice Runbook · <a href="https://github.com/msftsean/47doors">msftsean/47doors</a> · Styled with Anthropic/Claude design language</p>
 </footer>
 
 <!-- ─── Back to Top ───────────────────────────────────────────────── -->
