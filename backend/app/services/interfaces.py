@@ -18,6 +18,7 @@ from app.models.schemas import (
     TicketSummary,
 )
 from app.models.enums import Department, Priority, TicketStatus
+from app.models.voice_schemas import RealtimeSessionResponse, ToolDefinition, ToolCallResponse
 
 
 class LLMServiceInterface(ABC):
@@ -493,5 +494,58 @@ class BrandingServiceInterface(ABC):
 
         Returns:
             Tuple of (is_healthy, latency_ms, error_message).
+        """
+        pass
+
+
+class RealtimeServiceInterface(ABC):
+    """Interface for Azure OpenAI Realtime API service."""
+
+    @abstractmethod
+    async def create_session(
+        self,
+        session_id: str,
+        voice: str,
+        instructions: Optional[str] = None,
+    ) -> RealtimeSessionResponse:
+        """Create an ephemeral realtime session with a short-lived token.
+
+        Args:
+            session_id: Unique session identifier
+            voice: Azure voice name (alloy, echo, etc.)
+            instructions: Optional system prompt override
+
+        Returns:
+            RealtimeSessionResponse with ephemeral token (≤60s TTL)
+        """
+        pass
+
+    @abstractmethod
+    async def get_tool_definitions(self) -> list[ToolDefinition]:
+        """Return tool definitions for the 4 pipeline tools.
+
+        Returns:
+            List of ToolDefinition objects for the Realtime API
+        """
+        pass
+
+    @abstractmethod
+    async def execute_tool(
+        self,
+        call_id: str,
+        tool_name: str,
+        arguments: dict,
+        session_id: str,
+    ) -> ToolCallResponse:
+        """Execute a tool call from the Realtime API through the pipeline.
+
+        Args:
+            call_id: Unique call identifier from Realtime API
+            tool_name: Name of tool to invoke
+            arguments: Parsed arguments for the tool
+            session_id: Session context for the call
+
+        Returns:
+            ToolCallResponse with PII-filtered result
         """
         pass

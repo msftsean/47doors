@@ -6,7 +6,7 @@ Supports both environment variables and .env files.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     )
     azure_openai_api_key: str = Field(
         default="",
-        description="Azure OpenAI API key"
+        description="Azure OpenAI API key (optional - uses managed identity if not provided)"
     )
     azure_openai_deployment: str = Field(
         default="gpt-4o",
@@ -173,6 +173,41 @@ class Settings(BaseSettings):
     sla_high_hours: int = Field(default=4)
     sla_medium_hours: int = Field(default=24)
     sla_low_hours: int = Field(default=72)
+
+    # ==========================================================================
+    # Voice / Realtime API Settings
+    # ==========================================================================
+    voice_enabled: bool = Field(
+        default=True,
+        description="Kill switch for the voice feature; auto-disabled when deployment is unset outside mock mode"
+    )
+    azure_openai_realtime_deployment: str = Field(
+        default="",
+        description="Azure OpenAI Realtime API deployment name (e.g. gpt-4o-realtime-preview)"
+    )
+    azure_openai_realtime_api_version: str = Field(
+        default="2025-04-01-preview",
+        description="API version for the Azure OpenAI Realtime endpoint"
+    )
+    realtime_voice: str = Field(
+        default="alloy",
+        description="Azure OpenAI voice selection for Realtime API (e.g. alloy, shimmer, echo)"
+    )
+    realtime_vad_threshold_ms: int = Field(
+        default=500,
+        description="Voice Activity Detection silence threshold in milliseconds"
+    )
+    max_voice_session_duration: int = Field(
+        default=600,
+        description="Maximum voice session duration in seconds (default 10 minutes)"
+    )
+
+    @model_validator(mode="after")
+    def _auto_disable_voice(self) -> "Settings":
+        """Disable voice when no realtime deployment is configured and not in mock mode."""
+        if not self.azure_openai_realtime_deployment and not self.mock_mode:
+            self.voice_enabled = False
+        return self
 
     @property
     def is_production(self) -> bool:

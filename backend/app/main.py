@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router
+from app.api.realtime import router as realtime_router
 from app.core.config import get_settings
 
 
@@ -75,6 +76,7 @@ def create_app() -> FastAPI:
 
     # Include API routes
     app.include_router(router, prefix=settings.api_prefix)
+    app.include_router(realtime_router, prefix=f"{settings.api_prefix}/realtime", tags=["Voice Realtime"])
 
     return app
 

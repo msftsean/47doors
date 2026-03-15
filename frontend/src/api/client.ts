@@ -15,6 +15,7 @@ import type {
   ApiError,
   Department,
 } from '../types';
+import type { RealtimeSessionResponse } from '../types/voice';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
@@ -236,4 +237,33 @@ export async function updateBranding(
     method: 'PUT',
     body: JSON.stringify(update),
   });
+}
+
+// =============================================================================
+// Voice Realtime API
+// =============================================================================
+
+/**
+ * Create a realtime voice session with an ephemeral token.
+ * POST /api/realtime/session
+ */
+export async function createRealtimeSession(
+  options: { sessionId?: string; voice?: string; instructions?: string } = {}
+): Promise<RealtimeSessionResponse> {
+  return request<RealtimeSessionResponse>('/realtime/session', {
+    method: 'POST',
+    body: JSON.stringify({
+      session_id: options.sessionId,
+      voice: options.voice ?? 'alloy',
+      instructions: options.instructions,
+    }),
+  });
+}
+
+/** Error thrown when voice realtime API is unavailable. */
+export class VoiceUnavailableError extends Error {
+  constructor(message = 'Voice realtime API is unavailable') {
+    super(message);
+    this.name = 'VoiceUnavailableError';
+  }
 }

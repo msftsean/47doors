@@ -1,1086 +1,860 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo Run of Show - University Front Door Support Agent</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>47 Doors — Voice Feature Demo Runbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:            #0f0f1a;
+      --surface:       #1a1a2e;
+      --surface2:      #22223b;
+      --purple:        #7c3aed;
+      --purple-dark:   #6d28d9;
+      --purple-lite:   #a78bfa;
+      --purple-dim:    rgba(124,58,237,0.15);
+      --purple-border: rgba(124,58,237,0.25);
+      --text:          #e2e8f0;
+      --text-muted:    #94a3b8;
+      --text-dim:      #64748b;
+      --green:         #34d399;
+      --yellow:        #fbbf24;
+      --red:           #f87171;
+      --nav-h:         64px;
+      --radius:        12px;
+      --radius-sm:     8px;
+    }
+    html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--purple-dark) var(--surface); }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--purple-dark); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--purple); }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #2d3748;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-        }
+    /* ─── Nav ────────────────────────────────────────────────────── */
+    nav { position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h); background: rgba(15,15,26,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--purple-border); z-index: 1000; display: flex; align-items: center; padding: 0 24px; }
+    .nav-brand { font-weight: 700; font-size: 1rem; color: var(--purple-lite); white-space: nowrap; margin-right: 24px; letter-spacing: -0.01em; }
+    .nav-brand span { color: var(--text-muted); font-weight: 400; }
+    .nav-links { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); text-decoration: none; white-space: nowrap; transition: all 0.2s ease; border: 1px solid transparent; }
+    .nav-links a:hover { color: var(--purple-lite); background: var(--purple-dim); border-color: var(--purple-border); }
+    .nav-links a.active { color: #fff; background: var(--purple); border-color: var(--purple); }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
+    /* ─── Auth Bar ───────────────────────────────────────────────── */
+    .nav-auth { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; padding-left: 16px; }
+    .auth-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+    .auth-badge .auth-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 6px rgba(52,211,153,0.6); }
+    .auth-name { color: var(--text); font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .auth-signout { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; font-size: 0.73rem; font-weight: 500; color: var(--text-muted); text-decoration: none; border: 1px solid var(--purple-border); background: transparent; transition: all 0.2s ease; }
+    .auth-signout:hover { color: var(--purple-lite); background: var(--purple-dim); border-color: var(--purple); }
+    .auth-localdev { font-size: 0.72rem; color: var(--text-dim); font-style: italic; }
 
-        .header {
-            background: linear-gradient(135deg, #0078D4 0%, #00BCF2 100%);
-            color: white;
-            padding: 50px 40px;
-            text-align: center;
-        }
+    /* ─── Layout ─────────────────────────────────────────────────── */
+    main { max-width: 880px; margin: 0 auto; padding: calc(var(--nav-h) + 48px) 32px 80px; }
+    section { scroll-margin-top: calc(var(--nav-h) + 24px); margin-bottom: 80px; }
 
-        .header h1 {
-            font-size: 2.8rem;
-            margin-bottom: 15px;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+    /* ─── Hero ───────────────────────────────────────────────────── */
+    .hero { text-align: center; padding: 48px 24px 56px; background: linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(109,40,217,0.06) 100%); border: 1px solid var(--purple-border); border-radius: var(--radius); margin-bottom: 40px; }
+    .hero-ascii { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--purple-lite); white-space: pre; line-height: 1.4; display: block; margin-bottom: 28px; text-shadow: 0 0 20px rgba(167,139,250,0.4); }
+    .hero-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 28px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--purple-border); border-radius: 20px; padding: 5px 14px; font-size: 0.78rem; color: var(--text-muted); }
+    .badge strong { color: var(--text); }
 
-        .header .subtitle {
-            font-size: 1.3rem;
-            opacity: 0.95;
-            margin-bottom: 10px;
-        }
+    /* ─── Progress Bars ──────────────────────────────────────────── */
+    .progress-group { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--purple-border); border-radius: var(--radius-sm); padding: 20px 24px; margin: 20px 0; }
+    .progress-row { display: flex; align-items: center; gap: 12px; }
+    .progress-label { font-size: 0.8rem; color: var(--text-muted); min-width: 145px; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+    .progress-bar-wrap { flex: 1; background: rgba(255,255,255,0.06); border-radius: 4px; height: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--purple) 0%, var(--purple-lite) 100%); transition: width 0.6s ease; }
+    .progress-bar.yellow { background: linear-gradient(90deg, #d97706 0%, var(--yellow) 100%); }
+    .progress-bar.green  { background: linear-gradient(90deg, #059669 0%, var(--green) 100%); }
+    .progress-bar.red    { background: linear-gradient(90deg, #b91c1c 0%, var(--red) 100%); }
+    .progress-pct { font-size: 0.78rem; font-weight: 600; min-width: 36px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .progress-pct.green  { color: var(--green); }
+    .progress-pct.yellow { color: var(--yellow); }
+    .progress-pct.red    { color: var(--red); }
+    .progress-status { font-size: 0.75rem; color: var(--text-muted); }
 
-        .header .event-info {
-            font-size: 1rem;
-            opacity: 0.85;
-            margin-top: 15px;
-        }
+    /* ─── Headings ───────────────────────────────────────────────── */
+    h2 { font-size: 1.75rem; font-weight: 700; color: var(--text); margin-bottom: 20px; letter-spacing: -0.02em; display: flex; align-items: center; }
+    h2::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--purple-border) 0%, transparent 100%); margin-left: 16px; }
+    h3 { font-size: 1.1rem; font-weight: 600; color: var(--purple-lite); margin: 32px 0 14px; letter-spacing: -0.01em; }
+    p { margin-bottom: 14px; line-height: 1.75; max-width: 72ch; }
+    strong { color: #fff; font-weight: 600; }
+    em { color: var(--purple-lite); font-style: italic; }
+    a { color: var(--purple-lite); text-decoration: none; }
+    a:hover { text-decoration: underline; }
 
-        .meta {
-            background: #f7fafc;
-            padding: 25px 40px;
-            border-bottom: 3px solid #e2e8f0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
+    /* ─── Inline Code ────────────────────────────────────────────── */
+    code { font-family: 'JetBrains Mono', monospace; font-size: 0.83em; background: rgba(124,58,237,0.15); border: 1px solid var(--purple-border); border-radius: 4px; padding: 1px 6px; color: var(--purple-lite); }
 
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    /* ─── Code Blocks ────────────────────────────────────────────── */
+    pre { background: var(--surface); border: 1px solid var(--purple-border); border-radius: var(--radius-sm); padding: 20px 22px; overflow-x: auto; margin: 16px 0; box-shadow: 0 0 0 1px rgba(124,58,237,0.08), inset 0 0 40px rgba(124,58,237,0.03); }
+    pre code { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: none; border: none; padding: 0; color: var(--text); line-height: 1.65; display: block; }
+    .ascii-art pre { border-color: rgba(124,58,237,0.4); box-shadow: 0 0 20px rgba(124,58,237,0.12), inset 0 0 40px rgba(124,58,237,0.05); }
+    .ascii-art pre code { color: var(--purple-lite); }
+    .cm { color: var(--text-dim); }
 
-        .meta-item strong {
-            color: #0078D4;
-            font-weight: 600;
-        }
+    /* ─── Blockquotes ────────────────────────────────────────────── */
+    blockquote { border-left: 3px solid var(--purple); background: var(--purple-dim); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 14px 20px; margin: 16px 0; color: var(--text-muted); font-size: 0.95rem; }
+    blockquote p { margin-bottom: 6px; max-width: none; }
+    blockquote p:last-child { margin-bottom: 0; }
+    blockquote strong { color: var(--purple-lite); }
+    .status-note { display: inline-flex; align-items: center; gap: 8px; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); border-radius: 20px; padding: 4px 14px; font-size: 0.8rem; color: var(--green); margin-bottom: 16px; }
+    .status-note.yellow { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); color: var(--yellow); }
 
-        .nav {
-            background: #2d3748;
-            padding: 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
+    /* ─── Tables ─────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; margin: 16px 0; border-radius: var(--radius-sm); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; border: 1px solid var(--purple-border); border-radius: var(--radius-sm); overflow: hidden; }
+    thead tr { background: linear-gradient(135deg, rgba(124,58,237,0.3) 0%, rgba(109,40,217,0.2) 100%); }
+    thead th { padding: 12px 16px; text-align: left; font-weight: 600; font-size: 0.8rem; color: var(--purple-lite); letter-spacing: 0.02em; border-bottom: 1px solid var(--purple-border); white-space: nowrap; }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:nth-child(even) { background: rgba(124,58,237,0.05); }
+    tbody tr:nth-child(odd)  { background: rgba(255,255,255,0.01); }
+    tbody tr:hover           { background: rgba(124,58,237,0.1); }
+    tbody td { padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    td code { font-size: 0.78rem; }
 
-        .nav ul {
-            list-style: none;
-            display: flex;
-            flex-wrap: wrap;
-        }
+    /* ─── Lists ──────────────────────────────────────────────────── */
+    ul { padding-left: 24px; margin: 12px 0 16px; }
+    ul li { margin-bottom: 8px; line-height: 1.65; }
+    ol { list-style: none; counter-reset: step; padding-left: 0; margin: 12px 0 16px; }
+    ol > li { counter-increment: step; display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+    ol > li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--purple-dim); border: 1px solid var(--purple-border); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: var(--purple-lite); flex-shrink: 0; margin-top: 2px; }
+    ol > li > div { flex: 1; }
 
-        .nav li {
-            flex: 1;
-            min-width: 120px;
-        }
+    /* ─── Scene Cards ────────────────────────────────────────────── */
+    .scene { background: var(--surface); border: 1px solid var(--purple-border); border-radius: var(--radius); padding: 24px 28px 24px 32px; margin: 20px 0; position: relative; overflow: hidden; }
+    .scene::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, var(--purple) 0%, var(--purple-lite) 100%); }
+    .scene h3 { margin-top: 0; }
 
-        .nav a {
-            display: block;
-            padding: 15px 20px;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            transition: background 0.3s;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
+    /* ─── Talk Track ─────────────────────────────────────────────── */
+    .talk-track { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-sm); padding: 14px 18px; margin: 12px 0; font-style: italic; color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
 
-        .nav a:hover {
-            background: #4a5568;
-        }
+    /* ─── Card ───────────────────────────────────────────────────── */
+    .card { background: var(--surface); border: 1px solid var(--purple-border); border-radius: var(--radius); padding: 24px 28px; margin: 16px 0; }
 
-        .content {
-            padding: 40px;
-        }
+    /* ─── Color Helpers ──────────────────────────────────────────── */
+    .green  { color: var(--green)  !important; }
+    .yellow { color: var(--yellow) !important; }
+    .red    { color: var(--red)    !important; }
 
-        .section {
-            margin-bottom: 60px;
-        }
+    /* ─── Back to Top ────────────────────────────────────────────── */
+    #back-top { position: fixed; bottom: 28px; right: 28px; width: 44px; height: 44px; background: var(--purple); color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 1.2rem; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(124,58,237,0.5); opacity: 0; transform: translateY(10px); transition: all 0.3s ease; z-index: 999; }
+    #back-top.visible { opacity: 1; transform: translateY(0); }
+    #back-top:hover   { background: var(--purple-dark); transform: translateY(-2px); }
 
-        .section h2 {
-            color: #0078D4;
-            font-size: 2rem;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #00BCF2;
-        }
+    /* ─── Footer ─────────────────────────────────────────────────── */
+    footer { text-align: center; padding: 40px 32px; border-top: 1px solid var(--purple-border); color: var(--text-dim); font-size: 0.82rem; }
+    .footer-ascii { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); white-space: pre; line-height: 1.4; display: block; margin-bottom: 16px; }
 
-        .section h3 {
-            color: #2d3748;
-            font-size: 1.5rem;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
+    /* ─── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 720px) {
+      main { padding: calc(var(--nav-h) + 24px) 16px 60px; }
+      h2 { font-size: 1.35rem; }
+      .hero-ascii { font-size: 0.52rem; }
+      .progress-label { min-width: 90px; font-size: 0.7rem; }
+      .scene { padding: 16px 18px 16px 22px; }
+      .card { padding: 16px; }
+    }
+    @media (max-width: 480px) {
+      .hero-ascii { display: none; }
+      nav { padding: 0 12px; }
+      .nav-links a { padding: 5px 8px; font-size: 0.72rem; }
+      .nav-brand { font-size: 0.85rem; margin-right: 12px; }
+    }
 
-        .timeline {
-            position: relative;
-            padding-left: 40px;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: linear-gradient(to bottom, #0078D4, #00BCF2);
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 35px;
-            padding: 20px;
-            background: #f7fafc;
-            border-radius: 8px;
-            border-left: 4px solid #0078D4;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -44px;
-            top: 25px;
-            width: 12px;
-            height: 12px;
-            background: #0078D4;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 0 2px #0078D4;
-        }
-
-        .timeline-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .slide-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #2d3748;
-        }
-
-        .timing {
-            background: #0078D4;
-            color: white;
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .script {
-            background: white;
-            padding: 20px;
-            border-radius: 6px;
-            margin-top: 15px;
-            border-left: 3px solid #00BCF2;
-        }
-
-        .script-label {
-            font-weight: 600;
-            color: #0078D4;
-            margin-bottom: 10px;
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .script-text {
-            color: #2d3748;
-            line-height: 1.8;
-        }
-
-        .cue {
-            background: #fff5e6;
-            border-left: 4px solid #FFB900;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-        }
-
-        .cue-label {
-            font-weight: 600;
-            color: #d97706;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .cue-label::before {
-            content: '🎬';
-            font-size: 1.2rem;
-        }
-
-        .critical {
-            background: #fee;
-            border-left: 4px solid #E81123;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-        }
-
-        .critical-label {
-            font-weight: 600;
-            color: #c53030;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .critical-label::before {
-            content: '⚠️';
-            font-size: 1.2rem;
-        }
-
-        .checklist {
-            background: #e6f7ff;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        .checklist h4 {
-            color: #0078D4;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-
-        .checklist-item {
-            padding: 8px 0;
-            display: flex;
-            align-items: start;
-            gap: 10px;
-        }
-
-        .checklist-item::before {
-            content: '☐';
-            font-size: 1.3rem;
-            color: #0078D4;
-            flex-shrink: 0;
-        }
-
-        .timing-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .timing-table th {
-            background: #0078D4;
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        .timing-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .timing-table tr:hover {
-            background: #f7fafc;
-        }
-
-        .demo-highlight {
-            background: #fff9e6;
-        }
-
-        .key-moment {
-            background: #ffe6e6;
-        }
-
-        .footer {
-            background: #2d3748;
-            color: white;
-            padding: 30px 40px;
-            text-align: center;
-        }
-
-        .footer p {
-            margin: 5px 0;
-        }
-
-        @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-            .container {
-                box-shadow: none;
-            }
-            .nav {
-                position: static;
-            }
-            .timeline-item {
-                page-break-inside: avoid;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            .content {
-                padding: 20px;
-            }
-            .nav ul {
-                flex-direction: column;
-            }
-            .nav li {
-                min-width: 100%;
-            }
-            .nav a {
-                border-right: none;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-            }
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin: 5px 5px 5px 0;
-        }
-
-        .badge-tech {
-            background: #e3f2fd;
-            color: #1565c0;
-        }
-
-        .badge-demo {
-            background: #fff3e0;
-            color: #e65100;
-        }
-
-        .badge-ethics {
-            background: #fce4ec;
-            color: #c2185b;
-        }
-    </style>
+    /* ─── Print ──────────────────────────────────────────────────── */
+    @media print {
+      nav, #back-top { display: none !important; }
+      main { padding: 0; max-width: 100%; }
+      body { background: #fff; color: #000; font-size: 11pt; }
+      pre, .ascii-art pre { background: #f5f5f5 !important; color: #000 !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+      pre code, .ascii-art pre code { color: #000 !important; }
+      code { background: #f0f0f0 !important; color: #6d28d9 !important; border-color: #ddd !important; }
+      table { page-break-inside: avoid; border-color: #ddd !important; }
+      thead tr { background: #f0e8ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      thead th { color: #6d28d9 !important; border-color: #ddd !important; }
+      tbody td { color: #000 !important; border-color: #eee !important; }
+      .scene { border: 1px solid #ddd; break-inside: avoid; }
+      .scene::before { background: #7c3aed !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      h2, h3 { color: #000; break-after: avoid; }
+      h2::after { background: #ddd !important; }
+      blockquote { border-color: #7c3aed !important; color: #333 !important; background: #faf5ff !important; }
+      .progress-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      footer { border-color: #ddd; }
+      a { color: #6d28d9; }
+      section { margin-bottom: 36pt; }
+      .talk-track { background: #f9f9f9 !important; color: #555 !important; border-color: #ddd !important; }
+      .status-note { border-color: #aaa !important; color: #333 !important; background: #f9f9f9 !important; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>University Front Door Support Agent</h1>
-            <p class="subtitle">Demo Run of Show</p>
-            <p class="event-info">Azure Days Arlington | February 3, 2026 | 12:15-1:45 PM Lunch Showcase</p>
-        </header>
 
-        <div class="meta">
-            <div class="meta-item">
-                <strong>Presenter:</strong> Sean Gayle, Director of AI Engineering, Microsoft
-            </div>
-            <div class="meta-item">
-                <strong>Duration:</strong> 7-8 minutes
-            </div>
-            <div class="meta-item">
-                <strong>Audience:</strong> Higher Education Leaders
-            </div>
-            <div class="meta-item">
-                <strong>Format:</strong> Live Demo + Slides
-            </div>
-        </div>
+<!-- ─── Sticky Navigation ─────────────────────────────────────────── -->
+<nav>
+  <div class="nav-brand">🚪 47 Doors <span>/ Runbook</span></div>
+  <div class="nav-links">
+    <a href="#overview">🎯 Overview</a>
+    <a href="#version-matrix">🧰 Versions</a>
+    <a href="#checklist">✅ Checklist</a>
+    <a href="#start-commands">🚀 Start</a>
+    <a href="#demo-sequence">🎬 Demo</a>
+    <a href="#troubleshooting">🔧 Troubleshoot</a>
+    <a href="#edu-framing">🏫 EDU Framing</a>
+  </div>
+  <div class="nav-auth" id="nav-auth" style="display:none">
+    <span class="auth-badge"><span class="auth-dot"></span> 🔒 <span id="auth-name" class="auth-name"></span></span>
+    <a href="/.auth/logout" class="auth-signout">Sign Out ↩</a>
+  </div>
+</nav>
 
-        <nav class="nav">
-            <ul>
-                <li><a href="#overview">Overview</a></li>
-                <li><a href="#setup">Pre-Show Setup</a></li>
-                <li><a href="#timeline">Timeline</a></li>
-                <li><a href="#contingency">Contingency Plans</a></li>
-                <li><a href="#success">Success Markers</a></li>
-            </ul>
-        </nav>
+<main>
 
-        <div class="content">
-            <!-- OVERVIEW SECTION -->
-            <section id="overview" class="section">
-                <h2>Overview</h2>
-                
-                <div style="background: #f7fafc; padding: 25px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="margin-top: 0;">Demo Purpose</h3>
-                    <p style="margin-bottom: 15px;">This 7-minute showcase demonstrates the University Front Door Support Agent while setting up the AI Ethics session at 1:45 PM. The demo accomplishes two critical goals:</p>
-                    <ol style="margin-left: 20px;">
-                        <li style="margin: 10px 0;"><strong>Show the capability</strong> - Prove the technology works and is accessible</li>
-                        <li style="margin: 10px 0;"><strong>Expose the ethical complexity</strong> - Create the "aha" moment that there are harder questions than "can we build it?"</li>
-                    </ol>
-                </div>
-
-                <h3>Key Message</h3>
-                <div style="background: #0078D4; color: white; padding: 25px; border-radius: 8px; margin: 20px 0; text-align: center;">
-                    <p style="font-size: 1.8rem; font-weight: 600; margin-bottom: 10px;">"Ethics Is The Edge"</p>
-                    <p style="font-size: 1.1rem; opacity: 0.9;">The technology is democratized. The competitive advantage is in how you deploy it responsibly.</p>
-                </div>
-
-                <h3>Content Tags</h3>
-                <div style="margin: 20px 0;">
-                    <span class="badge badge-tech">Three-Agent Architecture</span>
-                    <span class="badge badge-demo">Live Demo</span>
-                    <span class="badge badge-ethics">Ethical Boundaries</span>
-                    <span class="badge badge-tech">Azure AI Stack</span>
-                    <span class="badge badge-demo">Crisis Escalation</span>
-                    <span class="badge badge-ethics">Values Encoded</span>
-                </div>
-            </section>
-
-            <!-- PRE-SHOW SETUP -->
-            <section id="setup" class="section">
-                <h2>Pre-Show Setup (5 Minutes Before)</h2>
-                
-                <div class="checklist">
-                    <h4>Technical Setup</h4>
-                    <div class="checklist-item">Backend running locally (localhost:8000/api/health - verify green)</div>
-                    <div class="checklist-item">Frontend running locally (localhost:5173 - verify loads)</div>
-                    <div class="checklist-item">Run one warmup query: "test connection"</div>
-                    <div class="checklist-item">Browser in presentation mode (F11), cleared history</div>
-                    <div class="checklist-item">Close all other tabs/applications</div>
-                    <div class="checklist-item">Backup slides 4-6 ready (hidden unless needed)</div>
-                </div>
-
-                <div class="checklist">
-                    <h4>Physical Setup</h4>
-                    <div class="checklist-item">Water bottle nearby</div>
-                    <div class="checklist-item">Remote clicker tested</div>
-                    <div class="checklist-item">HDMI + USB-C adapters ready</div>
-                    <div class="checklist-item">Backup laptop with presentation loaded</div>
-                </div>
-
-                <div class="critical">
-                    <div class="critical-label">Critical Tech Stack</div>
-                    <ul style="margin-left: 20px; margin-top: 10px;">
-                        <li><strong>Primary:</strong> Live demo running locally (no WiFi dependencies)</li>
-                        <li><strong>Backup:</strong> Video recording of demo scenarios (on desktop)</li>
-                        <li><strong>Failsafe:</strong> Slides 4-6 static scenarios</li>
-                    </ul>
-                </div>
-            </section>
-
-            <!-- TIMELINE SECTION -->
-            <section id="timeline" class="section">
-                <h2>Detailed Timeline</h2>
-
-                <table class="timing-table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Slide/Section</th>
-                            <th>Duration</th>
-                            <th>Running Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>0:00-0:20</td>
-                            <td>Slide 1: Title</td>
-                            <td>20s</td>
-                            <td>0:20</td>
-                        </tr>
-                        <tr>
-                            <td>0:20-1:20</td>
-                            <td>Slide 2: Problem Statement</td>
-                            <td>60s</td>
-                            <td>1:20</td>
-                        </tr>
-                        <tr>
-                            <td>1:20-1:50</td>
-                            <td>Slide 3: Solution Intro</td>
-                            <td>30s</td>
-                            <td>1:50</td>
-                        </tr>
-                        <tr class="demo-highlight">
-                            <td>1:50-2:20</td>
-                            <td><strong>LIVE DEMO: Scenario 1</strong></td>
-                            <td>30s</td>
-                            <td>2:20</td>
-                        </tr>
-                        <tr class="demo-highlight">
-                            <td>2:20-2:55</td>
-                            <td><strong>LIVE DEMO: Scenario 2</strong></td>
-                            <td>35s</td>
-                            <td>2:55</td>
-                        </tr>
-                        <tr class="demo-highlight key-moment">
-                            <td>2:55-4:05</td>
-                            <td><strong>LIVE DEMO: Scenario 3 (CRISIS)</strong></td>
-                            <td>70s</td>
-                            <td>4:05</td>
-                        </tr>
-                        <tr>
-                            <td>4:05-5:35</td>
-                            <td>Slide 7: Three-Agent Architecture</td>
-                            <td>90s</td>
-                            <td>5:35</td>
-                        </tr>
-                        <tr>
-                            <td>5:35-6:05</td>
-                            <td>Slide 8: Azure Infrastructure</td>
-                            <td>30s</td>
-                            <td>6:05</td>
-                        </tr>
-                        <tr>
-                            <td>6:05-6:25</td>
-                            <td>Slide 9: Cost</td>
-                            <td>20s</td>
-                            <td>6:25</td>
-                        </tr>
-                        <tr class="key-moment">
-                            <td>6:25-7:25</td>
-                            <td><strong>Slide 10: Questions We Didn't Show</strong></td>
-                            <td>60s</td>
-                            <td>7:25</td>
-                        </tr>
-                        <tr class="key-moment">
-                            <td>7:25-8:10</td>
-                            <td><strong>Slide 11: Ethics Is The Edge</strong></td>
-                            <td>45s</td>
-                            <td>8:10</td>
-                        </tr>
-                        <tr>
-                            <td>8:10-8:40</td>
-                            <td>Slide 12: Your Turn (Close)</td>
-                            <td>30s</td>
-                            <td>8:40</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="critical">
-                    <div class="critical-label">DO NOT CUT These Sections</div>
-                    <ul style="margin-left: 20px; margin-top: 10px;">
-                        <li>Demo Scenario 3 (Crisis escalation - ethics hook)</li>
-                        <li>Slide 10 (Questions we didn't show - values to encode moment)</li>
-                        <li>Final "Ethics is the edge" messaging</li>
-                    </ul>
-                </div>
-
-                <div class="timeline">
-                    <!-- SLIDE 1 -->
-                    <div class="timeline-item">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 1: Title Slide</div>
-                            <div class="timing">0:00-0:20 (20s)</div>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Walk to center stage, pause, make eye contact]</em></p>
-                                <p>"Good afternoon. I'm Sean Gayle, and I'm going to show you something we built in two weeks—and then ask you a question that's going to take the rest of the afternoon to answer.</p>
-                                <p>Quick show of hands: How many of you have students who call the wrong office when they need help? <em>[Wait for hands, acknowledge with nod]</em></p>
-                                <p>That's the problem we're solving. Let's go."</p>
-                                <p><em>[Advance to Slide 2]</em></p>
-                            </div>
-                        </div>
-
-                        <div style="background: #e6f7ff; padding: 15px; border-radius: 6px; margin-top: 15px;">
-                            <strong>Delivery Notes:</strong> Keep energy high, trim the preamble. Don't belabor the intro, get to the problem fast. The hand-raise gives you instant credibility.
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 2 -->
-                    <div class="timeline-item">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 2: The Problem Statement</div>
-                            <div class="timing">0:20-1:20 (60s)</div>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Gesture to the slide as you walk toward the screen]</em></p>
-                                <p>"Here's the reality. Students contact an average of <strong>four offices</strong> before they find help.</p>
-                                <p><em>[Point to first image]</em> They start with a phone call. Wrong department.</p>
-                                <p><em>[Point to second image]</em> They send an email. Gets forwarded. Bounced. 'Not my area.'</p>
-                                <p><em>[Point to third image]</em> They walk to a physical office. 'Sorry, different building.'</p>
-                                <p><em>[Pause, face audience]</em></p>
-                                <p>First-contact resolution on most campuses? <strong>Forty percent.</strong> That means 60% of the time, we're sending students away to figure it out on their own.</p>
-                                <p>When students can't find help, they stop asking. That's not just inefficient—it's a barrier to student success.</p>
-                                <p>So we built this."</p>
-                                <p><em>[Advance to Slide 3]</em></p>
-                            </div>
-                        </div>
-
-                        <div style="background: #e6f7ff; padding: 15px; border-radius: 6px; margin-top: 15px;">
-                            <strong>Delivery Notes:</strong> Use the images as visual anchors - physical pointing helps. Emphasize "Forty percent" with vocal stress. Transition from problem to solution with energy shift (frustration → optimism).
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 3 -->
-                    <div class="timeline-item">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 3: Solution Introduction</div>
-                            <div class="timing">1:20-1:50 (30s)</div>
-                        </div>
-                        
-                        <div class="cue">
-                            <div class="cue-label">DEMO PREP CUE</div>
-                            Start moving toward demo station/laptop. Demo interface should already be loaded.
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Walk to demo laptop, gesture to slide]</em></p>
-                                <p>"What if there was just one intelligent entry point? One place where students get immediate, accurate answers—no phone trees, no department dropdown menus, just natural language.</p>
-                                <p><em>[Casually pull up demo interface on screen - should already be loaded]</em></p>
-                                <p>This is it. Three AI agents working together behind the scenes. From the student's perspective? It just works.</p>
-                                <p>Let me show you three scenarios—and pay attention to the third one, because that's where the ethics conversation starts."</p>
-                                <p><em>[Demo interface now visible on screen]</em></p>
-                            </div>
-                        </div>
-
-                        <div class="cue">
-                            <div class="cue-label">TECHNICAL CUE</div>
-                            Demo should be full-screen, clean interface visible. Chat input box ready, cursor blinking. No previous conversation history showing.
-                        </div>
-                    </div>
-
-                    <!-- DEMO SCENARIO 1 -->
-                    <div class="timeline-item demo-highlight">
-                        <div class="timeline-header">
-                            <div class="slide-title">LIVE DEMO - Scenario 1: Password Reset</div>
-                            <div class="timing">1:50-2:20 (30s)</div>
-                        </div>
-                        
-                        <div class="cue">
-                            <div class="cue-label">DEMO CUE: TYPE IN INTERFACE</div>
-                            <strong>TYPE:</strong> <code>I forgot my password</code>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT (while system processes ~3-5 sec delay)</div>
-                            <div class="script-text">
-                                <p>"Watch what happens. Intent classification... QueryAgent says 'IT Support.' RouterAgent searching knowledge base..."</p>
-                                <p><em>[Results appear on screen]</em></p>
-                                <p>"There. Ticket created: TKT-IT-<em>[read the actual ticket number from screen]</em>. Student gets confirmation. IT gets notified. Knowledge base article included—password reset instructions. Estimated response time: two hours.</p>
-                                <p>The student never had to know which office handles passwords. The system did."</p>
-                                <p><em>[Clear the chat or scroll down for next query]</em></p>
-                            </div>
-                        </div>
-
-                        <div class="critical">
-                            <div class="critical-label">EXPECTED RESPONSE</div>
-                            <ul style="margin-left: 20px; margin-top: 10px;">
-                                <li>Response time: 3-5 seconds</li>
-                                <li>Should include: ticket ID, department (IT), KB article link, estimated time</li>
-                                <li><strong>If takes >8 seconds:</strong> "Still processing—that's the AI thinking..." (buy time)</li>
-                                <li><strong>If fails completely:</strong> "And this is exactly why we have Slide 10" → <strong>ABORT TO SLIDES 4-6</strong></li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- DEMO SCENARIO 2 -->
-                    <div class="timeline-item demo-highlight">
-                        <div class="timeline-header">
-                            <div class="slide-title">LIVE DEMO - Scenario 2: Financial Aid</div>
-                            <div class="timing">2:20-2:55 (35s)</div>
-                        </div>
-                        
-                        <div class="cue">
-                            <div class="cue-label">DEMO CUE: TYPE SECOND QUERY</div>
-                            <strong>TYPE:</strong> <code>How do I apply for financial aid?</code>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT (while processing)</div>
-                            <div class="script-text">
-                                <p>"Different classification now. This time the agent realizes—this doesn't need a ticket. This is information, not intervention. RouterAgent searching..."</p>
-                                <p><em>[Results appear]</em></p>
-                                <p>"Three knowledge base articles. Deadlines, eligibility, how to apply. Self-service resolution. No ticket created. No wait time. No office visit.</p>
-                                <p><em>[Look at audience]</em></p>
-                                <p>The student gets answers in ten seconds. First-contact resolution achieved. Staff time saved for higher-value work."</p>
-                                <p><em>[Clear chat or scroll for final query]</em></p>
-                            </div>
-                        </div>
-
-                        <div style="background: #fff9e6; padding: 15px; border-radius: 6px; margin-top: 15px;">
-                            <strong>Technical Note:</strong> Expected response should include 3-5 KB articles, NO ticket ID. Should explicitly say "no ticket needed" or similar.
-                        </div>
-                    </div>
-
-                    <!-- DEMO SCENARIO 3 - CRITICAL -->
-                    <div class="timeline-item demo-highlight key-moment">
-                        <div class="timeline-header">
-                            <div class="slide-title">LIVE DEMO - Scenario 3: Crisis Escalation</div>
-                            <div class="timing">2:55-4:05 (70s)</div>
-                        </div>
-                        
-                        <div class="critical">
-                            <div class="critical-label">THIS IS YOUR MOST IMPORTANT 70 SECONDS</div>
-                            This scenario MUST work correctly or you lose your ethics hook. If response is wrong, immediately pivot to Slide 6 as backup.
-                        </div>
-
-                        <div class="cue">
-                            <div class="cue-label">DEMO CUE: PAUSE BEFORE TYPING - BUILD TENSION</div>
-                            <p style="margin-top: 10px;">Stand straighter, shift body language to more serious posture. Pause 2 beats before typing.</p>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT (before typing)</div>
-                            <div class="script-text">
-                                <p><em>[Pause, shift tone to serious]</em></p>
-                                <p>"Now watch this carefully. This is where ethics becomes concrete."</p>
-                                <p><em>[Pause 2 beats, let that land]</em></p>
-                                <p><em>[Type slowly, deliberately - let audience see each word]</em></p>
-                            </div>
-                        </div>
-
-                        <div class="cue">
-                            <div class="cue-label">TYPE</div>
-                            <strong>TYPE:</strong> <code>My roommate is threatening me</code>
-                        </div>
-
-                        <div class="script">
-                            <div class="script-label">SCRIPT (while processing - slower pace)</div>
-                            <div class="script-text">
-                                <p>"Classification happening... Crisis detected... Safety protocol engaged..."</p>
-                                <p><em>[Results appear - should show ESCALATION message]</em></p>
-                                <p><em>[Pause, let audience read the screen for 3 full seconds - DON'T TALK]</em></p>
-                                <p><em>[Step forward, point to screen]</em></p>
-                                <p>"No ticket queue. No knowledge base search. <strong>Immediate escalation</strong> to Campus Safety. Dean of Students gets a real-time alert.</p>
-                                <p><em>[Turn fully to audience, step away from screen]</em></p>
-                                <p>A human responds <strong>now</strong>—not in two hours.</p>
-                                <p><em>[Pause, make eye contact with different sections of room]</em></p>
-                                <p>Why?</p>
-                                <p>Because we <strong>programmed</strong> it that way. The agent is not <strong>allowed</strong> to handle crisis situations autonomously. Ever. No matter how smart the AI gets.</p>
-                                <p><em>[Emphatic gesture]</em></p>
-                                <p>That wasn't a bug we fixed. That was a <strong>value we encoded.</strong></p>
-                                <p><em>[Pause, let it sink in - 2 beats of silence]</em></p>
-                                <p><em>[Softer tone, more conversational]</em></p>
-                                <p>And that decision? It didn't come from Azure documentation. It came from conversations. Campus safety. Legal counsel. Title IX office. Student affairs. Students themselves.</p>
-                                <p><em>[Transition - energy shift back to technical]</em></p>
-                                <p>Let me show you how this works under the hood."</p>
-                                <p><em>[Advance to Slide 7 - Three-Agent Architecture]</em></p>
-                            </div>
-                        </div>
-
-                        <div class="critical">
-                            <div class="critical-label">RECOVERY PLAN IF WRONG RESPONSE</div>
-                            <p style="margin-top: 10px;"><strong>If creates ticket instead of escalating:</strong></p>
-                            <p style="margin-top: 10px;">"Interesting—in this demo environment, it created a ticket. In production, this would trigger immediate escalation. That's a configuration parameter we'd adjust. But notice what <strong>should</strong> happen—<em>[advance to Slide 6 as backup]</em>—immediate human escalation, no automation."</p>
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 7 -->
-                    <div class="timeline-item">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 7: Three-Agent Architecture</div>
-                            <div class="timing">4:05-5:35 (90s)</div>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Click to advance slide, step toward screen, gesture to diagram]</em></p>
-                                <p>"So how does it make those decisions? Three-agent orchestration.</p>
-                                <p><em>[Point to QueryAgent]</em></p>
-                                <p><strong>QueryAgent</strong>: 'What is the user asking?' Classifies intent. Financial aid? IT support? <strong>Crisis?</strong> This is triage.</p>
-                                <p><em>[Point to RouterAgent]</em></p>
-                                <p><strong>RouterAgent</strong>: 'What information do we need?' Searches Azure AI Search. Retrieves knowledge base articles, policies, procedures. Retrieval-augmented generation.</p>
-                                <p><em>[Point to ActionAgent]</em></p>
-                                <p><strong>ActionAgent</strong>: The decision maker. 'How do we respond?' Synthesizes information, generates the answer, decides: Create a ticket? Self-serve? <strong>Escalate to human?</strong></p>
-                                <p><em>[Point to boundaries callout box - read them]</em></p>
-                                <p>And here's the critical part—the ethical boundaries:</p>
-                                <p>✅ <strong>Can</strong> renew library books. Low risk, high convenience.<br>
-                                ✅ <strong>Can</strong> create IT tickets. Predictable, automatable.<br>
-                                ❌ <strong>Cannot</strong> waive fines. Requires human judgment.<br>
-                                ❌ <strong>Cannot</strong> override financial aid. High stakes, human accountability.<br>
-                                ❌ <strong>Cannot</strong> handle crises alone. <em>[Emphasize]</em> Ever.</p>
-                                <p><em>[Turn to audience]</em></p>
-                                <p>These boundaries didn't come from the code. They came from conversations with your stakeholders.</p>
-                                <p>The technology <strong>can</strong> do almost anything. The question is: <strong>should</strong> it?</p>
-                                <p><em>[Beat]</em></p>
-                                <p>That's the ethics question. And you'll answer it for every use case you build.</p>
-                                <p>Here's how it's built."</p>
-                                <p><em>[Advance to Slide 8]</em></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 8 - COMPRESSED -->
-                    <div class="timeline-item">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 8: Azure Infrastructure</div>
-                            <div class="timing">5:35-6:05 (30s - COMPRESSED)</div>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Quick gesture to slide, don't deep-dive]</em></p>
-                                <p>"Built on Azure. Production-ready from day one.</p>
-                                <p><em>[Quick left-to-right gesture across architecture]</em></p>
-                                <p>React frontend on Static Web Apps. Three agents in FastAPI on Container Apps—serverless, scales to zero. GPT-4o for reasoning, AI Search for retrieval. Cosmos DB for sessions. Key Vault for secrets.</p>
-                                <p>Enterprise-grade. Secure. The same tools you'll use tomorrow in the boot camp.</p>
-                                <p>Quick cost question: How much?"</p>
-                                <p><em>[Advance to Slide 9]</em></p>
-                            </div>
-                        </div>
-
-                        <div style="background: #fff9e6; padding: 15px; border-radius: 6px; margin-top: 15px;">
-                            <strong>Delivery Note:</strong> FAST pace here - don't linger. You're giving them enough to know it's legit. Transition question pulls them to next slide.
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 9 - COMPRESSED -->
-                    <div class="timeline-item">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 9: Cost</div>
-                            <div class="timing">6:05-6:25 (20s - COMPRESSED)</div>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Point to Small Pilot column]</em></p>
-                                <p>"Pilot deployment: 100 to 500 users, <strong>$160 to $300 a month</strong>.</p>
-                                <p><em>[Pause]</em></p>
-                                <p>That's less than one full-time staff member—and this runs 24/7, never takes vacation, gets smarter over time.</p>
-                                <p><em>[Beat]</em></p>
-                                <p>The ROI is obvious. The tools are ready. The technology is democratized.</p>
-                                <p><em>[Shift tone - slower, more serious]</em></p>
-                                <p>So why isn't everyone doing this?</p>
-                                <p><em>[Pause]</em></p>
-                                <p>Because the hard part isn't the technology."</p>
-                                <p><em>[Advance to Slide 10 - should feel like a gear shift]</em></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 10 - CRITICAL -->
-                    <div class="timeline-item key-moment">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 10: The Questions We Didn't Show</div>
-                            <div class="timing">6:25-7:25 (60s - DO NOT COMPRESS)</div>
-                        </div>
-
-                        <div class="critical">
-                            <div class="critical-label">SECOND MOST IMPORTANT MOMENT</div>
-                            Vocal pacing: Slow down here, every word matters. This is the "values to encode" moment.
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Step to center stage, away from screen, hands open/visible]</em></p>
-                                <p><em>[Slower pace, more contemplative]</em></p>
-                                <p>"Here's what I didn't show you in that demo.</p>
-                                <p><em>[Pause, gesture to slide title]</em></p>
-                                <p>Building this system—the actual coding—took <strong>eight minutes</strong>. Spec first, vibe code with Copilot, test it live. Eight minutes from idea to working feature.</p>
-                                <p><em>[Pause]</em></p>
-                                <p>But <strong>before</strong> those eight minutes, we spent <strong>eight weeks</strong> answering harder questions.</p>
-                                <p><em>[Gesture to question cards, read them]</em></p>
-                                <p>Who decides when the agent creates tickets automatically versus when it asks permission?</p>
-                                <p>What student data do we log, for how long, and who sees it?</p>
-                                <p>When must a human be involved versus when can the agent decide?</p>
-                                <p>What happens when it gets it wrong—and who's accountable?</p>
-                                <p><em>[Pause, look directly at audience - serious eye contact]</em></p>
-                                <p>These aren't bugs to fix. These are <strong>values to encode.</strong></p>
-                                <p><em>[Shift posture slightly - more conversational]</em></p>
-                                <p>Tomorrow, you're going to build something in the boot camp. And at some point, you'll hit a moment where the question isn't <strong>'Can we?'</strong></p>
-                                <p><em>[Pause]</em></p>
-                                <p>The question is: <strong>'Should we?'</strong></p>
-                                <p><em>[Beat]</em></p>
-                                <p>And you won't find the answer in Azure documentation. You'll find it by talking to your stakeholders. Your students. Your faculty. Legal. Compliance.</p>
-                                <p><em>[Emphatic]</em></p>
-                                <p>The technology is democratized. Everyone has GPT-4o. Everyone has Azure.</p>
-                                <p><em>[Pause]</em></p>
-                                <p><strong>Ethics is the edge.</strong>"</p>
-                                <p><em>[Advance to Slide 11]</em></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 11 - CRITICAL -->
-                    <div class="timeline-item key-moment">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 11: Ethics Is The Edge</div>
-                            <div class="timing">7:25-8:10 (45s)</div>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Gesture to split screen visual]</em></p>
-                                <p><em>[Point to left side - code]</em></p>
-                                <p>"This is the easy part. Writing code. Eight minutes. GitHub Copilot writes it for you.</p>
-                                <p><em>[Point to right side - people discussing]</em></p>
-                                <p>This is the hard part. Deciding the rules. Eight <strong>weeks</strong> of conversations.</p>
-                                <p><em>[Face audience, step forward]</em></p>
-                                <p>The technology is not your competitive advantage anymore. You have the same models I have. Same Azure services. Same tools in tomorrow's boot camp.</p>
-                                <p><em>[Pause]</em></p>
-                                <p>The edge—the thing that separates institutions that succeed with AI from those that flounder—is <strong>ethics</strong>.</p>
-                                <p>Not as a compliance checkbox. Not as a quarterly committee. Ethics as a <strong>design practice</strong>. Baked into every decision. Every user story. Every agent you build.</p>
-                                <p><em>[Softer, invitational tone]</em></p>
-                                <p>At 1:45, we're going to talk about <strong>how</strong> to do that. How to build governance that speeds you up, not slows you down. How to make ethical decisions at the speed of innovation.</p>
-                                <p><em>[Pause, final thought]</em></p>
-                                <p>Because the future of AI in higher education won't be written by those with the most powerful models.</p>
-                                <p>It'll be written by those who know what they're <strong>for</strong>—and build toward it."</p>
-                                <p><em>[Advance to Slide 12]</em></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SLIDE 12 - CLOSE -->
-                    <div class="timeline-item">
-                        <div class="timeline-header">
-                            <div class="slide-title">Slide 12: Your Turn - Closing</div>
-                            <div class="timing">8:10-8:40 (30s)</div>
-                        </div>
-                        
-                        <div class="script">
-                            <div class="script-label">SCRIPT</div>
-                            <div class="script-text">
-                                <p><em>[Energy back up, optimistic, actionable]</em></p>
-                                <p>"So here's where we are.</p>
-                                <p><em>[Gesture to tools on screen]</em></p>
-                                <p>You have the tools. GitHub. Copilot. Azure AI Foundry. Same stack I used. Same models.</p>
-                                <p>Your environment is ready. Your datasets are curated. Your challenges—<em>[gesture to room]</em>—are sitting right here.</p>
-                                <p>Tomorrow you're going to build something. Not a prototype. A <strong>choice</strong>.</p>
-                                <p><em>[Pause]</em></p>
-                                <p>You're going to choose: Do we automate this? Augment it? Leave it to humans? Where's the boundary?</p>
-                                <p><em>[Smile]</em></p>
-                                <p>And when you hit that moment—and you will—when you're staring at your screen wondering <strong>'Should we?'</strong> instead of <strong>'Can we?'</strong>—</p>
-                                <p><em>[Point to audience]</em></p>
-                                <p>Remember: <strong>Ethics is the edge.</strong></p>
-                                <p><em>[Beat]</em></p>
-                                <p>I'll see you at 1:45. We'll give you the frameworks to answer those questions.</p>
-                                <p><em>[Casual wave, smile]</em></p>
-                                <p>Go enjoy lunch. Start thinking about what you're going to build."</p>
-                                <p><em>[Walk off to applause]</em></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CONTINGENCY PLANS -->
-            <section id="contingency" class="section">
-                <h2>Contingency Plans</h2>
-
-                <h3>If Demo Completely Fails</h3>
-                <div class="critical">
-                    <div class="critical-label">IMMEDIATE PIVOT</div>
-                    <div class="script-text">
-                        <p>"And this—<em>[gesture to failed screen]</em>—is exactly why we encode human fallbacks into every system. Let me show you what it <strong>would</strong> have done."</p>
-                        <p><em>[Advance to Slides 4-6, narrate as if live demo happened]</em></p>
-                    </div>
-                    <p style="margin-top: 15px;"><strong>DO NOT:</strong></p>
-                    <ul style="margin-left: 20px;">
-                        <li>Apologize profusely</li>
-                        <li>Make excuses</li>
-                        <li>Break character</li>
-                        <li>Lose energy</li>
-                    </ul>
-                    <p style="margin-top: 15px;"><strong>DO:</strong></p>
-                    <ul style="margin-left: 20px;">
-                        <li>Acknowledge smoothly</li>
-                        <li>Pivot to slides immediately</li>
-                        <li>Use it as an ethics example</li>
-                        <li>Keep moving forward</li>
-                    </ul>
-                </div>
-
-                <h3>If Scenario 3 Gives Wrong Response</h3>
-                <div class="cue">
-                    <div class="cue-label">IMMEDIATE RECOVERY</div>
-                    <div class="script-text">
-                        <p>"Interesting—in this demo environment, it created a ticket. In production, this would trigger immediate escalation. That's a configuration parameter we'd adjust. But notice what <strong>should</strong> happen—<em>[advance to Slide 6 as backup]</em>—immediate human escalation, no automation."</p>
-                        <p><em>[Continue as planned]</em></p>
-                    </div>
-                    <p style="margin-top: 15px;"><strong>KEY:</strong> Don't panic, use Slide 6 as your safety net, acknowledge and move forward.</p>
-                </div>
-
-                <h3>If Running Long (Approaching 8+ Minutes at Slide 9)</h3>
-                <div style="background: #fff9e6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <strong>SPEED UP:</strong>
-                    <ul style="margin-left: 20px; margin-top: 10px;">
-                        <li>Cut Slide 8 entirely: "Built on Azure, production-ready, same tools tomorrow—how much does it cost?"</li>
-                        <li>Compress Slide 9: "Pilot: $200/month. Less than one staff member. ROI is obvious."</li>
-                        <li>Go straight to Slide 10 (DO NOT CUT THIS)</li>
-                    </ul>
-                </div>
-
-                <h3>If Audience Looks Disengaged During Demo</h3>
-                <div class="cue">
-                    <div class="cue-label">RE-ENGAGE TACTICS</div>
-                    <ul style="margin-left: 20px; margin-top: 10px;">
-                        <li>Add interactive moment: "How many of you handle password reset requests weekly? <em>[Wait for hands]</em> Right—imagine that off your plate."</li>
-                        <li>Ask rhetorical: "What would you do with that time back?"</li>
-                        <li>Energy up: Faster pace, more enthusiastic tone</li>
-                    </ul>
-                </div>
-            </section>
-
-            <!-- SUCCESS MARKERS -->
-            <section id="success" class="section">
-                <h2>Success Markers</h2>
-
-                <div style="background: #e6f7ff; padding: 25px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="margin-top: 0;">You Nailed It If:</h3>
-                    <div class="checklist-item">Scenario 3 landed (you saw heads nodding or note-taking)</div>
-                    <div class="checklist-item">"Ethics is the edge" got repeated or written down</div>
-                    <div class="checklist-item">People stayed engaged through technical sections</div>
-                    <div class="checklist-item">Someone approaches you after about their use case</div>
-                    <div class="checklist-item">Audience connects demo → ethics talk at 1:45</div>
-                </div>
-
-                <div style="background: #fff9e6; padding: 25px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="margin-top: 0;">Adjust for 1:45 PM Session If:</h3>
-                    <div class="checklist-item">Demo technical details overshadowed ethics message</div>
-                    <div class="checklist-item">Scenario 3 didn't land clearly</div>
-                    <div class="checklist-item">Audience seemed confused about the "values encoded" concept</div>
-                </div>
-
-                <div style="background: #d4edda; padding: 30px; border-radius: 8px; margin: 30px 0; text-align: center;">
-                    <h3 style="color: #155724; margin-bottom: 15px;">Final Reminder</h3>
-                    <p style="font-size: 1.2rem; color: #155724; margin: 0;">
-                        <strong>Trust the build. Own the room. Ethics is the edge.</strong>
-                    </p>
-                </div>
-            </section>
-        </div>
-
-        <footer class="footer">
-            <p><strong>University Front Door Support Agent - Demo Run of Show</strong></p>
-            <p>Azure Days Arlington | February 3, 2026</p>
-            <p style="margin-top: 10px; opacity: 0.8;">Sean Gayle, Director of AI Engineering, Microsoft</p>
-            <p style="margin-top: 15px; font-size: 0.9rem;">
-                <a href="https://github.com/msftsean/hiedcab_frontdoor_agent" style="color: white; text-decoration: underline;">View Project on GitHub</a>
-            </p>
-        </footer>
+  <!-- ─── Hero ─────────────────────────────────────────────────── -->
+  <div class="hero">
+    <code class="hero-ascii">╔══════════════════════════════════════════════════════════════════════════════╗
+║   🎤  4 7   D O O R S   —   V O I C E   F E A T U R E   R U N B O O K  🎤  ║
+║              speak naturally · be heard · get answers                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝</code>
+    <div class="hero-meta">
+      <span class="badge">🌿 <strong>Branch:</strong> 002-voice-interaction</span>
+      <span class="badge">👥 <strong>Audience:</strong> EDU customers &amp; stakeholders</span>
+      <span class="badge">📅 <strong>Updated:</strong> 2026-03-14</span>
+      <span class="badge">⏱️ <strong>Demo time:</strong> 12–15 min</span>
+      <span class="badge">🟢 <strong>Status:</strong> LIVE ON AZURE</span>
     </div>
+    <div class="progress-group">
+      <div class="progress-row">
+        <span class="progress-label">Demo Readiness</span>
+        <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+        <span class="progress-pct green">100%</span>
+        <span class="progress-status">✅ All systems go</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Azure Live</span>
+        <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+        <span class="progress-pct green">100%</span>
+        <span class="progress-status">✅ Connected to Azure OpenAI (MOCK_MODE=false)</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Test Coverage</span>
+        <div class="progress-bar-wrap"><div class="progress-bar yellow" style="width:76%"></div></div>
+        <span class="progress-pct yellow">76%</span>
+        <span class="progress-status">🟡 76 backend tests passing</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🎯 Demo Overview ─────────────────────────────────────────────── -->
+  <section id="overview">
+    <h2>🎯 Demo Overview</h2>
+    <p>The <strong>47 Doors Universal Front Door Support Agent</strong> now speaks. Students can click a single microphone button and have a natural spoken conversation with the same AI pipeline that powers text chat — getting ticket confirmations, knowledge article summaries, and escalation notices, all by voice. This demo shows how a university can replace dozens of disconnected support portals with <strong>one trusted digital colleague</strong> that works whether you type or talk.</p>
+    <div class="ascii-art">
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│  🎓 Student speaks  →  🧠 3-Agent Pipeline  →  🔊 AI replies │
+│                                                             │
+│  QueryAgent ──► RouterAgent ──► ActionAgent                 │
+│      │               │               │                      │
+│   🔍 Intent       🗺️ Route        🎫 Ticket                 │
+│   Detection      Selection        Creation                  │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+    </div>
+  </section>
+
+  <!-- 🧰 Version Matrix ─────────────────────────────────────────────── -->
+  <section id="version-matrix">
+    <h2>🧰 Version Matrix &amp; Compatibility</h2>
+
+    <h3>🐍 Runtime &amp; Framework Versions</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>🔧 Component</th><th>📌 Required</th><th>🏷️ Recommended</th><th>🟢 Status</th></tr></thead>
+        <tbody>
+          <tr><td>🐍 Python</td><td><code>3.11+</code></td><td><code>3.12</code></td><td class="green">✅ Supported</td></tr>
+          <tr><td>🟩 Node.js</td><td><code>18+</code></td><td><code>20 LTS</code></td><td class="green">✅ Supported</td></tr>
+          <tr><td>⚡ FastAPI</td><td><code>0.109+</code></td><td><code>0.115+</code></td><td class="green">✅ Supported</td></tr>
+          <tr><td>⚛️ React</td><td><code>18.x</code></td><td><code>18.3+</code></td><td class="green">✅ Supported</td></tr>
+          <tr><td>⚡ Vite</td><td><code>5.x</code></td><td><code>5.2+</code></td><td class="green">✅ Supported</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>☁️ Azure OpenAI Model Versions</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>🤖 Model</th><th>🏷️ Version</th><th>🎯 Use Case</th><th>🟢 Status</th></tr></thead>
+        <tbody>
+          <tr><td>🧠 GPT-4o</td><td><code>2024-05-13</code></td><td>Text chat pipeline</td><td class="green">✅ Active</td></tr>
+          <tr><td>🎤 GPT-4o Realtime Preview</td><td><code>2024-10-01</code></td><td>Voice / WebRTC</td><td class="green">✅ Active</td></tr>
+          <tr><td>🔊 GPT-4o Audio Preview</td><td><code>2024-10-01</code></td><td>Audio fallback</td><td class="yellow">🟡 Optional</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>🌐 Browser Compatibility</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>🌐 Browser</th><th>📌 Min Version</th><th>🎤 WebRTC</th><th>🔊 Audio API</th><th>🟢 Recommended</th></tr></thead>
+        <tbody>
+          <tr><td>🟡 Chrome</td><td><code>90+</code></td><td class="green">✅ Full</td><td class="green">✅ Full</td><td>⭐ Best</td></tr>
+          <tr><td>🔵 Edge</td><td><code>90+</code></td><td class="green">✅ Full</td><td class="green">✅ Full</td><td>⭐ Best</td></tr>
+          <tr><td>🟠 Firefox</td><td><code>85+</code></td><td class="green">✅ Full</td><td class="green">✅ Full</td><td class="green">✅ Good</td></tr>
+          <tr><td>🔘 Safari</td><td><code>15+</code></td><td class="yellow">⚠️ Partial</td><td class="yellow">⚠️ Partial</td><td class="yellow">🟡 Caution</td></tr>
+          <tr><td>🔴 IE / Legacy</td><td>Any</td><td class="red">❌ None</td><td class="red">❌ None</td><td class="red">❌ Unsupported</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <blockquote><p>⚠️ <strong>Safari note</strong>: WebRTC and Web Audio API support varies. Test before customer demos on macOS/iOS.</p></blockquote>
+
+    <h3>💻 Operating System Support</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>💻 Platform</th><th>🟢 Support Level</th><th>📝 Notes</th></tr></thead>
+        <tbody>
+          <tr><td>🪟 Windows 10/11</td><td class="green">✅ Full</td><td>Recommended for demos</td></tr>
+          <tr><td>🍎 macOS 12+</td><td class="green">✅ Full</td><td>Check Safari mic permissions</td></tr>
+          <tr><td>🐧 Linux (Ubuntu 22+)</td><td class="green">✅ Full</td><td>Chrome/Firefox only</td></tr>
+          <tr><td>☁️ GitHub Codespaces</td><td class="green">✅ Full</td><td>Leave <code>VITE_API_BASE_URL</code> empty</td></tr>
+          <tr><td>🐳 Docker Desktop</td><td class="green">✅ Full</td><td><code>docker-compose up</code> — one command</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ✅ Pre-Demo Checklist ─────────────────────────────────────────── -->
+  <section id="checklist">
+    <h2>✅ Pre-Demo Checklist</h2>
+    <blockquote><p>⏰ Run through this list <strong>5 minutes before</strong> you start the demo.</p></blockquote>
+
+    <div class="progress-group" style="margin-bottom:20px;">
+      <div class="progress-row">
+        <span class="progress-label">Overall Readiness</span>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:0%" id="checklist-bar"></div></div>
+        <span class="progress-pct" id="checklist-pct">0%</span>
+        <span class="progress-status" id="checklist-status">← check items below</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>🔍 Check</th><th>💡 Detail</th><th style="text-align:center">Done?</th></tr></thead>
+        <tbody>
+          <tr><td>1️⃣</td><td>🌐 <strong>Browser open</strong></td><td>Chrome 90+, Firefox 85+, or Edge 90+</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>2️⃣</td><td>🎙️ <strong>Microphone tested</strong></td><td>Settings → Privacy → Microphone → Allow</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>3️⃣</td><td>☁️ <strong>Azure Container App deployed</strong></td><td><code>azd up</code> completed · <a href="https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health" target="_blank"><code>/api/health</code></a> returns <code>healthy</code></td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>4️⃣</td><td>🖼️ <strong>Frontend reachable</strong></td><td>Container App URL loads the UI (or Vite dev if running locally)</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>5️⃣</td><td>🔑 <strong>Azure subscription active</strong></td><td><code>az account show</code> confirms sub <code>ME-MngEnvMCAP262307-segayle-1</code> · <code>azd auth login</code> completed</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>6️⃣</td><td>🤖 <strong>Azure OpenAI connected</strong></td><td><code>MOCK_MODE=false</code> · live <code>gpt-4o</code> + <code>gpt-4o-realtime-preview</code> on <code>frontdoor-6wfum6gndxawy-openai</code></td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>7️⃣</td><td>🔊 <strong>Audio output working</strong></td><td>System volume up · headset or speakers confirmed</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+          <tr><td>8️⃣</td><td>🛡️ <strong>Fallback ready</strong></td><td>If voice fails → text chat <strong>always</strong> works · stay calm</td><td style="text-align:center"><input type="checkbox" class="check-item" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;" /></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="progress-group">
+      <div class="progress-row">
+        <span class="progress-label">✅ All 8 checked?</span>
+        <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+        <span class="progress-pct green">100%</span>
+        <span class="progress-status">🟢 Ready to demo!</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">⚠️ 6–7 checked?</span>
+        <div class="progress-bar-wrap"><div class="progress-bar yellow" style="width:80%"></div></div>
+        <span class="progress-pct yellow">80%</span>
+        <span class="progress-status">🟡 Proceed with caution</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">❌ &lt;6 checked?</span>
+        <div class="progress-bar-wrap"><div class="progress-bar red" style="width:40%"></div></div>
+        <span class="progress-pct red">40%</span>
+        <span class="progress-status">🔴 Stop — fix issues first</span>
+      </div>
+    </div>
+    <blockquote><p>💡 <strong>Codespaces?</strong> Leave <code>VITE_API_BASE_URL</code> blank — Vite proxies <code>/api</code> to <code>127.0.0.1:8000</code> automatically. Both port <strong>5173</strong> and port <strong>8000</strong> must be forwarded.</p></blockquote>
+  </section>
+
+  <!-- 🚀 Start Commands ─────────────────────────────────────────────── -->
+  <section id="start-commands">
+    <h2>🚀 Start Commands</h2>
+    <div class="ascii-art">
+<pre><code>┌──────────────────────────────────────────────────────┐
+│  🚀  LAUNCH SEQUENCE — CHOOSE YOUR PATH              │
+├──────────────────────────────────────────────────────┤
+│  Option A  ── ☁️  Azure Container Apps (Recommended) │
+│  Option B  ── 🐳 Docker (local alternative)          │
+│  Option C  ── 💻 Local Dev (debugging fallback)      │
+│  Option D  ── ☁️  GitHub Codespaces (cloud dev)       │
+└──────────────────────────────────────────────────────┘</code></pre>
+    </div>
+
+    <h3>☁️ Option A — Azure Container Apps <em>(Recommended)</em></h3>
+    <p>This is the <strong>primary demo path</strong>. Azure resources are live and verified in <code>rg-vvoice</code> (eastus2).</p>
+<pre><code><span class="cm"># 1️⃣  Authenticate (once per machine)</span>
+azd auth login
+
+<span class="cm"># 2️⃣  Provision + deploy everything (first time, ~5 min)</span>
+azd up
+
+<span class="cm"># 2b️⃣  Subsequent deploys (code changes only)</span>
+azd deploy
+
+<span class="cm"># 3️⃣  Get the live URL</span>
+azd env get-values | grep AZURE_CONTAINERAPP_URL</code></pre>
+<pre><code><span class="cm"># The frontend SPA is served from the same Container App host.</span>
+<span class="cm"># Use the URL returned above — e.g. https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io</span></code></pre>
+    <blockquote><p>💡 <strong>Subscription</strong>: <code>ME-MngEnvMCAP262307-segayle-1</code> · <strong>Region</strong>: <code>eastus2</code></p></blockquote>
+
+    <h3>🐳 Option B — Docker <em>(Local Alternative)</em></h3>
+<pre><code>docker-compose up
+<span class="cm"># 🖼️ Frontend: http://localhost:5173</span>
+<span class="cm"># 🖥️ Backend:  http://localhost:8000</span></code></pre>
+
+    <h3>💻 Option C — Local Dev <em>(Debugging Fallback)</em></h3>
+<pre><code><span class="cm"># 🖥️ Terminal 1 — Backend</span>
+cd backend
+cp .env.example .env          <span class="cm"># Set MOCK_MODE=false + Azure creds for live mode</span>
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload</code></pre>
+<pre><code><span class="cm"># 🖼️ Terminal 2 — Frontend</span>
+cd frontend
+npm install
+npm run dev                   <span class="cm"># Opens http://localhost:5173</span></code></pre>
+
+    <h3>☁️ Option D — GitHub Codespaces</h3>
+<pre><code><span class="cm"># Same as Option C — Vite proxy handles /api routing</span>
+<span class="cm"># ⚠️  DO NOT set VITE_API_BASE_URL to a localhost URL inside Codespaces</span>
+<span class="cm"># Leave it as empty string in frontend/.env.local:</span>
+echo "VITE_API_BASE_URL=" > frontend/.env.local</code></pre>
+
+    <h3>🩺 Health Check <em>(Verify before demoing)</em></h3>
+    <blockquote><p>💡 The live Container App URL is hardcoded below. Both endpoints have been verified ✅.</p></blockquote>
+<pre><code><span class="cm"># ☁️ Azure (primary — LIVE)</span>
+curl https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health
+<span class="cm"># ✅ Verified: LLM connecting, services up: ticketing, knowledge_base, session_store</span>
+
+curl https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health
+<span class="cm"># ✅ Verified: { "realtime_available": true, "mock_mode": false, "voice_enabled": true }</span>
+
+<span class="cm"># 💻 Local fallback</span>
+<span class="cm"># curl http://localhost:8000/api/health</span>
+<span class="cm"># curl http://localhost:8000/api/realtime/health</span></code></pre>
+
+    <div class="progress-group">
+      <div class="progress-row">
+        <span class="progress-label">Backend Health</span>
+        <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+        <span class="progress-pct green">✅</span>
+        <span class="progress-status">healthy (ticketing ✅ · knowledge_base ✅ · session_store ✅)</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Realtime Health</span>
+        <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+        <span class="progress-pct green">✅</span>
+        <span class="progress-status">available (mock_mode: false · voice_enabled: true — Azure Live)</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">Frontend Load</span>
+        <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+        <span class="progress-pct green">✅</span>
+        <span class="progress-status">frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 🎬 Demo Sequence ─────────────────────────────────────────────── -->
+  <section id="demo-sequence">
+    <h2>🎬 Demo Sequence (12–15 Minutes)</h2>
+    <div class="ascii-art">
+<pre><code>┌────────────────────────────────────────────────────────────────────┐
+│  🎬  DEMO TIMELINE                                                 │
+├──────┬──────────────────────────────────────────────┬─────────────┤
+│  ⏱️  │  🎭 Scene                                     │  📊 Progress │
+├──────┼──────────────────────────────────────────────┼─────────────┤
+│ 0–3m │  🎭 Scene 1 — The 47 Doors Problem           │ [████░░░░░░] │
+│ 3–7m │  🎤 Scene 2 — Voice Interaction              │ [████████░░] │
+│ 7–10m│  🔍 Scene 3 — Observability &amp; Trust          │ [████████░░] │
+│10–12m│  🛡️  Scene 4 — Graceful Degradation           │ [████████░░] │
+│12–14m│  🔭 Scene 5 — What's Next                    │ [████████░░] │
+└──────┴──────────────────────────────────────────────┴─────────────┘</code></pre>
+    </div>
+
+    <!-- Scene 1 -->
+    <div class="scene">
+      <h3>🎭 Scene 1 — The 47 Doors Problem <em>(~3 min)</em></h3>
+      <span class="status-note">🟢 Opening act — set the context</span>
+      <p><strong>📺 What to show:</strong> The chat UI with text conversation working normally.</p>
+      <p><strong>🎙️ Talk track:</strong></p>
+      <div class="talk-track">"Imagine being a first-year student at a large university. You have a password problem — but is that IT? Or is it your course portal? Maybe it's your library login? At most universities, there are literally <strong>47 different front doors</strong> for support. Students don't know which door to knock on, so they knock on all of them and wait."</div>
+      <div class="talk-track">"47 Doors is the answer to that. One trusted digital colleague that knows every department, every process, and every knowledge article — and routes your request to exactly the right team."</div>
+      <ol>
+        <li><div>⌨️ <strong>Type</strong> in the chat: <code>"I forgot my password and can't log into Canvas"</code></div></li>
+        <li><div>👀 <strong>Show</strong> the ticket ID returned, the KB articles, and the SLA estimate</div></li>
+        <li><div>📍 <strong>Point out</strong>: One input → intent detected → ticket created → KB surfaced → SLA communicated</div></li>
+      </ol>
+<pre><code>Student types  ──►  🧠 Intent Detection  ──►  🗺️ Router  ──►  🎫 Ticket + 📚 KB + ⏱️ SLA
+                         [████████████]           [████]         [████████████████]</code></pre>
+      <div class="talk-track">"This is what we built for text. Today, I'm going to show you the same experience — but spoken out loud."</div>
+    </div>
+
+    <!-- Scene 2 -->
+    <div class="scene">
+      <h3>🎤 Scene 2 — Voice Interaction <em>(~4 min)</em></h3>
+      <span class="status-note">🟢 The money shot — this is what they came to see</span>
+      <p><strong>📺 What to show:</strong> The full voice round-trip — click mic, speak, hear a response, see the transcript.</p>
+      <div class="talk-track">"Let me show you what it looks like when a student just wants to talk."</div>
+      <ol>
+        <li>
+          <div>👆 <strong>Point to</strong> the 🎤 microphone button in the chat input area
+            <div class="talk-track" style="margin-top:10px;">"One button. That's the entire voice interface."</div>
+          </div>
+        </li>
+        <li>
+          <div>🖱️ <strong>Click the mic button</strong> — the button pulses 🟢 green
+            <div class="talk-track" style="margin-top:10px;">"The browser asks for mic permission — we request it, the student grants it, and we're live. Notice the status banner at the top: it says 'Listening...'"</div>
+          </div>
+        </li>
+        <li>
+          <div>🗣️ <strong>Speak clearly</strong>: <em>"I forgot my password and can't log into Canvas"</em>
+            <div class="talk-track" style="margin-top:10px;">"Speak naturally. No commands, no keywords — just say what you need."</div>
+            <div class="progress-group" style="margin-top:12px;">
+              <div class="progress-row">
+                <span class="progress-label">🎙️ Listening...</span>
+                <div class="progress-bar-wrap"><div class="progress-bar" style="width:65%"></div></div>
+                <span class="progress-status" style="margin-left:8px;">VAD active · detecting speech</span>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div>⏳ <strong>While processing</strong> — point to the spinner state
+            <div class="talk-track" style="margin-top:10px;">"The agent heard me finish speaking. Now it's running the same 3-agent pipeline we just saw in text — intent detection, routing, action. That's the WebSocket tool relay working in the background."</div>
+            <div class="progress-group" style="margin-top:12px;">
+              <div class="progress-row">
+                <span class="progress-label">🧠 Processing...</span>
+                <div class="progress-bar-wrap"><div class="progress-bar yellow" style="width:82%"></div></div>
+                <span class="progress-status" style="margin-left:8px;">3-agent pipeline running</span>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div>🔊 <strong>When the agent responds</strong> — point to the transcript bubble with 🔊 icon
+            <div class="talk-track" style="margin-top:10px;">"The agent speaks the answer back AND adds it to the chat thread with a speaker icon so there's always a written record. No audio is stored — only this PII-filtered transcript."</div>
+            <div class="progress-group" style="margin-top:12px;">
+              <div class="progress-row">
+                <span class="progress-label">✅ Response ready</span>
+                <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+                <span class="progress-pct green">✅</span>
+                <span class="progress-status">🔊 Audio + 📝 Transcript delivered</span>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div>🗣️ <strong>Ask a follow-up verbally</strong>: <em>"Can you check the status of that ticket?"</em>
+            <div class="talk-track" style="margin-top:10px;">"Now I'm asking a follow-up without re-explaining anything. The session context is shared — voice and text are the same session."</div>
+          </div>
+        </li>
+        <li>
+          <div>🖱️ <strong>Click mic button again</strong> to stop — status returns to 💤 idle
+            <div class="talk-track" style="margin-top:10px;">"Done. I stopped talking, the mic is off. I can pick up the conversation in text right now without losing a single message."</div>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <!-- Scene 3 -->
+    <div class="scene">
+      <h3>🔍 Scene 3 — Observability &amp; Trust <em>(~3 min)</em></h3>
+      <span class="status-note">🟢 Build confidence for IT administrators</span>
+      <p><strong>📺 What to show:</strong> Health endpoint, audit trail, session sharing.</p>
+      <div class="talk-track">"University IT teams ask: 'How do we know what the AI is doing? How do we audit it?' Great question."</div>
+      <ol>
+        <li>
+          <div>🌐 <strong>Open a new browser tab</strong>, navigate to <code><a href="https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/realtime/health" target="_blank">/api/realtime/health</a></code>
+<pre style="margin-top:12px;"><code>{ "realtime_available": true, "mock_mode": false, "voice_enabled": true }</code></pre>
+            <div class="talk-track" style="margin-top:10px;">"This endpoint tells the frontend whether voice is available. If it returns false, the mic button never even appears — there's no broken state to deal with."</div>
+          </div>
+        </li>
+        <li>
+          <div>🌐 <strong>Navigate to</strong> <code><a href="https://frontdoor-6wfum6gndxawy-backend.blackflower-446b9850.eastus2.azurecontainerapps.io/api/health" target="_blank">/api/health</a></code>
+            <div class="talk-track" style="margin-top:10px;">"Full health check — every service, including the Realtime API, has a status entry."</div>
+          </div>
+        </li>
+        <li>
+          <div>📜 <strong>Back in the chat</strong>, scroll through the conversation history
+            <div class="talk-track" style="margin-top:10px;">"Every voice interaction is logged with <code>input_modality: voice</code>. Admins can filter logs to see exactly which queries came through voice, when, and what the agent did. No audio, no PII — just a clean audit trail."</div>
+          </div>
+        </li>
+        <li>
+          <div>🔗 <strong>Highlight</strong> that voice and text messages share the same session
+            <div class="talk-track" style="margin-top:10px;">"The session ID is identical whether a student types or speaks. That means support staff see a coherent conversation history, not two separate logs."</div>
+          </div>
+        </li>
+      </ol>
+<pre><code>🔒 Audit Trail:   input_modality: voice  ✅  PII filtered  ✅  No raw audio stored
+🔗 Session Link:  voice_session_id === text_session_id  ✅  Unified history</code></pre>
+    </div>
+
+    <!-- Scene 4 -->
+    <div class="scene">
+      <h3>🛡️ Scene 4 — Graceful Degradation <em>(~2 min)</em></h3>
+      <span class="status-note yellow">🟡 Show resilience — builds institutional trust</span>
+      <p><strong>📺 What to show:</strong> Voice unavailable → text chat continues seamlessly.</p>
+      <div class="talk-track">"The most important thing about a feature like this is what happens when it doesn't work."</div>
+      <ol>
+        <li>
+          <div>🔧 <strong>Temporarily disable voice</strong>: In the Azure Container App, set environment variable <code>VOICE_ENABLED=false</code> via the portal or:
+<pre style="margin-top:12px;"><code>az containerapp update --name frontdoor-6wfum6gndxawy-backend --resource-group rg-vvoice \
+  --set-env-vars VOICE_ENABLED=false</code></pre>
+            <p style="font-size:0.85rem;color:#94a3b8;margin-top:6px;">(If running locally: set <code>VOICE_ENABLED=false</code> in <code>backend/.env</code> and restart uvicorn)</p>
+          </div>
+        </li>
+        <li>
+          <div>🔄 <strong>Refresh the frontend</strong> — mic button is <strong>gone entirely</strong>
+            <div class="talk-track" style="margin-top:10px;">"When voice isn't available, we don't show a broken button — we remove it. The student sees a normal, fully functional text chat."</div>
+<pre style="margin-top:12px;"><code>VOICE_ENABLED=false  →  🎤 mic button hidden  →  💬 text chat: fully functional ✅</code></pre>
+          </div>
+        </li>
+        <li>
+          <div>⌨️ <strong>Type</strong> a message and get a response
+            <div class="talk-track" style="margin-top:10px;">"Text chat is completely unaffected. Voice uses separate WebRTC and WebSocket connections — there's zero coupling to the text pipeline."</div>
+          </div>
+        </li>
+        <li><div>✅ <strong>Re-enable</strong>: Restore <code>VOICE_ENABLED=true</code> on the Container App — mic button reappears</div></li>
+      </ol>
+      <div class="progress-group">
+        <div class="progress-row">
+          <span class="progress-label">Voice OFF: Text</span>
+          <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+          <span class="progress-pct green">✅</span>
+          <span class="progress-status">💬 Text fully functional · 🎤 Voice hidden</span>
+        </div>
+        <div class="progress-row">
+          <span class="progress-label">Voice ON: Both</span>
+          <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+          <span class="progress-pct green">✅</span>
+          <span class="progress-status">💬 Text fully functional · 🎤 Voice active</span>
+        </div>
+      </div>
+      <div class="talk-track">"Graceful degradation isn't just a buzzword here. It's a constitutional requirement baked into the architecture from day one."</div>
+    </div>
+
+    <!-- Scene 5 -->
+    <div class="scene">
+      <h3>🔭 Scene 5 — What's Next <em>(~2 min)</em></h3>
+      <span class="status-note">🟢 Close strong — leave them excited</span>
+      <div class="talk-track">"What you just saw is running live on Azure — connected to Azure OpenAI GPT-4o Realtime API in East US 2. Here's what the path forward looks like."</div>
+      <div class="progress-group">
+        <div class="progress-row">
+          <span class="progress-label">Phase 1–3</span>
+          <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+          <span class="progress-pct green">✅</span>
+          <span class="progress-status">Complete — Live on Azure</span>
+        </div>
+        <div class="progress-row">
+          <span class="progress-label">Phase 4–6</span>
+          <div class="progress-bar-wrap"><div class="progress-bar yellow" style="width:60%"></div></div>
+          <span class="progress-pct yellow">🟡</span>
+          <span class="progress-status">In progress</span>
+        </div>
+        <div class="progress-row">
+          <span class="progress-label">Phase 7–8</span>
+          <div class="progress-bar-wrap"><div class="progress-bar" style="width:0%"></div></div>
+          <span class="progress-pct" style="color:#64748b;">📋</span>
+          <span class="progress-status">Planned</span>
+        </div>
+      </div>
+      <ol>
+        <li><div>🏭 <strong>Production hardening</strong>: WCAG 2.1 AA audit, screen reader testing with JAWS/NVDA — the Bicep templates in <code>infra/</code> already include the full deployment</div></li>
+        <li><div>♿ <strong>Accessibility hardening</strong>: Complete WCAG 2.1 AA audit pass</div></li>
+        <li><div>⚡ <strong>Sub-2-second latency</strong>: Fine-tune Azure Container App scaling + WebRTC transport for optimal response times</div></li>
+        <li><div>📊 <strong>Analytics</strong>: Voice vs. text resolution rate comparison, VAD tuning per environment</div></li>
+      </ol>
+      <div class="talk-track">"The architecture is already live. The tests are green — 76 backend tests pass. Scaling this to production tenants is a <strong>configuration change</strong>, not a code change."</div>
+    </div>
+  </section>
+
+  <!-- 🔧 Troubleshooting ─────────────────────────────────────────────── -->
+  <section id="troubleshooting">
+    <h2>🔧 Troubleshooting Table</h2>
+    <div class="ascii-art">
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│  🔧  TROUBLESHOOTING QUICK REFERENCE                        │
+│  🔴 = Blocking  🟡 = Degraded  🟢 = Self-resolving         │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>🚨 Issue</th><th style="text-align:center;white-space:nowrap;">Sev</th><th>🔍 Cause</th><th>🛠️ Fix</th></tr></thead>
+        <tbody>
+          <tr><td>🚫 Mic permission denied</td><td style="text-align:center" class="red">🔴</td><td>Browser blocked microphone access</td><td>Click 🔒 lock icon in address bar → Allow Microphone → refresh</td></tr>
+          <tr><td>🔌 WebSocket fails / <code>4001</code></td><td style="text-align:center" class="red">🔴</td><td>Ephemeral token expired (TTL ≤ 60 s)</td><td><code>POST /api/realtime/session</code> — hook retries automatically</td></tr>
+          <tr><td>🔌 WebSocket closes <code>4002</code></td><td style="text-align:center" class="red">🔴</td><td><code>session_id</code> not found</td><td>Verify UUID in query params matches a live session; reload</td></tr>
+          <tr><td>🔇 No audio output</td><td style="text-align:center" class="red">🔴</td><td>System volume muted / wrong output device</td><td>Check system audio; try a headset</td></tr>
+          <tr><td>🌊 VAD not triggering / false triggers</td><td style="text-align:center" class="yellow">🟡</td><td>Background noise</td><td>Use headset in quiet room; adjust <code>REALTIME_VAD_THRESHOLD_MS</code> in <code>.env</code></td></tr>
+          <tr><td>🎤 "Voice unavailable" banner</td><td style="text-align:center" class="yellow">🟡</td><td>Backend not running or voice disabled</td><td>Confirm Container App is running; check <code>VOICE_ENABLED=true</code> env var</td></tr>
+          <tr><td>🚫 <code>503</code> on <code>POST /session</code></td><td style="text-align:center" class="red">🔴</td><td><code>VOICE_ENABLED=false</code> in config</td><td>Set <code>VOICE_ENABLED=true</code> on Container App → restart revision</td></tr>
+          <tr><td>🎤 Mic button not shown</td><td style="text-align:center" class="yellow">🟡</td><td><code>realtime_available: false</code> from health check</td><td><code>GET /api/realtime/health</code>; confirm Container App running</td></tr>
+          <tr><td>📝 Transcript not appearing</td><td style="text-align:center" class="yellow">🟡</td><td>Voice components not rendered</td><td>Confirm <code>ChatContainer.tsx</code> imports <code>VoiceTranscript</code>; check console</td></tr>
+          <tr><td>💬 Text chat broken after voice</td><td style="text-align:center" class="red">🔴</td><td>Should not happen (separate connections)</td><td>Hard-reload; file a bug if persists — check <code>ChatContainer.tsx</code> state isolation</td></tr>
+          <tr><td>🔒 WebRTC ICE failure</td><td style="text-align:center" class="red">🔴</td><td>Azure endpoint/region misconfigured</td><td>Verify <code>AZURE_OPENAI_ENDPOINT</code> + <code>AZURE_OPENAI_REALTIME_DEPLOYMENT</code> in env vars</td></tr>
+          <tr><td>🌐 Codespaces: API calls fail</td><td style="text-align:center" class="red">🔴</td><td><code>VITE_API_BASE_URL</code> set to localhost</td><td>Clear <code>VITE_API_BASE_URL</code> — Vite proxy handles <code>/api</code> routing</td></tr>
+          <tr><td>📦 Container App not starting</td><td style="text-align:center" class="red">🔴</td><td>Image build failure or missing env vars</td><td><code>azd deploy --debug</code>; check Container App logs in Azure Portal</td></tr>
+          <tr><td>🛑 <code>azd up</code> failure</td><td style="text-align:center" class="red">🔴</td><td>Quota, permissions, or Bicep error</td><td>Check <code>azd</code> output; verify subscription <code>ME-MngEnvMCAP262307-segayle-1</code> and role assignments</td></tr>
+          <tr><td>🤖 Azure OpenAI quota exceeded</td><td style="text-align:center" class="red">🔴</td><td>TPM/RPM limit hit on <code>frontdoor-6wfum6gndxawy-openai</code></td><td>Check quota in Azure Portal → <code>rg-vvoice</code> → OpenAI resource → Deployments</td></tr>
+          <tr><td>🐌 Cold start delay (first request)</td><td style="text-align:center" class="yellow">🟡</td><td>Container App scaling from zero</td><td>Wait 10–15 s; send a warm-up request to <code>/api/health</code> before the demo</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <strong>Legend</strong>
+      <ul style="list-style:none;padding-left:0;margin-top:10px;">
+        <li style="margin-bottom:6px;"><span class="red">🔴 Blocking</span> — demo cannot continue without fix</li>
+        <li style="margin-bottom:6px;"><span class="yellow">🟡 Degraded</span> — demo can proceed with workaround</li>
+        <li><span class="green">🟢 Self-resolving</span> — wait or retry</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 🏫 EDU Framing ─────────────────────────────────────────────────── -->
+  <section id="edu-framing">
+    <h2>🏫 EDU Reusable Framing</h2>
+    <div class="ascii-art">
+<pre><code>╔══════════════════════════════════════════════════════════════╗
+║  🎓  THE PITCH — COPY-PASTE READY TALKING POINTS            ║
+╚══════════════════════════════════════════════════════════════╝</code></pre>
+    </div>
+
+    <h3>🚪 The "47 Front Doors" Problem</h3>
+    <p>Universities are not monolithic. A typical large institution has separate portals for: IT support, financial aid, housing, dining, registrar, library, advising, health services, parking, athletics, career services... and more. Students waste hours figuring out <strong>which door to knock on</strong> — and often knock on the wrong one.</p>
+<pre><code>Before 47 Doors:
+🚪IT  🚪FinAid  🚪Housing  🚪Dining  🚪Registrar  🚪Library  🚪Advising  🚪Health ...
+Student → "Which door?!" → knocks on all → waits on all → frustrated
+
+After 47 Doors:
+              🏠 ONE DOOR
+Student → speaks or types → instant routing → right team → resolved ✅</code></pre>
+    <blockquote><p>💬 <strong>The pitch</strong>: <em>"What if there was one door? One place where any student question — regardless of department — is heard, understood, and routed correctly?"</em></p></blockquote>
+
+    <h3>🤝 The "Trusted Digital Colleague" Narrative</h3>
+    <p>47 Doors is not a chatbot. It is a <strong>digital colleague</strong> — one that:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>🧠 Capability</th><th>📝 Description</th></tr></thead>
+        <tbody>
+          <tr><td>🗺️ Knows the org chart</td><td>Routes every query to the right team automatically</td></tr>
+          <tr><td>📚 Knows the knowledge base</td><td>Surfaces relevant articles with RAG-powered search</td></tr>
+          <tr><td>⚠️ Knows when to escalate</td><td>Policy triggers, sensitivity detection, human handoff</td></tr>
+          <tr><td>💾 Remembers the conversation</td><td>Session context across turns <strong>and</strong> modalities</td></tr>
+          <tr><td>🔒 Never stores what it shouldn't</td><td>No raw audio · PII-filtered transcripts · audit-ready logs</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Voice makes this colleague feel <strong>present</strong> — not like filling out a form, but like asking a knowledgeable colleague in the hallway.</p>
+
+    <h3>🌍 Applicable to Any University</h3>
+    <p>This architecture is institution-agnostic. The 3-agent pipeline (<code>QueryAgent → RouterAgent → ActionAgent</code>) maps to any university's department taxonomy. With live Azure deployment via <code>azd up</code>, any institution can demo it today against real Azure OpenAI — and scale to production deployment after seeing it work for their specific use cases.</p>
+    <blockquote><p>💬 <strong>The close</strong>: <em>"You're not buying a chatbot. You're giving every student a trusted digital colleague who is always available, always accurate, and always gets them to the right place — whether they type or talk."</em></p></blockquote>
+  </section>
+
+</main>
+
+<!-- ─── Footer ────────────────────────────────────────────────────── -->
+<footer>
+  <code class="footer-ascii">╔══════════════════════════════════════════════════════════════════════════════╗
+║  📋  Runbook maintained by the 47 Doors engineering team                    ║
+║  🐛  Issues? Open a GitHub issue on branch: 002-voice-interaction           ║
+║  ☁️   Azure-first: `azd up` → live on Azure OpenAI (MOCK_MODE=false)         ║
+╚══════════════════════════════════════════════════════════════════════════════╝</code>
+  <p>47 Doors Voice Runbook · Branch <a href="https://github.com/47doors/47doors/tree/002-voice-interaction">002-voice-interaction</a> · Styled with Anthropic/Claude design language</p>
+</footer>
+
+<!-- ─── Back to Top ───────────────────────────────────────────────── -->
+<button id="back-top" aria-label="Back to top" title="Scroll to top">↑</button>
+
+<!-- ─── Scripts ───────────────────────────────────────────────────── -->
+<script>
+  // Back to Top
+  const backTop = document.getElementById('back-top');
+  window.addEventListener('scroll', () => {
+    backTop.classList.toggle('visible', window.scrollY > 400);
+  }, { passive: true });
+  backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // Active Nav Highlighting
+  const navLinks = document.querySelectorAll('.nav-links a');
+  const sections = document.querySelectorAll('main section[id]');
+  function updateNav() {
+    let current = '';
+    const offset = window.scrollY + 100;
+    sections.forEach(s => { if (s.offsetTop <= offset) current = s.id; });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav();
+
+  // Live Checklist Progress Bar
+  const checks  = document.querySelectorAll('.check-item');
+  const bar     = document.getElementById('checklist-bar');
+  const pct     = document.getElementById('checklist-pct');
+  const status  = document.getElementById('checklist-status');
+  function updateChecklist() {
+    const done    = [...checks].filter(c => c.checked).length;
+    const total   = checks.length;
+    const percent = Math.round(done / total * 100);
+    bar.style.width = percent + '%';
+    pct.textContent = percent + '%';
+    bar.className = 'progress-bar';
+    pct.className = 'progress-pct';
+    if (done === total) {
+      bar.classList.add('green'); pct.classList.add('green');
+      status.textContent = '🟢 Ready to demo!';
+    } else if (done >= 6) {
+      bar.classList.add('yellow'); pct.classList.add('yellow');
+      status.textContent = '🟡 Proceed with caution';
+    } else if (done < 4) {
+      bar.classList.add('red'); pct.classList.add('red');
+      status.textContent = '🔴 Stop — fix issues first';
+    } else {
+      bar.classList.add('yellow'); pct.classList.add('yellow');
+      status.textContent = '🟡 Keep going...';
+    }
+  }
+  checks.forEach(c => c.addEventListener('change', updateChecklist));
+  updateChecklist();
+
+  // Auth — fetch /.auth/me and show user info in nav
+  (async () => {
+    try {
+      const res = await fetch('/.auth/me', { cache: 'no-store' });
+      if (!res.ok) return; // local dev — hide silently
+      const data = await res.json();
+      const principal = data?.clientPrincipal;
+      if (!principal) return; // unauthenticated or local dev
+      const name = principal.userDetails || principal.userId || 'Authenticated';
+      const authNav = document.getElementById('nav-auth');
+      const authName = document.getElementById('auth-name');
+      if (authNav && authName) {
+        authName.textContent = name;
+        authNav.style.display = 'flex';
+      }
+    } catch (_) {
+      // /.auth/me unavailable locally — silent no-op
+    }
+  })();
+</script>
 </body>
 </html>

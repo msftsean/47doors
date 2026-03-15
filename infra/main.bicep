@@ -16,6 +16,9 @@ param openAiModel string = 'gpt-4o'
 @description('OpenAI model version')
 param openAiModelVersion string = '2024-05-13'
 
+@description('GPT-4o Realtime model version')
+param realtimeModelVersion string = '2024-12-17'
+
 @description('Enable mock mode (no external service connections)')
 param mockMode bool = false
 
@@ -50,6 +53,7 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2023-10-01-preview' = {
   properties: {
     customSubDomainName: '${prefix}-openai'
     publicNetworkAccess: 'Enabled'
+    disableLocalAuth: true  // Managed identity only - no API key auth
   }
 }
 
@@ -66,6 +70,23 @@ resource openAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023
   sku: {
     name: 'Standard'
     capacity: 30
+  }
+}
+
+resource openAiRealtimeDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-10-01-preview' = {
+  parent: openAi
+  name: 'gpt-4o-realtime-preview'
+  dependsOn: [openAiDeployment]
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-4o-realtime-preview'
+      version: realtimeModelVersion
+    }
+  }
+  sku: {
+    name: 'GlobalStandard'
+    capacity: 1
   }
 }
 
@@ -203,14 +224,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 // Store secrets
-resource openAiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'azure-openai-api-key'
-  properties: {
-    value: openAi.listKeys().key1
-  }
-}
-
 resource cosmosKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!mockMode) {
   parent: keyVault
   name: 'cosmos-db-key'
@@ -251,6 +264,9 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
   tags: union(tags, {
     'azd-service-name': 'backend'
   })
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
@@ -263,6 +279,14 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
         {
           name: 'acr-password'
           value: containerRegistry.listCredentials().passwords[0].value
+        }
+        {
+          name: 'cosmos-db-key'
+          value: mockMode ? 'mock' : cosmosAccount.listKeys().primaryMasterKey
+        }
+        {
+          name: 'search-api-key'
+          value: searchService.listAdminKeys().primaryKey
         }
       ]
       registries: [
@@ -283,6 +307,42 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
               name: 'MOCK_MODE'
               value: string(mockMode)
             }
+            {
+              name: 'AZURE_OPENAI_ENDPOINT'
+              value: openAi.properties.endpoint
+            }
+            {
+              name: 'AZURE_OPENAI_DEPLOYMENT'
+              value: openAiDeployment.name
+            }
+            {
+              name: 'AZURE_OPENAI_REALTIME_DEPLOYMENT'
+              value: openAiRealtimeDeployment.name
+            }
+            {
+              name: 'AZURE_OPENAI_API_VERSION'
+              value: '2025-04-01-preview'
+            }
+            {
+              name: 'AZURE_COSMOS_ENDPOINT'
+              value: mockMode ? '' : cosmosAccount.properties.documentEndpoint
+            }
+            {
+              name: 'AZURE_COSMOS_KEY'
+              secretRef: 'cosmos-db-key'
+            }
+            {
+              name: 'AZURE_COSMOS_DATABASE'
+              value: mockMode ? 'frontdoor' : cosmosDatabase.name
+            }
+            {
+              name: 'AZURE_SEARCH_ENDPOINT'
+              value: 'https://${searchService.name}.search.windows.net'
+            }
+            {
+              name: 'AZURE_SEARCH_KEY'
+              secretRef: 'search-api-key'
+            }
           ]
           resources: {
             cpu: json('0.5')
@@ -299,16 +359,92 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
 }
 
 // ============================================================================
+// Role Assignments for Managed Identity
+// ============================================================================
+
+// Cognitive Services OpenAI User role definition ID (Azure built-in role)
+var cognitiveServicesOpenAIUserRoleId = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+
+// Grant backend container app access to Azure OpenAI via managed identity
+resource backendOpenAIRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(openAi.id, backendContainerApp.id, cognitiveServicesOpenAIUserRoleId)
+  scope: openAi
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
+    principalId: backendContainerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// ============================================================================
+// Frontend Container App
+// ============================================================================
+resource frontendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
+  name: '${prefix}-frontend'
+  location: location
+  tags: union(tags, {
+    'azd-service-name': 'frontend'
+  })
+  properties: {
+    managedEnvironmentId: containerAppEnv.id
+    configuration: {
+      ingress: {
+        external: true
+        targetPort: 80
+        transport: 'auto'
+      }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: containerRegistry.listCredentials().passwords[0].value
+        }
+      ]
+      registries: [
+        {
+          server: containerRegistry.properties.loginServer
+          username: containerRegistry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'frontend'
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          env: [
+            {
+              name: 'BACKEND_URL'
+              value: 'https://${backendContainerApp.properties.configuration.ingress.fqdn}'
+            }
+          ]
+          resources: {
+            cpu: json('0.25')
+            memory: '0.5Gi'
+          }
+        }
+      ]
+      scale: {
+        minReplicas: 1
+        maxReplicas: 2
+      }
+    }
+  }
+}
+
+// ============================================================================
 // Outputs for azd
 // ============================================================================
 output AZURE_OPENAI_ENDPOINT string = openAi.properties.endpoint
 output AZURE_OPENAI_DEPLOYMENT string = openAiDeployment.name
+output AZURE_OPENAI_REALTIME_DEPLOYMENT string = openAiRealtimeDeployment.name
 output AZURE_COSMOS_ENDPOINT string = mockMode ? '' : cosmosAccount.properties.documentEndpoint
 output AZURE_COSMOS_DATABASE string = mockMode ? 'frontdoor' : cosmosDatabase.name
 output AZURE_SEARCH_ENDPOINT string = 'https://${searchService.name}.search.windows.net'
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.properties.loginServer
 output AZURE_CONTAINER_ENV_ID string = containerAppEnv.id
 output AZURE_CONTAINERAPP_URL string = 'https://${backendContainerApp.properties.configuration.ingress.fqdn}'
+output AZURE_FRONTEND_URL string = 'https://${frontendContainerApp.properties.configuration.ingress.fqdn}'
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output AZURE_KEY_VAULT_NAME string = keyVault.name
 output MOCK_MODE bool = mockMode
