@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Bicep: `gpt-4o-realtime-preview` model deployment
   - Demo runbook, feature summary, quickstart, manual smoke tests, eval harness
 
+- **Eval Test Improvements**
+  - Fixed mock intent routing: "deadline to withdraw" → REGISTRAR, student employment → HR
+  - GPT-4o evals now runnable via `DefaultAzureCredential` fallback (API key auth disabled by Azure policy)
+  - 97 GPT-4o eval tests (intent, PII, sentiment, entities, urgency, e2e) pass with `az login`
+
 - **Boot Camp Labs Curriculum** (`001-boot-camp-labs`): Complete 8-hour boot camp curriculum with 8 progressive lab exercises
   - Lab 00: Environment Setup (30 min) - Prerequisites verification and Azure configuration
   - Lab 01: Understanding AI Agents (90 min) - Three-agent pattern and intent classification

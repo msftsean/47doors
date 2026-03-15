@@ -169,7 +169,14 @@ Full schema: [`contracts/voice-api.yaml`](./contracts/voice-api.yaml)
 cd backend
 python -m pytest tests/test_voice/ -v
 
-# Run all backend tests (voice + existing)
+# Run all backend tests (voice + existing, excluding GPT-4o evals)
+python -m pytest -x --ignore=tests/test_gpt4o_evals.py
+
+# ── GPT-4o model evals (requires az login) ────────────────────────────────────
+az login                              # authenticate with DefaultAzureCredential
+python -m pytest tests/test_gpt4o_evals.py -v   # 97 tests: intent, PII, sentiment, entities, urgency, e2e
+
+# Run ALL backend tests (338 unit/mock + 97 GPT-4o evals)
 python -m pytest -x
 
 # ── Frontend voice tests ──────────────────────────────────────────────────────
@@ -189,6 +196,8 @@ Backend test coverage areas:
 | `test_mock_service.py` | Mock Realtime service tool call simulation |
 | `test_endpoints.py` | `POST /realtime/session`, WS handshake, `GET /realtime/health` |
 | `test_pii_filter.py` | PII scrubbing of transcripts before persistence |
+| `test_evals.py` | 74 mock-based eval tests (intent routing, PII, sentiment, entities, urgency) |
+| `test_gpt4o_evals.py` | 97 GPT-4o model eval tests via `DefaultAzureCredential` (requires `az login`) |
 
 Frontend test coverage areas:
 

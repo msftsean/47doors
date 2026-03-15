@@ -1,6 +1,6 @@
 # 🎤 Feature Summary: Voice Interaction (002-voice-interaction)
 
-> **Branch**: `002-voice-interaction` | **Status**: ✅ MVP Live on Azure — 264 backend tests passing
+> **Branch**: `002-voice-interaction` | **Status**: ✅ MVP Live on Azure — 435 backend tests passing (338 unit/mock + 97 GPT-4o evals)
 > **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Tasks**: [tasks.md](./tasks.md)
 
 ---
@@ -117,7 +117,7 @@ The MVP cutline is **P1 (Core Voice) + P5 (Degradation) + Eval Pack**.
 
 | Layer | Count | Details |
 |-------|-------|---------|
-| **Backend unit tests** | **264 / 264 ✅** | Config fields, Pydantic models, MockRealtimeService, API endpoints, PII filter, plus existing pipeline tests |
+| **Backend unit tests** | **435 / 435 ✅** | Config fields, Pydantic models, MockRealtimeService, API endpoints, PII filter, existing pipeline tests, plus 97 GPT-4o model evals |
 | **Frontend unit tests** | Vitest | `VoiceMicButton` (6 states, keyboard), `useVoice` (state machine, WS, degradation) |
 | **E2E tests** | Playwright | Full mock-mode voice session: click mic → speak → transcript → stop |
 | **Eval harness** | Prompt suite | 20 voice eval prompts; mock baseline; regression detection vs. text baseline |
@@ -160,7 +160,7 @@ The 47 Doors project constitution (v1.1.0) defines non-negotiable engineering pr
 
 ### Why You Can Trust It
 - **No audio stored** — raw audio travels browser↔Azure only; transcripts are PII-filtered before being written anywhere
-- **264 backend tests pass** — voice models, services, endpoints, PII filter alongside all existing pipeline tests (excludes eval tests with pre-existing model variance failures)
+- **435 backend tests pass** — voice models, services, endpoints, PII filter, existing pipeline tests, plus 97 GPT-4o model evals (intent, PII, sentiment, entities, urgency, e2e) running via `DefaultAzureCredential`
 - **Mock mode works offline** — you just saw it run without any Azure credentials; production is a config flip
 
 ### What's Next

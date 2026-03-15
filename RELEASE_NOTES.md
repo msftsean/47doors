@@ -23,13 +23,13 @@
 
 #### GPT-4o Eval Fix
 - **Fixed**: Work-study job classification eval in `test_gpt4o_evals.py` now accepts both `GENERAL_INQUIRY` and `STUDENT_SERVICES` as valid categories
-- **Result**: Backend tests: 359/359 passing
+- **Result**: Backend tests: 435/435 passing
 
 ### 📊 Test Results Summary
 
 | Suite | Result |
 |-------|--------|
-| Backend tests | 359/359 ✅ |
+| Backend tests | 435/435 ✅ |
 | Frontend unit tests | 8/8 ✅ |
 | Lab 01 - Understanding Agents | 7/7 ✅ (EXEMPLARY) |
 | Lab 02 - Azure MCP Setup | 5/10 ⚠️ (requires az login) |

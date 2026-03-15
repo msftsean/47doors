@@ -11,7 +11,7 @@
 ```
 Demo Readiness  [████████████████████] 100%  ✅ All systems go
 Azure Live      [████████████████████] 100%  ✅ Connected to Azure OpenAI (MOCK_MODE=false)
-Test Coverage   [████████████████████] 100%  ✅ 264 backend tests passing
+Test Coverage   [████████████████████] 100%  ✅ 435 backend tests passing
 ```
 
 ---
@@ -406,7 +406,7 @@ Current State → Production Hardening:
 3. ⚡ **Sub-2-second latency**: Fine-tune Azure Container App scaling + WebRTC transport for optimal response times
 4. 📊 **Analytics**: Voice vs. text resolution rate comparison, VAD tuning per environment
 
-> *"The architecture is already live. The tests are green — 264 backend tests pass. Scaling this to production tenants is a **configuration change**, not a code change."*
+> *"The architecture is already live. The tests are green — 435 backend tests pass. Scaling this to production tenants is a **configuration change**, not a code change."*
 
 ---
 

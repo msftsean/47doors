@@ -370,7 +370,7 @@ See [Cost Estimation Guide](./docs/deployment/COST_ESTIMATION.md) for details.
 
 | Suite | Tests | Status |
 |-------|------:|--------|
-| Backend (pytest) | 359/359 | ✅ Passing |
+| Backend (pytest) | 435/435 | ✅ Passing |
 | Frontend (vitest) | 8/8 | ✅ Passing |
 | Lab 01 – Understanding Agents | 7/7 | ✅ EXEMPLARY |
 | Lab 03 – Spec-Driven Dev | 8/8 | ✅ EXEMPLARY |
