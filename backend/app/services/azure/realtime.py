@@ -114,22 +114,16 @@ class AzureRealtimeService(RealtimeServiceInterface):
             "Content-Type": "application/json",
         }
         
+        # Only type, model, and instructions are accepted in /client_secrets body.
+        # voice and input_audio_transcription must be configured via session.update
+        # on the WebRTC data channel (Azure returns 500 if included here).
         session_config = {
             "session": {
                 "type": "realtime",
                 "model": self.deployment,
-                "audio": {
-                    "output": {
-                        "voice": voice,
-                    },
-                },
-                "input_audio_transcription": {
-                    "model": "whisper-1",
-                },
+                "instructions": instructions or VOICE_SYSTEM_PROMPT,
             },
         }
-        
-        session_config["session"]["instructions"] = instructions or VOICE_SYSTEM_PROMPT
 
         try:
             response = await self._client.post(url, headers=headers, json=session_config)

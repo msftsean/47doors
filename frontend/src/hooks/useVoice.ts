@@ -104,9 +104,12 @@ export function useVoice(options: UseVoiceOptions = {}) {
       dataChannelRef.current = dc;
 
       dc.onopen = () => {
+        // Configure voice and transcription via session.update after data channel opens.
+        // These cannot be set in /client_secrets body (Azure returns 500).
         dc.send(JSON.stringify({
           type: 'session.update',
           session: {
+            voice: options.voice ?? 'alloy',
             input_audio_transcription: {
               model: 'whisper-1',
             },
