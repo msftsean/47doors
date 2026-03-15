@@ -317,7 +317,10 @@
         "I need to petition for retroactive withdrawal",
         "Retroactive withdrawal",
         "Late drop",
-        "Drop after deadline"
+        "Drop after deadline",
+        "What's the deadline to withdraw?",
+        "When is the withdrawal deadline?",
+        "Deadline to drop a class"
       ],
       "entities": ["course_code", "action"],
       "priority": "MEDIUM"
@@ -512,16 +515,33 @@
       "category": "FINANCIAL",
       "department": "FINANCIAL_AID",
       "examples": [
-        "How do I apply for a work-study job?",
         "Work study application",
-        "Student employment opportunities",
-        "I need help with my student employment paperwork",
-        "Employment forms for students",
-        "Campus job application",
+        "Work study",
+        "Work-study job",
+        "Work study eligibility",
+        "Am I eligible for work-study?",
+        "Federal work-study",
         "My work-study hours from last semester didn't sync to my payroll",
         "Work-study hours didn't sync",
         "Work study payroll",
         "Work-study payroll issue"
+      ],
+      "entities": ["job_type"],
+      "priority": "MEDIUM"
+    },
+    "student_employment": {
+      "category": "GENERAL_INQUIRY",
+      "department": "HR",
+      "examples": [
+        "How do I apply for a work-study job?",
+        "Student employment opportunities",
+        "I need help with my student employment paperwork",
+        "Employment forms for students",
+        "Campus job application",
+        "How do I apply for a campus job?",
+        "Student employment application",
+        "I need to fill out employment paperwork",
+        "Where do I submit my student employment forms?"
       ],
       "entities": ["job_type"],
       "priority": "MEDIUM"

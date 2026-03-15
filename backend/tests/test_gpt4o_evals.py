@@ -31,6 +31,37 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _verify_azure_openai_access():
+    """Verify Azure OpenAI credentials actually work before running eval tests.
+
+    Env vars may be set (from .env) but the API key may be rejected if
+    the resource has disableLocalAuth=true (managed-identity-only).
+    """
+    import httpx
+
+    endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "").rstrip("/")
+    api_key = os.environ.get("AZURE_OPENAI_API_KEY", "")
+    if not endpoint or not api_key:
+        pytest.skip("Azure OpenAI credentials not configured")
+
+    api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
+    try:
+        resp = httpx.get(
+            f"{endpoint}/openai/models?api-version={api_version}",
+            headers={"api-key": api_key},
+            timeout=10,
+        )
+        if resp.status_code in (401, 403):
+            pytest.skip(
+                f"Azure OpenAI API key rejected (HTTP {resp.status_code}). "
+                "Local auth may be disabled on this resource — "
+                "GPT-4o evals require a resource with API key auth enabled."
+            )
+    except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        pytest.skip(f"Azure OpenAI endpoint not reachable: {exc}")
+
+
 # =============================================================================
 # Test Data
 # =============================================================================
