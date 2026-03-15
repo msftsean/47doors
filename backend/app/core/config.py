@@ -190,8 +190,8 @@ class Settings(BaseSettings):
         description="API version for the Azure OpenAI Realtime endpoint"
     )
     realtime_voice: str = Field(
-        default="alloy",
-        description="Azure OpenAI voice selection for Realtime API (e.g. alloy, shimmer, echo)"
+        default="marin",
+        description="Azure OpenAI voice selection for Realtime API (e.g. marin, cedar, alloy, shimmer, echo)"
     )
     realtime_vad_threshold_ms: int = Field(
         default=500,

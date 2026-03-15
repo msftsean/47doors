@@ -254,7 +254,7 @@ export async function createRealtimeSession(
     method: 'POST',
     body: JSON.stringify({
       session_id: options.sessionId,
-      voice: options.voice ?? 'alloy',
+      voice: options.voice ?? 'marin',
       instructions: options.instructions,
     }),
   });

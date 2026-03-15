@@ -79,7 +79,7 @@ export function useVoice(options: UseVoiceOptions = {}) {
       // 1. Get ephemeral token from backend
       const session = await createRealtimeSession({
         sessionId: options.sessionId,
-        voice: options.voice ?? 'alloy',
+        voice: options.voice ?? 'marin',
       });
 
       // 2. Create RTCPeerConnection
@@ -118,7 +118,7 @@ export function useVoice(options: UseVoiceOptions = {}) {
                 },
               },
               output: {
-                voice: options.voice ?? 'alloy',
+                voice: options.voice ?? 'marin',
                 transcription: {
                   model: 'whisper-1',
                 },

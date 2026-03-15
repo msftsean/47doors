@@ -58,10 +58,10 @@ class TestVoiceConfig:
         settings = Settings(mock_mode=True)
         assert settings.azure_openai_realtime_api_version == "2025-04-01-preview"
 
-    def test_realtime_voice_default_alloy(self):
-        """Default voice should be alloy."""
+    def test_realtime_voice_default_marin(self):
+        """Default voice should be marin."""
         settings = Settings(mock_mode=True)
-        assert settings.realtime_voice == "alloy"
+        assert settings.realtime_voice == "marin"
 
     def test_realtime_deployment_field_accepts_empty_string(self):
         """Realtime deployment field should accept an empty string value."""
