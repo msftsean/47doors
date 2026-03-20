@@ -14,6 +14,7 @@ from app.services.interfaces import (
     BrandingServiceInterface,
     KnowledgeServiceInterface,
     LLMServiceInterface,
+    PhoneServiceInterface,
     RealtimeServiceInterface,
     SessionStoreInterface,
     TicketServiceInterface,
@@ -137,6 +138,27 @@ def get_realtime_service(settings: Settings | None = None) -> RealtimeServiceInt
         )
 
 
+@lru_cache
+def get_phone_service(settings: Settings | None = None) -> PhoneServiceInterface:
+    """Get phone service instance (mock or production)."""
+    if settings is None:
+        settings = get_settings()
+
+    if settings.use_mock_services:
+        from app.services.mock.phone import MockPhoneService
+        return MockPhoneService()
+    else:
+        from app.services.azure.phone import AzurePhoneService
+        # Use connection string if provided, otherwise fall back to managed identity
+        connection_string = settings.azure_acs_connection_string if settings.azure_acs_connection_string else None
+        return AzurePhoneService(
+            acs_endpoint=settings.azure_acs_endpoint,
+            openai_endpoint=settings.azure_openai_endpoint,
+            openai_deployment=settings.azure_openai_realtime_deployment,
+            connection_string=connection_string,
+        )
+
+
 # FastAPI dependency annotations
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 LLMServiceDep = Annotated[LLMServiceInterface, Depends(get_llm_service)]
@@ -146,6 +168,7 @@ SessionStoreDep = Annotated[SessionStoreInterface, Depends(get_session_store)]
 AuditLogDep = Annotated[AuditLogInterface, Depends(get_audit_log)]
 BrandingServiceDep = Annotated[BrandingServiceInterface, Depends(get_branding_service)]
 RealtimeServiceDep = Annotated[RealtimeServiceInterface, Depends(get_realtime_service)]
+PhoneServiceDep = Annotated[PhoneServiceInterface, Depends(get_phone_service)]
 
 
 def clear_service_caches() -> None:
@@ -157,3 +180,4 @@ def clear_service_caches() -> None:
     get_audit_log.cache_clear()
     get_branding_service.cache_clear()
     get_realtime_service.cache_clear()
+    get_phone_service.cache_clear()

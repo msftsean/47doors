@@ -202,11 +202,37 @@ class Settings(BaseSettings):
         description="Maximum voice session duration in seconds (default 10 minutes)"
     )
 
+    # ==========================================================================
+    # Phone / Azure Communication Services Settings
+    # ==========================================================================
+    phone_enabled: bool = Field(
+        default=True,
+        description="Kill switch for phone call feature; auto-disabled when ACS endpoint is unset outside mock mode"
+    )
+    azure_acs_endpoint: str = Field(
+        default="",
+        description="Azure Communication Services endpoint URL"
+    )
+    azure_acs_connection_string: str = Field(
+        default="",
+        description="ACS connection string for Call Automation (optional - uses managed identity if not provided)"
+    )
+    acs_phone_number: str = Field(
+        default="",
+        description="Phone number provisioned in ACS for inbound calls (E.164 format, e.g. +15551234567)"
+    )
+    max_call_duration: int = Field(
+        default=600,
+        description="Maximum phone call duration in seconds (default 10 minutes)"
+    )
+
     @model_validator(mode="after")
-    def _auto_disable_voice(self) -> "Settings":
-        """Disable voice when no realtime deployment is configured and not in mock mode."""
+    def _auto_disable_features(self) -> "Settings":
+        """Auto-disable voice and phone when not configured outside mock mode."""
         if not self.azure_openai_realtime_deployment and not self.mock_mode:
             self.voice_enabled = False
+        if not self.azure_acs_endpoint and not self.mock_mode:
+            self.phone_enabled = False
         return self
 
     @property

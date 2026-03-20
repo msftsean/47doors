@@ -549,3 +549,52 @@ class RealtimeServiceInterface(ABC):
             ToolCallResponse with PII-filtered result
         """
         pass
+
+
+class PhoneServiceInterface(ABC):
+    """Interface for phone call handling via Azure Communication Services."""
+
+    @abstractmethod
+    async def handle_incoming_call(
+        self,
+        incoming_call_context: str,
+        caller_id: str,
+        callback_url: str,
+    ) -> dict:
+        """Answer an incoming phone call and connect to AI agent.
+
+        Args:
+            incoming_call_context: ACS incoming call context (from Event Grid event)
+            caller_id: Caller's phone number (E.164)
+            callback_url: URL for Call Automation callbacks
+
+        Returns:
+            Dict with call_connection_id and status
+        """
+        pass
+
+    @abstractmethod
+    async def handle_call_event(
+        self,
+        event_type: str,
+        event_data: dict,
+    ) -> dict:
+        """Handle a Call Automation callback event.
+
+        Args:
+            event_type: Event type (e.g. CallConnected, PlayCompleted)
+            event_data: Full event payload
+
+        Returns:
+            Dict with action taken and status
+        """
+        pass
+
+    @abstractmethod
+    async def health_check(self) -> tuple[bool, Optional[int], Optional[str]]:
+        """Check phone service health.
+
+        Returns:
+            Tuple of (is_healthy, latency_ms, error_message).
+        """
+        pass

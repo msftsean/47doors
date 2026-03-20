@@ -478,3 +478,119 @@ class TestResponseQuality:
         assert any(indicator in response.lower() for indicator in time_indicators), (
             "Response should include response time expectation"
         )
+
+
+# ---------------------------------------------------------------------------
+# Phone Call-In Evaluation Cases
+# ---------------------------------------------------------------------------
+
+# Intent classification evals framed as phone caller conversational language.
+# Callers speak naturally, use incomplete sentences, contractions, and filler words.
+PHONE_INTENT_CASES = [
+    # (input_message, expected_intent_category, expected_department, should_escalate)
+
+    # IT / Account Access — spoken, casual phrasing
+    ("Yeah hi I forgot my password", "ACCOUNT_ACCESS", "IT", False),
+    ("Uh I'm trying to get into Canvas but it won't let me", "ACCOUNT_ACCESS", "IT", False),
+    ("My email just stopped working this morning", "ACCOUNT_ACCESS", "IT", False),
+    ("I can't connect to the campus WiFi", "ACCOUNT_ACCESS", "IT", False),
+    ("The VPN isn't working and I need to log in from home", "ACCOUNT_ACCESS", "IT", False),
+
+    # Registrar / Academic Records — phone-style
+    ("I need you to send me my transcripts", "ACADEMIC_RECORDS", "REGISTRAR", False),
+    ("Um, when do grades get posted for this semester?", "ACADEMIC_RECORDS", "REGISTRAR", False),
+    ("I need proof that I'm enrolled for my insurance", "ACADEMIC_RECORDS", "REGISTRAR", False),
+    ("How do I add a class? The deadline is soon", "ENROLLMENT", "REGISTRAR", False),
+    ("I want to drop a course", "ENROLLMENT", "REGISTRAR", False),
+
+    # Financial Aid — phone-style
+    ("Hey when does my financial aid come in?", "FINANCIAL", "FINANCIAL_AID", False),
+    ("Something looks wrong on my tuition bill", "FINANCIAL", "FINANCIAL_AID", False),
+    ("I have questions about my FAFSA, who do I talk to?", "FINANCIAL", "FINANCIAL_AID", False),
+
+    # Facilities — phone-style
+    ("The elevator in my building is broken", "FACILITIES", "FACILITIES", False),
+    ("There's water coming through the ceiling in room 204", "FACILITIES", "FACILITIES", False),
+
+    # Escalation — Human request (key phone scenario: caller wants a person)
+    ("I need to talk to somebody about my grade", "HUMAN_REQUEST", "ESCALATE_TO_HUMAN", True),
+    ("Can you transfer me to financial aid?", "HUMAN_REQUEST", "ESCALATE_TO_HUMAN", True),
+    ("Can I just talk to a real person please?", "HUMAN_REQUEST", "ESCALATE_TO_HUMAN", True),
+    ("Put me through to someone in the registrar's office", "HUMAN_REQUEST", "ESCALATE_TO_HUMAN", True),
+    ("I'd rather speak to a human agent", "HUMAN_REQUEST", "ESCALATE_TO_HUMAN", True),
+
+    # Escalation — Policy exceptions (phone-style phrasing)
+    ("I want to appeal my grade, who handles that?", "POLICY_EXCEPTION", "ESCALATE_TO_HUMAN", True),
+    ("Is there any way to get a refund this late in the semester?", "POLICY_EXCEPTION", "ESCALATE_TO_HUMAN", True),
+    ("I'm requesting a deadline extension for a medical reason", "POLICY_EXCEPTION", "ESCALATE_TO_HUMAN", True),
+
+    # Escalation — Sensitive / urgent
+    ("I need to report something that happened to me on campus", "GENERAL_INQUIRY", "ESCALATE_TO_HUMAN", True),
+    ("I'm really struggling and I don't know who to call", "GENERAL_INQUIRY", "ESCALATE_TO_HUMAN", True),
+]
+
+
+class TestPhoneIntentClassification:
+    """Evals for phone caller intent classification — more conversational phrasing."""
+
+    @pytest.fixture
+    def llm_service(self):
+        from app.services.mock.llm_service import MockLLMService
+        return MockLLMService()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "message,expected_category,expected_dept,should_escalate",
+        PHONE_INTENT_CASES,
+    )
+    async def test_phone_intent_classification(
+        self,
+        llm_service,
+        message: str,
+        expected_category: str,
+        expected_dept: str,
+        should_escalate: bool,
+    ):
+        """Phone callers use spoken, conversational language — intents must still classify correctly."""
+        result = await llm_service.classify_intent(message)
+
+        assert result.requires_escalation == should_escalate, (
+            f"Phone message '{message}' should {'require' if should_escalate else 'not require'} escalation. "
+            f"Got requires_escalation={result.requires_escalation}"
+        )
+
+        assert result.department_suggestion.value == expected_dept, (
+            f"Phone message '{message}' should route to {expected_dept}. "
+            f"Got {result.department_suggestion.value}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_phone_filler_words_do_not_break_classification(self, llm_service):
+        """Filler words common in phone speech must not prevent classification."""
+        filler_messages = [
+            "Um, yeah, hi, I uh, forgot my password I think",
+            "So basically I just can't get into Canvas at all",
+            "Well I mean I need my transcripts or whatever",
+        ]
+        for message in filler_messages:
+            result = await llm_service.classify_intent(message)
+            assert hasattr(result, "department_suggestion"), (
+                f"Classification failed entirely for message with fillers: '{message}'"
+            )
+            assert result.confidence >= 0.0
+
+    @pytest.mark.asyncio
+    async def test_phone_human_transfer_requests_always_escalate(self, llm_service):
+        """Any phone phrasing that asks to be transferred to a person must trigger escalation."""
+        transfer_phrases = [
+            "Transfer me please",
+            "Can you connect me to someone?",
+            "I want to talk to a live agent",
+            "Just put me through to a person",
+            "Give me a human",
+        ]
+        for message in transfer_phrases:
+            result = await llm_service.classify_intent(message)
+            assert result.requires_escalation, (
+                f"Phone transfer request '{message}' must require escalation"
+            )

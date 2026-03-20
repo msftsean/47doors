@@ -176,6 +176,18 @@ resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
 }
 
 // ============================================================================
+// Azure Communication Services
+// ============================================================================
+resource acs 'Microsoft.Communication/communicationServices@2023-04-01' = {
+  name: '${prefix}-acs'
+  location: 'global'  // ACS is a global resource
+  tags: tags
+  properties: {
+    dataLocation: 'unitedstates'  // Data residency
+  }
+}
+
+// ============================================================================
 // Azure Container Apps Environment
 // ============================================================================
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
@@ -240,6 +252,14 @@ resource searchKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
+resource acsConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'acs-connection-string'
+  properties: {
+    value: acs.listKeys().primaryConnectionString
+  }
+}
+
 // ============================================================================
 // Azure Container Registry
 // ============================================================================
@@ -287,6 +307,10 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
         {
           name: 'search-api-key'
           value: searchService.listAdminKeys().primaryKey
+        }
+        {
+          name: 'acs-connection-string'
+          value: mockMode ? '' : acs.listKeys().primaryConnectionString
         }
       ]
       registries: [
@@ -343,6 +367,14 @@ resource backendContainerApp 'Microsoft.App/containerApps@2023-08-01-preview' = 
               name: 'AZURE_SEARCH_KEY'
               secretRef: 'search-api-key'
             }
+            {
+              name: 'AZURE_ACS_ENDPOINT'
+              value: mockMode ? '' : 'https://${acs.properties.hostName}'
+            }
+            {
+              name: 'AZURE_ACS_CONNECTION_STRING'
+              secretRef: 'acs-connection-string'
+            }
           ]
           resources: {
             cpu: json('0.5')
@@ -371,6 +403,18 @@ resource backendOpenAIRoleAssignment 'Microsoft.Authorization/roleAssignments@20
   scope: openAi
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
+    principalId: backendContainerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Grant backend container app Contributor access to ACS via managed identity
+var acsContributorRoleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
+resource backendACSRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acs.id, backendContainerApp.id, acsContributorRoleId)
+  scope: acs
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acsContributorRoleId)
     principalId: backendContainerApp.identity.principalId
     principalType: 'ServicePrincipal'
   }
@@ -447,4 +491,5 @@ output AZURE_CONTAINERAPP_URL string = 'https://${backendContainerApp.properties
 output AZURE_FRONTEND_URL string = 'https://${frontendContainerApp.properties.configuration.ingress.fqdn}'
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 output AZURE_KEY_VAULT_NAME string = keyVault.name
+output AZURE_ACS_ENDPOINT string = mockMode ? '' : 'https://${acs.properties.hostName}'
 output MOCK_MODE bool = mockMode
