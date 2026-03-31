@@ -274,7 +274,7 @@ export default function DemoWalkthrough() {
         <CollapsibleNotes>
           <p className="mb-3">
             <strong>Full Demo Script:</strong> The complete demo follows a 5-scene arc from the project's 
-            DEMO_RUNBOOK.md:
+            specs/002-voice-interaction/DEMO_RUNBOOK.md:
           </p>
           <ol className="list-decimal pl-6 mb-3 space-y-2">
             <li>
