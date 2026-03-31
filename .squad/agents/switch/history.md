@@ -10,6 +10,50 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-03-19 — Workshop Companion Site Build
+
+**Architecture decisions:**
+- Built standalone React + TypeScript + Tailwind CSS site at `workshop-site/` as executive briefing tool for "Trustworthy Agentic AI in Higher Education" workshop
+- Microsoft Fluent 2 visual language: generous whitespace, calm typography, restrained color palette
+- Primary colors: Microsoft blue (#0078D4), neutral gray (#F3F2F1), dark text (#323130)
+- IU crimson (#990000) used SPARINGLY for callout borders — accent color, not primary
+- 10 tab-based sections covering full 47 Doors narrative: Problem → Architecture → Trust → Voice → Demo → Governance
+
+**Component architecture:**
+- Tab navigation with keyboard accessibility (arrow keys, Tab/Shift+Tab, Enter/Space)
+- Reusable components: TabNavigation, CollapsibleNotes, CalloutCard, DiagramSVG
+- Each tab is standalone React component in `src/tabs/` — deep-linkable design
+- SVG diagrams with semantic markup (figure/figcaption, aria-labels, title/desc elements)
+- No external component libraries — lightweight, Heroicons only
+
+**Key file paths:**
+- Site root: `workshop-site/`
+- Main app: `workshop-site/src/App.tsx` (tab state management)
+- Tab components: `workshop-site/src/tabs/*.tsx` (10 total: Overview, TheProblem, ChatbotsToAgents, TrustBoundaries, Architecture, VoiceAccessibility, DemoWalkthrough, ResponsibleAI, ReuseAcrossCampus, YourFirstAgent)
+- Reusable UI: `workshop-site/src/components/*.tsx`
+- README: `workshop-site/README.md` (install/run instructions)
+
+**User preferences observed:**
+- Calm, academic tone — NO flashy marketing energy
+- Text-light, visually rich — icons, diagrams, callout cards over dense paragraphs
+- Speaker notes as collapsible sections (preserve presentation context without cluttering UI)
+- Interactive "Your First Agent" exercise (client-side only, no backend) with live-updating agent card
+- High contrast text (WCAG AA 4.5:1 minimum), semantic HTML, keyboard navigation
+- Design principle: "This should feel like a confident executive briefing, not a product pitch"
+
+**Content patterns:**
+- Each tab has: headline, visual elements (diagrams/cards), callout cards for key insights, collapsible presenter notes
+- Diagrams use inline SVG with DiagramSVG wrapper for accessibility
+- "What to Notice" callouts highlight architectural insights
+- Demo walkthrough uses numbered step cards with visual labels and notes
+- "Your First Agent" tab uses controlled inputs with example chips for quick selection
+
+**Build verification:**
+- TypeScript typechecks clean (`npm run typecheck` passes)
+- Production build succeeds: 222.94 kB JS (63.50 kB gzipped), 16.28 kB CSS (3.58 kB gzipped)
+- 371 modules transformed, built in 2.15s
+- Local dev: `npm run dev` (Vite dev server on port 5173)
+
 ### 2026-03-14 — Azure Static Web Apps Auth Migration (docs runbook)
 
 **Architecture decisions:**

@@ -10,6 +10,37 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-03-15 — Phone Call-In Feature (ACS Call Automation)
+
+**Architecture decisions**
+
+- ACS Call Automation bridges inbound PSTN calls to Azure OpenAI Realtime API via WebSocket media streaming (`MediaStreamingOptions`). Audio flows: PSTN caller → ACS → WebSocket → Azure OpenAI Realtime. Backend is never in the audio path — same pattern as browser WebRTC.
+- Reused the same `gpt-4o-realtime-preview` deployment and 4-tool pipeline as browser voice. PHONE_SYSTEM_PROMPT is phone-specific (terse, no markdown, no scrolling back) but same agent identity.
+- `PhoneServiceInterface` added to `backend/app/services/interfaces.py` following same ABC pattern as `RealtimeServiceInterface`. `AzurePhoneService` uses lazy-init `CallAutomationClient` with async double-checked locking — same pattern as `AzureRealtimeService`.
+- Mock service (`MockPhoneService`) uses SYNCHRONOUS methods (not async). This is intentional — the service tests call it without `await`. The API layer uses `_call()` helper (`inspect.isawaitable`) to handle both sync mocks and async production services. This is the correct pattern for Pydantic-v2 codebases with mixed sync/async test coverage.
+- ACS webhook events use TWO different event type names for subscription validation: `Microsoft.EventGrid.SubscriptionValidationEvent` AND `Microsoft.EventGrid.SubscriptionValidated`. Both must be handled.
+- Event Grid delivers callbacks as JSON arrays. Call Automation callbacks use flat dicts with `event_type` and `call_connection_id` as direct top-level keys (not wrapped in `data`). The phone API normalizes both formats.
+- ACS `listKeys().primaryConnectionString` provides the connection string for the `CallAutomationClient`. Managed identity is the preferred production auth path.
+
+**Pydantic v2 gotcha — multiple model validators**
+
+- Pydantic v2 only supports ONE `@model_validator(mode="after")` per class. Defining a second one with a different method name OVERRIDES the first silently (with a warning). Fix: combine all after-validators into a single method (`_auto_disable_features`). This affected the voice+phone auto-disable logic in `config.py`.
+
+**Key file paths**
+
+- `backend/app/services/azure/phone.py` — ACS Call Automation production service
+- `backend/app/services/mock/phone.py` — Synchronous mock for test isolation
+- `backend/app/api/phone.py` — `/api/phone/incoming` (Event Grid) + `/api/phone/callbacks` (Call Automation) + `/api/phone/health`
+- `backend/app/models/phone_schemas.py` — `IncomingCallEvent`, `CallEventRequest`, `CallState`, `PhoneHealthResponse`, `EventGridValidationEvent`
+- `infra/main.bicep` — ACS resource (always provisioned, not conditional), ACS connection string secret, Contributor role assignment for backend managed identity, `AZURE_ACS_ENDPOINT` env var + output
+- `backend/app/core/config.py` — `phone_enabled`, `azure_acs_endpoint`, `azure_acs_connection_string`, `acs_phone_number`, `max_call_duration`
+
+**New SDK dependency**
+
+- Added `azure-communication-callautomation>=1.4.0` to both `requirements.txt` and `pyproject.toml`
+
+
+
 ### 2026-03-13 — Voice Interaction Phase 0/1 Research & Data Model
 
 **Architecture decisions**

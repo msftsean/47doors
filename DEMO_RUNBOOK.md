@@ -229,6 +229,59 @@ Frontend Load    [████████████████████] 
 
 ---
 
+## 🎯 Demo Prompts Quick Reference
+
+> **Cheat sheet** — copy-paste or say these during the demo. Each is proven to hit a specific intent and department.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│  🧠  INTENT CLASSIFIER — WHAT TO TYPE OR SAY                                     │
+├──────────────────────┬───────────────┬───────────────────────────────────────────┤
+│  🎯 Intent           │  🏢 Department │  💬 Demo Prompt                            │
+├──────────────────────┼───────────────┼───────────────────────────────────────────┤
+│  TECHNICAL_SUPPORT   │  IT           │  "I forgot my password and can't log      │
+│                      │               │   into Canvas"                            │
+├──────────────────────┼───────────────┼───────────────────────────────────────────┤
+│  BILLING             │  FINANCIAL_AID│  "My financial aid was supposed to be     │
+│                      │               │   disbursed last week but my account      │
+│                      │               │   still shows a balance"                  │
+├──────────────────────┼───────────────┼───────────────────────────────────────────┤
+│  ACADEMIC_RECORDS    │  REGISTRAR    │  "How do I request an official transcript │
+│                      │               │   for my grad school application?"        │
+├──────────────────────┼───────────────┼───────────────────────────────────────────┤
+│  ACCOUNT_MANAGEMENT  │  IT           │  "I need to update my mailing address     │
+│                      │               │   before graduation"                      │
+├──────────────────────┼───────────────┼───────────────────────────────────────────┤
+│  GENERAL             │  IT           │  "Hi there!"                              │
+└──────────────────────┴───────────────┴───────────────────────────────────────────┘
+```
+
+### 🔥 High-Impact Demo Scenarios
+
+| # | Scenario | What to Say/Type | What Happens |
+|---|----------|-----------------|--------------|
+| 1 | 🎫 **Ticket creation** | "I forgot my password and can't log into Canvas" | Intent: TECHNICAL_SUPPORT → IT dept → ticket created + KB articles + SLA |
+| 2 | 💰 **Financial query** | "My financial aid was supposed to be disbursed last week but my account still shows a balance" | Intent: BILLING → FINANCIAL_AID dept → ticket + aid disbursement KB |
+| 3 | 📜 **Records request** | "How do I request an official transcript for my grad school application?" | Intent: ACADEMIC_RECORDS → REGISTRAR dept → transcript process KB |
+| 4 | 👤 **Profile update** | "I need to update my mailing address before graduation" | Intent: ACCOUNT_MANAGEMENT → IT dept → account update instructions |
+| 5 | ⚠️ **Escalation** | "I want to appeal my grade" | Intent: POLICY_EXCEPTION → ESCALATE_TO_HUMAN → human handoff demo |
+| 6 | 🗣️ **Human request** | "Can I speak to a real person?" | Intent: HUMAN_REQUEST → ESCALATE_TO_HUMAN → escalation flow |
+| 7 | 😤 **Frustrated student** | "This is urgent — I can't submit my assignment tonight and Canvas keeps crashing!" | Sentiment: FRUSTRATED/URGENT → priority bumped to HIGH |
+| 8 | 🔄 **Follow-up** | "Can you check the status of that ticket?" | Shows session continuity (voice or text) |
+| 9 | 👋 **Greeting** | "Hi there!" | Intent: GENERAL → friendly response, awaits real question |
+
+### 🚨 Escalation Triggers (Keywords That Force Human Handoff)
+
+These intents in the `RouterAgent` always escalate to a human:
+
+```
+grade_appeal · withdrawal_request · waiver_request · refund_request · request_human · speak_to_person
+```
+
+> 💡 **Pro tip**: For voice demos, use prompts #1 and #2 — they produce the most complete responses (ticket + KB + SLA). Follow with #8 to show session continuity.
+
+---
+
 ## 🎬 Demo Sequence (12–15 Minutes)
 
 ```
