@@ -112,7 +112,12 @@ class MockLLMService(LLMServiceInterface):
             "real person", "talk to human", "connect me to",
             "transfer me", "speak to a human", "live agent",
             "speak with someone", "talk to a real person",
-            "speak with a human", "real person please"
+            "speak with a human", "real person please",
+            # Phone-style phrasing
+            "put me through", "talk to somebody", "speak to somebody",
+            "connect me to someone", "put me through to",
+            "transfer me to", "speak with a person",
+            "give me a human", "give me a person",
         ]
         if any(term in lower_message for term in human_request_terms):
             return True, "user_requested_human"
@@ -120,6 +125,18 @@ class MockLLMService(LLMServiceInterface):
         # Check for individual sensitive words that indicate mental health concern
         mental_health_words = ["depressed", "suicidal", "self-harm", "anxious", "panic"]
         if any(word in lower_message for word in mental_health_words):
+            return True, "sensitive_topic"
+
+        # Distress / urgent-need escalation (phone call common scenarios)
+        distress_phrases = [
+            "report something that happened",
+            "something that happened to me",
+            "struggling and i don't know",
+            "don't know who to call",
+            "don't know where to turn",
+            "need help and don't know",
+        ]
+        if any(phrase in lower_message for phrase in distress_phrases):
             return True, "sensitive_topic"
 
         return False, None

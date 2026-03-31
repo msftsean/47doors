@@ -81,7 +81,10 @@
         "Transcript for job application",
         "How do I request my transcripts?",
         "Request official transcripts",
-        "Order my academic transcript"
+        "Order my academic transcript",
+        "I need you to send me my transcripts",
+        "send me my transcripts",
+        "Can you send my transcripts"
       ],
       "entities": ["recipient", "urgency"],
       "priority": "MEDIUM"
@@ -93,7 +96,10 @@
         "When will grades be posted?",
         "I can't see my final grade",
         "Grade isn't showing up",
-        "When do professors submit grades?"
+        "When do professors submit grades?",
+        "when do grades get posted",
+        "when are grades posted for this semester",
+        "when do grades get posted for this semester"
       ],
       "entities": ["course_code", "semester"],
       "priority": "LOW"
@@ -668,7 +674,12 @@
         "Connect me to an agent",
         "Can I speak with someone?",
         "I need to talk to a real person",
-        "Speak with a human"
+        "Speak with a human",
+        "put me through to someone",
+        "put me through to a person",
+        "just put me through to a person",
+        "talk to somebody about my grade",
+        "put me through to someone in the registrar"
       ],
       "entities": [],
       "priority": "HIGH"
