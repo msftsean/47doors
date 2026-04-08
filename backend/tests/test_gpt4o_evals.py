@@ -49,7 +49,7 @@ def _verify_azure_openai_access():
     if not endpoint:
         pytest.skip("AZURE_OPENAI_ENDPOINT not configured")
 
-    api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
+    api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
     url = f"{endpoint}/openai/models?api-version={api_version}"
 
     # Try API key auth first
@@ -213,8 +213,8 @@ async def gpt4o_service():
     from app.services.azure.llm_service import AzureOpenAILLMService
 
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
-    deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
-    api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
+    deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4.1")
+    api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
 
     if _auth_mode == "api_key":
         service = AzureOpenAILLMService(

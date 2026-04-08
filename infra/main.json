@@ -32,23 +32,30 @@
     },
     "openAiModel": {
       "type": "string",
-      "defaultValue": "gpt-4o",
+      "defaultValue": "gpt-4.1",
       "metadata": {
         "description": "Azure OpenAI deployment model"
       }
     },
     "openAiModelVersion": {
       "type": "string",
-      "defaultValue": "2024-05-13",
+      "defaultValue": "2025-04-14",
       "metadata": {
         "description": "OpenAI model version"
       }
     },
+    "realtimeModel": {
+      "type": "string",
+      "defaultValue": "gpt-realtime",
+      "metadata": {
+        "description": "Realtime model name"
+      }
+    },
     "realtimeModelVersion": {
       "type": "string",
-      "defaultValue": "2024-12-17",
+      "defaultValue": "2025-08-28",
       "metadata": {
-        "description": "GPT-4o Realtime model version"
+        "description": "Realtime model version"
       }
     },
     "mockMode": {
@@ -118,11 +125,11 @@
     {
       "type": "Microsoft.CognitiveServices/accounts/deployments",
       "apiVersion": "2023-10-01-preview",
-      "name": "[format('{0}/{1}', format('{0}-openai', variables('prefix')), 'gpt-4o-realtime-preview')]",
+      "name": "[format('{0}/{1}', format('{0}-openai', variables('prefix')), parameters('realtimeModel'))]",
       "properties": {
         "model": {
           "format": "OpenAI",
-          "name": "gpt-4o-realtime-preview",
+          "name": "[parameters('realtimeModel')]",
           "version": "[parameters('realtimeModelVersion')]"
         }
       },
@@ -374,11 +381,7 @@
                 },
                 {
                   "name": "AZURE_OPENAI_REALTIME_DEPLOYMENT",
-                  "value": "gpt-4o-realtime-preview"
-                },
-                {
-                  "name": "AZURE_OPENAI_API_VERSION",
-                  "value": "2025-04-01-preview"
+                  "value": "[parameters('realtimeModel')]"
                 },
                 {
                   "name": "AZURE_COSMOS_ENDPOINT",
@@ -420,7 +423,7 @@
         "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('cosmosAccountName'), 'frontdoor')]",
         "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('prefix')))]",
         "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('{0}-openai', variables('prefix')), parameters('openAiModel'))]",
-        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('{0}-openai', variables('prefix')), 'gpt-4o-realtime-preview')]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('{0}-openai', variables('prefix')), parameters('realtimeModel'))]",
         "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('prefix')))]"
       ]
     },
@@ -508,7 +511,7 @@
     },
     "AZURE_OPENAI_REALTIME_DEPLOYMENT": {
       "type": "string",
-      "value": "gpt-4o-realtime-preview"
+      "value": "[parameters('realtimeModel')]"
     },
     "AZURE_COSMOS_ENDPOINT": {
       "type": "string",

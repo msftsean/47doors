@@ -10,14 +10,20 @@ param location string = resourceGroup().location
 @description('Dedicated location for Cosmos DB when regional capacity is constrained')
 param cosmosLocation string = 'canadacentral'
 
+@description('Dedicated location for AI Search when regional capacity is constrained')
+param searchLocation string = 'eastus'
+
 @description('Azure OpenAI deployment model')
-param openAiModel string = 'gpt-4o'
+param openAiModel string = 'gpt-4.1'
 
 @description('OpenAI model version')
-param openAiModelVersion string = '2024-05-13'
+param openAiModelVersion string = '2025-04-14'
 
-@description('GPT-4o Realtime model version')
-param realtimeModelVersion string = '2024-12-17'
+@description('Realtime model name')
+param realtimeModel string = 'gpt-realtime'
+
+@description('Realtime model version')
+param realtimeModelVersion string = '2025-08-28'
 
 @description('Enable mock mode (no external service connections)')
 param mockMode bool = false
@@ -75,12 +81,12 @@ resource openAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023
 
 resource openAiRealtimeDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-10-01-preview' = {
   parent: openAi
-  name: 'gpt-4o-realtime-preview'
+  name: realtimeModel
   dependsOn: [openAiDeployment]
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4o-realtime-preview'
+      name: realtimeModel
       version: realtimeModelVersion
     }
   }
@@ -163,10 +169,10 @@ resource auditContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/cont
 // ============================================================================
 resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
   name: '${prefix}-search'
-  location: location
+  location: searchLocation
   tags: tags
   sku: {
-    name: 'basic'
+    name: 'free'
   }
   properties: {
     replicaCount: 1

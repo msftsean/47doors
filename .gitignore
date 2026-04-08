@@ -69,3 +69,6 @@ htmlcov/
 .squad/sessions/
 # Squad: SubSquad activation file (local to this machine)
 .squad-workstream
+
+# Support tickets (contain subscription/tenant IDs)
+docs/azure-support-ticket-*.md

@@ -27,7 +27,7 @@ class AzureOpenAILLMService(LLMServiceInterface):
         self,
         endpoint: str,
         deployment: str,
-        api_version: str = "2024-05-01-preview",
+        api_version: str = "2025-04-01-preview",
         api_key: Optional[str] = None,
         credential: Optional[object] = None,
     ) -> None:
