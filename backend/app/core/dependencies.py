@@ -67,9 +67,15 @@ def get_knowledge_service(settings: Settings | None = None) -> KnowledgeServiceI
         from app.services.mock.knowledge_service import MockKnowledgeService
         return MockKnowledgeService()
     else:
-        # TODO: Implement Azure AI Search service
-        from app.services.mock.knowledge_service import MockKnowledgeService
-        return MockKnowledgeService()
+        from app.services.azure.knowledge_service import AzureSearchKnowledgeService
+        api_key = settings.azure_openai_api_key if settings.azure_openai_api_key else None
+        return AzureSearchKnowledgeService(
+            search_endpoint=settings.azure_search_endpoint,
+            search_key=settings.azure_search_key,
+            index_name=settings.azure_search_index,
+            openai_endpoint=settings.azure_openai_endpoint,
+            openai_api_key=api_key,
+        )
 
 
 @lru_cache

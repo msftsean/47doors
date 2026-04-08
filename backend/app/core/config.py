@@ -93,7 +93,7 @@ class Settings(BaseSettings):
         default="",
         description="Azure AI Search endpoint URL"
     )
-    azure_search_api_key: str = Field(
+    azure_search_key: str = Field(
         default="",
         description="Azure AI Search API key"
     )
