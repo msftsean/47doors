@@ -233,6 +233,132 @@
 
 **Verification:** TypeScript compiles cleanly. Code review passed.
 
+### Phone Call-In Feature via Azure Communication Services (ACS)
+**Timestamp:** 2026-03-15  
+**Authority:** Tank (Backend Dev)  
+**Status:** ✅ Applied  
+
+**Decision:** Implement inbound PSTN call support via ACS Call Automation, bridging phone calls to the same Azure OpenAI GPT-4o Realtime deployment and 4-tool pipeline used by browser voice.
+
+**Key Decisions:**
+1. **ACS Resource Always Provisioned** — No conditional provisioning in Bicep (unlike initial spec suggestion). Matches existing codebase pattern for Cosmos DB and AI Search. Mock mode handled in application layer via `MOCK_MODE` env var. Resource cost negligible when unused.
+
+2. **Mock Service Synchronous** — `MockPhoneService` methods are sync (not async) intentionally, matching test pattern. API layer uses `inspect.isawaitable` helper to handle both sync mocks and async production services transparently.
+
+3. **Auth Strategy:**
+   - **Production:** Use `connection_string` from Key Vault; fall back to managed identity via `ManagedIdentityCredential`
+   - **Local dev:** Set `AZURE_ACS_CONNECTION_STRING` in `.env` to use connection string auth
+   - **Role assignment:** `Contributor` role for backend container app's system-assigned managed identity
+
+4. **Media Streaming Architecture** — Mirrors browser WebRTC approach: backend never touches audio, Azure OpenAI Realtime handles ASR/TTS/tool calling via `MediaStreamingOptions` with `WEBSOCKET` transport to `wss://` Realtime endpoint.
+
+5. **Pydantic v2 Constraint** — Only one `@model_validator(mode="after")` per class allowed. Combined voice and phone auto-disable logic into single `_auto_disable_features` validator.
+
+6. **Event Grid Dual Event Type Names** — ACS subscription validation uses both `Microsoft.EventGrid.SubscriptionValidationEvent` AND `Microsoft.EventGrid.SubscriptionValidated`. Webhook handles both for robustness.
+
+**Affected Files:**
+- `infra/main.bicep` — ACS resource, secret, role assignment
+- `backend/app/core/config.py` — Phone settings + merged validator
+- `backend/app/services/interfaces.py` — PhoneServiceInterface ABC
+- `backend/app/models/phone_schemas.py` — Phone models
+- `backend/app/services/azure/phone.py` — Production service
+- `backend/app/services/mock/phone.py` — Sync mock service
+- `backend/app/api/phone.py` — Endpoints
+
+**Rationale:** ACS Call Automation bridges PSTN calls seamlessly to the same 4-tool pipeline, maintaining Constitutional Principle I (pipeline integrity) across modalities. Synchronous mock service pattern enables early test-first development while Tank builds the service. Always-provisioned resource aligns with existing codebase patterns.
+
+### Phone Test Suite Design
+**Timestamp:** 2026-03-19  
+**Authority:** Mouse (Tester)  
+**Status:** Proposed  
+
+**Decision:** Test suite design for phone call-in feature before Tank implements the service. Defines interface contracts.
+
+**Key Test Decisions:**
+1. **No E.164 Validation at Schema Level** — Spec defines `caller_id: str` with no format constraint. ACS can deliver calls with `caller_id = "Anonymous"` for blocked/private numbers. Tests verify non-E.164 values are accepted.
+
+2. **Empty JSON Array is an Error** — Empty `[]` body on `POST /api/phone/incoming` should return 400 or 422 (semantically meaningless for Event Grid webhook).
+
+3. **Unknown Event Types Handled Gracefully** — Unknown Call Automation event types should not produce 5xx; endpoint logs and returns 200 or 400.
+
+4. **Lazy Imports in Tests** — Schema and service tests use lazy imports inside test methods so ImportError occurs at execution (not collection). Allows test suite to run even when Tank's modules don't exist yet.
+
+5. **Synchronous TestClient Only** — Phone endpoints are synchronous (no WebSocket, no streaming). Use `TestClient` (not `AsyncClient`) for simplicity.
+
+**Test Coverage:**
+- `test_phone_schemas.py` — 5 Pydantic models, valid/invalid construction, edge cases
+- `test_phone_service.py` — Mock service contracts, concurrency isolation
+- `test_phone_endpoints.py` — Three endpoints via TestClient
+
+**Rationale:** TDD approach (test first, implementation follows) unblocks Tank and ensures interface stability before implementation. Lazy imports keep test suite runnable during parallel development. Explicit decisions about caller_id and event types prevent rework.
+
+### Workshop Site Architecture Decision
+**Timestamp:** 2026-03-19  
+**Authority:** Switch (Frontend Dev)  
+**Status:** ✅ Applied  
+
+**Decision:** Create standalone workshop companion site with Microsoft Fluent 2 design system at `workshop-site/`.
+
+**Key Decisions:**
+1. **Visual Design** — Microsoft Fluent 2 principles (generous whitespace, calm typography, restrained color). Primary: Microsoft blue (#0078D4), accent: IU crimson (#990000) sparingly. No gradients, no flashy animations.
+
+2. **Content Structure** — 10 standalone tabs (each deep-linkable, complete narrative). Tab topics: Overview, Problem (47 Doors), Chatbots→Agents, Trust & Boundaries, Architecture, Voice & Accessibility, Demo Walkthrough, Responsible AI, Reuse, Your First Agent.
+
+3. **Technical Stack** — React 18 + TypeScript 5 + Vite 5 + Tailwind CSS 3.4+. No external component libraries (lightweight). Heroicons only.
+
+4. **Accessibility** — Keyboard navigable tabs, semantic HTML, ARIA labels, WCAG AA 4.5:1 contrast minimum, accessible SVG diagrams.
+
+5. **Component Architecture** — Reusable components (TabNavigation, CollapsibleNotes, CalloutCard, DiagramSVG). 10 separate tab files in `src/tabs/` for maintainability.
+
+6. **Deployment** — Azure Static Web Apps (SWA) deployment target (per user directive 2026-03-19).
+
+**Affected Files:** Entire `workshop-site/` directory structure.
+
+**Rationale:** Portable workshop companion for live presentations and async self-paced learning. Calm, institutional style reinforces "architecture lesson, not product pitch" framing. Tab structure enables non-linear navigation during live demos while supporting linear walkthrough. Interactive "Your First Agent" exercise makes constitutional design pattern concrete. Accessibility modeling aligns with 47 Doors voice feature philosophy.
+
+### User Directive: Workshop Site Azure SWA Deployment
+**Timestamp:** 2026-03-19T14:20:00Z  
+**Authority:** User (msftsean via Copilot)  
+**Decision:** Workshop site deployment target is Azure Static Web Apps (SWA).
+
+**Rationale:** Aligns with existing SWA auth decision for docs/runbook site. User directive captured for team memory.
+
+### GPT-4o → GPT-4.1 Model Migration
+**Timestamp:** 2026-03-20  
+**Authority:** Tank (Backend Dev)  
+**Status:** ✅ Applied  
+
+**Decision:** Migrate from deprecated GPT-4o models to GPT-4.1 (text) and gpt-realtime (voice) across infrastructure, backend config, and tests.
+
+**Background:** Both GPT-4o models deployed to Azure were deprecated:
+- `gpt-4o` version `2024-05-13` — deprecated 03/31/2026
+- `gpt-4o-realtime-preview` version `2024-12-17` — deprecated 03/24/2026
+
+**Model Selection (eastus2 availability):**
+- **Text Model:** `gpt-4o` → `gpt-4.1` (version `2025-04-14`, Standard SKU)
+- **Realtime/Voice Model:** `gpt-4o-realtime-preview` → `gpt-realtime` (version `2025-08-28`, GlobalStandard SKU)
+- **Note:** No `gpt-4.1-realtime` model exists; naming convention for realtime dropped base model prefix
+- **Alternative realtime models available in eastus2:** `gpt-realtime-mini` (2025-10-06, 2025-12-15), `gpt-realtime-1.5` (2026-02-23)
+
+**API Version Updates:**
+- Chat completions: `2024-02-15-preview` / `2024-05-01-preview` → `2025-04-01-preview`
+- Realtime API version: already `2025-04-01-preview` (unchanged)
+
+**Infrastructure Changes:**
+- `infra/main.bicep` — Parameterized `realtimeModel` name (was hardcoded); applied new model versions
+- `infra/main.parameters.json` — Model `gpt-4.1`, version `2025-04-14`
+- Backend config defaults updated to new model names and API versions
+
+**Test Updates:**
+- `backend/tests/conftest.py` — `AZURE_OPENAI_DEPLOYMENT` from `"gpt-4o"` → `"gpt-4.1"`
+- `backend/tests/test_voice/test_config.py` — Settings fixtures updated (2 occurrences)
+- `backend/tests/test_voice/test_models.py` — RealtimeSessionResponse fixtures updated (2 occurrences)
+- `backend/tests/test_gpt4o_evals.py` — Deployment + API version defaults updated (2 occurrences)
+
+**Verification:** 447 tests passed, 97 eval tests skipped (require real Azure credentials). Mock mode confirmed working.
+
+**Rationale:** GPT-4o retirement deadline drives immediate action. GPT-4.1 is direct successor with same capability tier. `gpt-realtime` is production GA successor to preview realtime model. Parameterized infrastructure enables future model swaps without code changes. Test updates ensure mock mode and fixture-driven configuration remain compatible.
+
 ## Governance
 
 - All meaningful changes require team consensus

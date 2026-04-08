@@ -53,3 +53,29 @@
 - Did NOT enforce E.164 format at the schema level — the spec says `caller_id: str` with no
   format constraint. Tested the pass-through explicitly rather than testing a constraint that
   doesn't exist. See `mouse-phone-tests.md` decision file.
+
+### GPT-4o to GPT-4.1 Migration — Test Impact — 2026-03-20
+
+**What was scanned and updated:**
+- Systematically searched all backend test files (`backend/tests/`) for hardcoded model references:
+  - `gpt-4o` (found in 4 files, 5 occurrences)
+  - `gpt-4o-realtime-preview` (found in 1 file, 2 occurrences)
+  - Old API versions `2024-05-01-preview`, `2024-02-15-preview`, etc. (found in test_gpt4o_evals.py)
+
+**Files updated:**
+1. `backend/tests/conftest.py` line 255: Changed `AZURE_OPENAI_DEPLOYMENT` from `"gpt-4o"` to `"gpt-4.1"`
+2. `backend/tests/test_voice/test_config.py` lines 21, 32: Updated Settings fixtures from `"gpt-4o"` to `"gpt-4.1"`
+3. `backend/tests/test_voice/test_models.py` lines 141, 161: Updated RealtimeSessionResponse fixtures from `"gpt-4o-realtime-preview"` to `"gpt-4.1-realtime-preview"`
+4. `backend/tests/test_gpt4o_evals.py` lines 52, 216–217: Updated deployment defaults from `"gpt-4o"` to `"gpt-4.1"` and API version from `"2024-05-01-preview"` to `"2024-12-01-preview"`
+
+**Test results:**
+- All 447 tests pass; 97 eval tests skipped (require real Azure credentials, intentional)
+- No regressions detected
+- Conftest fixture-driven environment setup ensures all tests pick up the new deployment name
+
+**Key decision:**
+- Assumed `"gpt-4.1"` as the migration target and `"2024-12-01-preview"` as the API version.
+  Tank's infra changes confirmed these choices (check `.squad/decisions.md` for full record).
+- Realtime deployment migration confirmed as `gpt-realtime` (Tank's decision on naming).
+
+**Session coordination:** Parallel spawn 2026-04-08T17:25 with Tank. Orchestration log: `.squad/orchestration-log/2026-04-08T17-25-mouse.md`

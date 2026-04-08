@@ -6,6 +6,29 @@
 - **Architecture:** Three-agent pipeline (QueryAgent → RouterAgent → ActionAgent) with voice interaction via Azure OpenAI GPT-4o Realtime API / WebRTC
 - **Created:** 2026-03-13
 
+## Core Context
+
+### Foundational Architecture Patterns (Phase 0 Research, 2026-03-13)
+
+Tank established the voice interaction architecture during Phase 0 research:
+- WebRTC transports audio direct browser → Azure; backend never touches audio bits
+- Ephemeral tokens (≤60s TTL) issued by `POST /api/realtime/session`; API keys server-side only
+- Tool calls flow over dedicated WS relay `/api/realtime/ws/{session_id}`, routed through QueryAgent → RouterAgent → ActionAgent pipeline (Constitution I)
+- Three-layer PII filter: pre-tool, post-tool, pre-speech (Constitution III)
+- Mock mode: full `RealtimeService` mock implementing `RealtimeServiceInterface`, controlled via `settings.use_mock_services`
+- Voice transcript entries use `input_modality = "voice"` discriminator in shared session history (same `session_id` UUID as text)
+- `eastus2` primary region; initial deployment target was `gpt-4o-realtime-preview`
+
+**Key patterns established:**
+- New voice models go in `backend/app/models/voice_schemas.py` and `backend/app/models/voice_enums.py`
+- Service interfaces in `backend/app/services/interfaces.py` (ABC pattern)
+- Config additions in `backend/app/core/config.py` with `model_validator(mode="after")` for Pydantic v2
+
+**Pydantic v2 Gotcha — Multiple Model Validators:**
+- Only one `@model_validator(mode="after")` per class allowed. Defining a second silently OVERRIDES the first. Solution: combine all after-validators into single method (e.g., `_auto_disable_features` for voice+phone auto-disable logic).
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
@@ -40,35 +63,6 @@
 - Added `azure-communication-callautomation>=1.4.0` to both `requirements.txt` and `pyproject.toml`
 
 
-
-### 2026-03-13 — Voice Interaction Phase 0/1 Research & Data Model
-
-**Architecture decisions**
-
-- WebRTC transports audio direct browser → Azure; backend is never in the audio path (no audio storage, no codec pipeline).
-- Ephemeral token endpoint `POST /api/realtime/session` issues ≤60 s TTL credentials; Azure API key stays server-side only.
-- Tool calls flow over a dedicated WS relay `/api/realtime/ws/{session_id}`; voice pipeline MUST route through the same QueryAgent → RouterAgent → ActionAgent chain (Constitution I).
-- Three-layer PII filter: pre-tool, post-tool, pre-speech (Constitution III).
-- Mock mode: full `RealtimeService` mock implementing `RealtimeServiceInterface` — activated by existing `settings.use_mock_services`.
-- Six-state UI machine: idle → connecting → listening → processing → speaking → idle (+ error from connecting/listening/processing).
-- Voice and text share the same `session_id` UUID; voice transcript entries appended with `input_modality = "voice"` discriminator.
-- `eastus2` primary region — only region with `gpt-4o-realtime-preview` availability matching existing infra region.
-
-**Key file paths**
-
-- `backend/app/models/schemas.py` — Pydantic v2 model patterns; `@field_validator` + `@classmethod`; `Optional[T]` with `default=None`
-- `backend/app/models/enums.py` — `str, Enum` pattern for all enumerations
-- `backend/app/services/interfaces.py` — ABC interface pattern for all service integrations (voice service will follow same structure)
-- `backend/app/core/config.py` — `mock_mode` / `use_mock_services` pattern; `SettingsConfigDict` with `.env` loading
-- `specs/002-voice-interaction/research.md` — Phase 0 decision log (10 decisions)
-- `specs/002-voice-interaction/data-model.md` — Phase 1 entity definitions (7 backend models, 3 frontend types)
-
-**Patterns to replicate for Phase 1 implementation**
-
-- New voice models go in `backend/app/models/voice_schemas.py` and `backend/app/models/voice_enums.py`
-- Service interface goes in `backend/app/services/interfaces.py` (extend existing file, same ABC pattern)
-- Config additions go in `backend/app/core/config.py` under a new `# Voice / Realtime Settings` section
-- Frontend types go in `frontend/src/types/voice.ts`
 
 ### 2026-03-14 — Phase 1 Setup (T001, T002, T003)
 
@@ -244,3 +238,41 @@
 **Team Coordination:** Paired with Switch's frontend `session.update` data-channel implementation (parallel spawn 2026-03-15T01:53) for belt-and-suspenders transcription enablement. Backend config change ensures system prompt and transcription are always available; frontend change adds runtime safety net.
 
 **Orchestration Log:** `.squad/orchestration-log/2026-03-15T01-53-tank.md`
+
+### 2026-03-15 — GPT-4o → GPT-4.1 Model Migration
+
+**Architecture decisions**
+
+- Text model migrated from `gpt-4o` (deprecated 03/31/2026) to `gpt-4.1` version `2025-04-14`. Available in eastus2 with Standard SKU.
+- Realtime/voice model migrated from `gpt-4o-realtime-preview` (deprecated 03/24/2026) to `gpt-realtime` version `2025-08-28`. There is NO `gpt-4.1-realtime` — the successor naming convention dropped the base model prefix.
+- API version defaults updated from `2024-02-15-preview`/`2024-05-01-preview` to `2025-04-01-preview` for chat completions. Realtime API version was already `2025-04-01-preview`.
+- Parameterized `realtimeModel` name in Bicep/ARM templates (was previously hardcoded as `gpt-4o-realtime-preview`). Future model swaps only require parameter changes.
+- Other realtime models available in eastus2 as of this date: `gpt-realtime-mini` (2025-10-06, 2025-12-15), `gpt-realtime-1.5` (2026-02-23). Could be alternatives if cost/latency optimization needed.
+
+**Key file paths**
+
+- `infra/main.bicep` — `realtimeModel` param added; realtime resource uses parameterized name/version
+- `infra/main.parameters.json` — `gpt-4.1` / `2025-04-14`
+- `backend/app/core/config.py` — deployment default `gpt-4.1`, API version `2025-04-01-preview`
+- `backend/app/services/azure/llm_service.py` — API version default `2025-04-01-preview`
+- `.squad/decisions/inbox/tank-gpt41-migration.md` — full decision record
+
+### 2026-03-20 — GPT-4o → GPT-4.1 Model Migration
+
+**Architecture decisions**
+
+- Text model migrated from `gpt-4o` (deprecated 03/31/2026) to `gpt-4.1` version `2025-04-14`. Available in eastus2 with Standard SKU.
+- Realtime/voice model migrated from `gpt-4o-realtime-preview` (deprecated 03/24/2026) to `gpt-realtime` version `2025-08-28`. There is NO `gpt-4.1-realtime` — the successor naming convention dropped the base model prefix.
+- API version defaults updated from `2024-02-15-preview`/`2024-05-01-preview` to `2025-04-01-preview` for chat completions. Realtime API version was already `2025-04-01-preview`.
+- Parameterized `realtimeModel` name in Bicep/ARM templates (was previously hardcoded as `gpt-4o-realtime-preview`). Future model swaps only require parameter changes.
+- Other realtime models available in eastus2 as of this date: `gpt-realtime-mini` (2025-10-06, 2025-12-15), `gpt-realtime-1.5` (2026-02-23). Could be alternatives if cost/latency optimization needed.
+
+**Key file paths**
+
+- `infra/main.bicep` — `realtimeModel` param added; realtime resource uses parameterized name/version
+- `infra/main.parameters.json` — `gpt-4.1` / `2025-04-14`
+- `backend/app/core/config.py` — deployment default `gpt-4.1`, API version `2025-04-01-preview`
+- `backend/app/services/azure/llm_service.py` — API version default `2025-04-01-preview`
+- `.squad/decisions/inbox/tank-gpt41-migration.md` — full decision record (merged to decisions.md 2026-04-08)
+
+**Verification:** 447 tests passed, 97 skipped. Mock mode confirmed working. Session log: `.squad/log/2026-04-08T17-25-gpt41-migration.md`
