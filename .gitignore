@@ -72,3 +72,4 @@ htmlcov/
 
 # Support tickets (contain subscription/tenant IDs)
 docs/azure-support-ticket-*.md
+.squad/commit-msg.txt

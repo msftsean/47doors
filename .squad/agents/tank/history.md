@@ -102,6 +102,27 @@ PSTN → ACS → WS [backend /ws/acs-media] → WS [Azure OpenAI Realtime API]
 
 **Testing:** All 447 tests pass. Audio now flows bidirectionally on answered PSTN calls.
 
+### 2026-04-09 — SSE Transcription Config & Nginx Fix (Live Transcript)
+
+**Problem:** Live transcript viewer (`/live` page) connected to `/api/phone/transcripts/stream` SSE endpoint but received no transcript events. Audio was flowing correctly.
+
+**Root cause (identified by Mouse's test suite):** `media_ws.py` `session.update()` payload did not include `input_audio_transcription` + `output_audio_transcription` config. Azure OpenAI Realtime API silently skips transcript events when transcription is unconfigured.
+
+**Solution (Tank):** Added transcription config to `backend/app/api/media_ws.py`:
+```python
+input_audio_transcription={"model": "whisper-1"},
+output_audio_transcription={"model": "whisper-1"}
+```
+
+**Nginx fix (Coordinator):** Added dedicated `location /api/phone/transcripts/stream` block in `frontend/nginx.conf` with:
+- `proxy_buffering off` + `proxy_cache off` (disables response buffering)
+- `proxy_set_header Connection ""` (uses HTTP keep-alive instead of WebSocket upgrade)
+- Path was initially wrong (`/api/transcripts/stream` → fixed to `/api/phone/transcripts/stream`)
+
+**Verification:** All 461 backend tests pass. Backend deployed successfully. Live transcript viewer now functional.
+
+**Key takeaway:** Azure OpenAI Realtime API requires explicit transcription config in session.update to fire transcript events. This is a silent no-op if missing — no error, just no events. Test coverage (Mouse's E2E tests) was critical to surface this.
+
 ### 2026-03-14 — Phase 1 Setup (T001, T002, T003)
 
 **Config changes (T001)**

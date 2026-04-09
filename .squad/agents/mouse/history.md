@@ -174,3 +174,17 @@
   "input_audio_transcription": {"model": "whisper-1"},
   "voice": settings.realtime_voice,
   ```
+
+**Fix applied (by Tank, commit c7669e0):**
+- Exact fix implemented as prescribed above
+- Removed nested udio object
+- Moved config to flat session properties
+- All 461 backend tests now pass
+- Backend re-deployed and healthy
+
+**Learnings:**
+- Azure OpenAI Realtime API silently ignores malformed session.update payloads
+- The SDK samples use flat properties; nested udio object is not in the published schema
+- Transcription is disabled when config is missing (no error, no events)
+- SSE infrastructure (nginx buffering, TranscriptBus, generator) was working perfectly — issue was 100% upstream (no config)
+- Test-driven diagnosis was critical: without the test suite, this would have taken 8+ hours of manual debugging
