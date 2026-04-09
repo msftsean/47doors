@@ -1,8 +1,28 @@
 # Decisions Log
 
-**Last Updated:** 2026-04-09T01:28
+**Last Updated:** 2026-04-09T02:00
 
 ## Active Decisions
+
+### WebSocket Bridge for ACS→Azure OpenAI Audio Relay — 2026-04-09
+
+**Author:** Tank  
+**Status:** Implemented & Deployed  
+**Commit:** b2d7abc
+
+Phone calls to +19132171946 connected (call answered) but produced dead air — no audio in either direction. ACS media streaming was configured to connect directly to Azure OpenAI Realtime API's WebSocket, but ACS had no managed identity to authenticate with and Azure OpenAI only accepted Entra ID auth. Additionally, CloudEvents callback parsing rejected all events, hiding `MediaStreamingFailed` diagnostics.
+
+**Decision:** Route ACS media streaming through a backend WebSocket bridge (`/ws/acs-media`) instead of connecting ACS directly to Azure OpenAI. The backend authenticates to Azure OpenAI using its existing managed identity.
+
+```
+PSTN → ACS → WS [backend /ws/acs-media] → WS [Azure OpenAI Realtime API]
+```
+
+**Files Changed:** `backend/app/api/media_ws.py` (new, 296 lines), `backend/app/services/azure/phone.py` (transport_url), `backend/app/api/phone.py` (CloudEvents parsing), `backend/app/main.py` (route registration)
+
+**Impact:** Audio now flows bidirectionally on answered PSTN calls. All 447 tests pass. No infra changes required.
+
+---
 
 ### Fix ACS CallbackUri for Container Apps — 2026-04-09
 

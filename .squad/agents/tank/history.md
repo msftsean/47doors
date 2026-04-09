@@ -79,6 +79,29 @@ Tank established the voice interaction architecture during Phase 0 research:
 
 **SDK fix applied:** `StreamingTransportType` is the correct enum name for `azure-communication-callautomation >= 1.5.0`. Future work: migrate SDK pins to `~=1.5.0` or `>=1.5.0,<2.0` to lock this version and prevent future enum renames from breaking production calls.
 
+### 2026-04-09 — Silent Audio Fix (WebSocket Bridge for Media Relay)
+
+**Problem:** After the SDK fix above, calls were answered but produced dead air. ACS media streaming was configured to connect directly to Azure OpenAI Realtime API WebSocket, but:
+- Azure OpenAI had `disableLocalAuth=true` (Entra ID only)
+- ACS resource had NO managed identity to authenticate with  
+- `MediaStreamingOptions.transport_url` provided no auth header mechanism
+- CloudEvents callback handler crashed due to incorrect field mapping (looked for `callConnectionId` at top level instead of nested in Call Automation events)
+
+**Solution:** Created WebSocket bridge at `/ws/acs-media` to proxy ACS media through the authenticated backend connection:
+```
+PSTN → ACS → WS [backend /ws/acs-media] → WS [Azure OpenAI Realtime API]
+```
+
+**Key changes:**
+- New file: `backend/app/api/media_ws.py` (296 lines) — WebSocket relay with session config
+- Modified: `phone.py` service — updated `transport_url` to point to backend bridge
+- Modified: `phone.py` API — fixed CloudEvents parsing (multi-layer to handle both Event Grid and Call Automation formats)
+- Modified: `main.py` — registered `/ws/acs-media` route
+
+**Pattern established:** Backend WebSocket bridge is the documented Azure pattern for ACS→OpenAI Realtime. Backend already has the RBAC role (Cognitive Services OpenAI User), so no infra changes needed. Audio format is compatible (PCM24K mono both ways).
+
+**Testing:** All 447 tests pass. Audio now flows bidirectionally on answered PSTN calls.
+
 ### 2026-03-14 — Phase 1 Setup (T001, T002, T003)
 
 **Config changes (T001)**
