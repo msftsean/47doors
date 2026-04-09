@@ -189,6 +189,7 @@ class ActionAgent:
         knowledge_articles, kb_article_contents = await self._search_knowledge_with_content(
             query_result=query_result,
             department=routing_decision.department,
+            original_message=original_message,
         )
 
         # Determine if we should create a ticket (considering KB results)
@@ -351,16 +352,28 @@ class ActionAgent:
         self,
         query_result: QueryResult,
         department: Department,
+        original_message: str = "",
     ) -> tuple[list[KnowledgeArticle], list[dict]]:
-        """Search knowledge base for relevant articles with full content."""
-        # Build search query from intent and entities
-        search_terms = [query_result.intent.replace("_", " ")]
+        """Search knowledge base for relevant articles with full content.
 
-        for value in query_result.entities.values():
-            if isinstance(value, str):
-                search_terms.append(value)
-
-        search_query = " ".join(search_terms)
+        Uses the student's original message as the primary search query for best
+        vector and keyword relevance, falling back to intent/entity terms when
+        the original message is unavailable.
+        """
+        # Use the student's original message for search — it contains the most
+        # natural language for both embedding similarity and BM25 keyword matching.
+        # Intent labels (e.g. "financial_aid_inquiry") and entity slugs
+        # (e.g. "financial_aid_disbursement") are classification artifacts that
+        # perform poorly as search queries.
+        if original_message.strip():
+            search_query = original_message.strip()
+        else:
+            # Fallback: reconstruct from intent + entities (legacy behavior)
+            search_terms = [query_result.intent.replace("_", " ")]
+            for value in query_result.entities.values():
+                if isinstance(value, str):
+                    search_terms.append(value.replace("_", " "))
+            search_query = " ".join(search_terms)
 
         # Don't filter by department for escalated requests
         dept_filter = None if department == Department.ESCALATE_TO_HUMAN else department
@@ -377,9 +390,12 @@ class ActionAgent:
         self,
         query_result: QueryResult,
         department: Department,
+        original_message: str = "",
     ) -> list[KnowledgeArticle]:
         """Search knowledge base for relevant articles (legacy method)."""
-        articles, _ = await self._search_knowledge_with_content(query_result, department)
+        articles, _ = await self._search_knowledge_with_content(
+            query_result, department, original_message
+        )
         return articles
 
     def _format_sla(self, hours: int) -> str:
