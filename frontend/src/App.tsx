@@ -12,9 +12,20 @@ import { useHighContrast } from './hooks/useHighContrast';
 
 type View = 'chat' | 'tickets' | 'admin' | 'runbook' | 'live';
 
+/** Map URL pathname to initial view for direct-link support (/live, /runbook). */
+function getInitialView(): View {
+  const path = window.location.pathname.toLowerCase();
+  if (path === '/live') return 'live';
+  if (path === '/runbook') return 'runbook';
+  return 'chat';
+}
+
+// Direct /live URL = audience mode: no header, no exit button
+const isDirectLiveRoute = window.location.pathname.toLowerCase() === '/live';
+
 function App() {
   const [highContrast, toggleHighContrast] = useHighContrast();
-  const [currentView, setCurrentView] = useState<View>('chat');
+  const [currentView, setCurrentView] = useState<View>(getInitialView);
 
   const {
     messages,
@@ -102,7 +113,9 @@ function App() {
       )}
 
       {/* Live page is a full-screen overlay — render outside main container */}
-      {currentView === 'live' && <LivePage onExit={() => handleViewChange('runbook')} />}
+      {currentView === 'live' && (
+        <LivePage onExit={isDirectLiveRoute ? undefined : () => handleViewChange('runbook')} />
+      )}
 
       {currentView !== 'live' && (
         <main
