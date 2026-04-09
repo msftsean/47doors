@@ -29,6 +29,21 @@ Tank established the voice interaction architecture during Phase 0 research:
 
 ---
 
+## Team Updates
+
+### 2026-04-09T04:52Z — Transcript Event Compatibility Fix
+
+Tank fixed event name mismatch in `backend/src/speech_agent/routes/media_ws.py`:
+- **Problem:** Handler did not accept both preview (`response.audio_transcript.done`) and GA (`response.output_audio_transcript.done`) event names from Azure OpenAI API
+- **Solution:** Updated handler to accept both variants for compatibility across API lifecycle versions
+- **Test Status:** All 461 tests passed
+- **Commit:** 297e7f7
+- **Deploy:** Backend deployed and pushed
+
+**Cross-agent note:** Switch simultaneously added URL routing for /live and /runbook pages (commit dc90d44). Both changes deployed without blocking issues. Voice interaction pipeline remains stable.
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->

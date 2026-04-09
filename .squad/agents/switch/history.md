@@ -6,6 +6,21 @@
 - **Architecture:** Three-agent pipeline (QueryAgent → RouterAgent → ActionAgent) with voice interaction via Azure OpenAI GPT-4o Realtime API / WebRTC
 - **Created:** 2026-03-13
 
+## Team Updates
+
+### 2026-04-09T04:52Z — Direct URL Routing for /live and /runbook
+
+Switch added URL routing for direct access to /live and /runbook pages in `frontend/src/App.tsx`:
+- **Implementation:** Pathname check in App.tsx for route detection
+- **Approach:** No react-router required; direct pathname-based navigation
+- **Test Status:** Build successful, no errors
+- **Commit:** dc90d44
+- **Deploy:** Frontend deployed and pushed
+
+**Cross-agent note:** Tank simultaneously fixed event name mismatch in media_ws.py (commit 297e7f7, all 461 tests passed). Both changes deployed without blocking issues. Voice interaction pipeline remains stable.
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
@@ -195,3 +210,26 @@
 - Presentation notes explain the architectural rationale for the split-page design
 
 **Orchestration Log:** `.squad/orchestration-log/2026-04-09T03-01-38Z-anvil.md`
+
+### 2026-04-09 — URL-Based Routing for /live and /runbook Direct Access
+
+**What was built:**
+- Added `window.location.pathname` reading at app initialization to support direct URL navigation
+- `/live` → fullscreen audience mode (no header, no exit button) — clean projector view
+- `/runbook` → presenter runbook page with normal header/tabs
+- `/` or any other path → default chat view with full header navigation
+
+**Key design decisions:**
+- No react-router dependency — simple `getInitialView()` function reads pathname once at module load
+- `isDirectLiveRoute` flag (module-level constant) controls whether LivePage gets an `onExit` prop
+- Direct `/live` URL = audience mode: no back arrow, no escape key handler, no way to accidentally leave
+- Tab-navigated `/live` = presenter mode: back arrow returns to runbook, escape key works
+- nginx `try_files $uri $uri/ /index.html` already handled SPA fallback — no server config changes needed
+
+**Files modified:**
+- `frontend/src/App.tsx` — added `getInitialView()`, `isDirectLiveRoute`, conditional `onExit` prop
+
+**Build verification:**
+- TypeScript + Vite build passes clean: 721 modules, 231.85 kB JS (66.55 kB gzip)
+- Deployed to Azure Container Apps successfully
+- Commit: `dc90d44` on main
