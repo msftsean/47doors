@@ -476,3 +476,38 @@ Events: call_started, user_speech, agent_speech, tool_call, call_ended
 **Commit:** 66ff243 — `feat(voice): add SSE endpoint for live phone transcript streaming`
 
 **Deployed:** 455 tests pass. SSE endpoint live at production URL (200, text/event-stream).
+
+### 2026-04-09 — Fix Phone Bridge: Transcript Streaming + Real Tool Execution
+
+**Two bugs found and fixed:**
+
+1. **Agent speech transcripts missing from SSE stream:**
+   - `media_ws.py` listened for `response.audio_transcript.done` (preview API event name)
+   - GA Realtime API (api-version `2025-04-01-preview`) sends `response.output_audio_transcript.done`
+   - Agent speech events were silently dropped → never published to `TranscriptBus`
+   - Fix: updated event handler to `response.output_audio_transcript.done`
+   - Also added `response.output_audio_transcript.delta` to noise list (kept old name for compat)
+   - Added subscriber-count logging on every publish for diagnosability
+
+2. **Phone tool calls returned hardcoded mock data (no real tickets/KB):**
+   - `AzureRealtimeService.execute_tool()` had stub implementations for all 4 tools
+   - `analyze_and_route_query` returned `TKT-IT-<random>` without creating a real ticket
+   - `search_knowledge_base` returned one hardcoded article regardless of query
+   - `escalate_to_human` returned fake escalation ID without creating a ticket
+   - Fix: wired all tools to real services via lazy import from `dependencies.py`:
+     - `analyze_and_route_query` → `llm_service.classify_intent()` + `ticket_service.create_ticket()`
+     - `check_ticket_status` → `ticket_service.get_ticket_status()`
+     - `search_knowledge_base` → `knowledge_service.search()`
+     - `escalate_to_human` → `ticket_service.create_ticket()` with URGENT priority
+   - Error handling wraps all tool execution; failures return error string to AI model
+
+**Key lesson:** Realtime API GA changed event names from preview. `response.audio_transcript.done` → `response.output_audio_transcript.done`. Always verify event names against the deployed api-version.
+
+**Key lesson:** `QueryResult.department_suggestion` (not `.department`) is the field name for the classified department. It's a `Department` enum already — no string conversion needed.
+
+**Files changed:**
+- `backend/app/api/media_ws.py` — fixed event name, added logging
+- `backend/app/services/azure/realtime.py` — replaced mock tool stubs with real service calls
+
+**Tests:** 455 pass (mock service unchanged — tests still use MockRealtimeService)
+**Deployed:** `azd deploy backend` SUCCESS, SSE keepalive confirmed, all services healthy.

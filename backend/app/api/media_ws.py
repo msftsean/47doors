@@ -81,6 +81,10 @@ async def acs_media_bridge(ws: WebSocket) -> None:
         "timestamp": call_start.isoformat(),
         "phone_number": "+19132171946",
     })
+    logger.info(
+        "Media bridge: published call_started (call_id=%s, subscribers=%d)",
+        call_id, transcript_bus.subscriber_count,
+    )
 
     openai_ws = None
     session_ready = asyncio.Event()
@@ -182,28 +186,40 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                     continue
 
                 # -- Transcript logging -----------------------------------
-                if t == "response.audio_transcript.done":
+                # GA event name: response.output_audio_transcript.done
+                # (preview used response.audio_transcript.done — no longer sent)
+                if t == "response.output_audio_transcript.done":
                     text = msg.get("transcript", "")
                     logger.info(
-                        f"Media bridge: AI said: {text[:120]}"
+                        "Media bridge: AI said (call_id=%s): %s",
+                        call_id, text[:120],
                     )
                     await transcript_bus.publish({
                         "type": "agent_speech",
                         "text": text,
                         "call_id": call_id,
                     })
+                    logger.debug(
+                        "Media bridge: published agent_speech to %d subscribers",
+                        transcript_bus.subscriber_count,
+                    )
                     continue
 
                 if t == "conversation.item.input_audio_transcription.completed":
                     text = msg.get("transcript", "")
                     logger.info(
-                        f"Media bridge: Caller said: {text[:120]}"
+                        "Media bridge: Caller said (call_id=%s): %s",
+                        call_id, text[:120],
                     )
                     await transcript_bus.publish({
                         "type": "user_speech",
                         "text": text,
                         "call_id": call_id,
                     })
+                    logger.debug(
+                        "Media bridge: published user_speech to %d subscribers",
+                        transcript_bus.subscriber_count,
+                    )
                     continue
 
                 # -- Tool calls -------------------------------------------
@@ -235,6 +251,10 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                         "summary": summary,
                         "call_id": call_id,
                     })
+                    logger.info(
+                        "Media bridge: published tool_call '%s' (call_id=%s)",
+                        name, call_id,
+                    )
                     continue
 
                 # -- Errors -----------------------------------------------
@@ -249,7 +269,9 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                     "response.created", "response.done",
                     "response.output_item.added", "response.output_item.done",
                     "response.content_part.added", "response.content_part.done",
-                    "response.audio.done", "response.audio_transcript.delta",
+                    "response.audio.done",
+                    "response.output_audio_transcript.delta",
+                    "response.audio_transcript.delta",  # keep for compat
                     "conversation.item.created",
                     "input_audio_buffer.speech_stopped",
                     "input_audio_buffer.committed",
@@ -324,6 +346,10 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                 "call_id": call_id,
                 "duration_seconds": round(duration),
             })
+            logger.info(
+                "Media bridge: published call_ended (call_id=%s, duration=%ds)",
+                call_id, round(duration),
+            )
         except Exception:
             pass
         if openai_ws and not openai_ws.closed:

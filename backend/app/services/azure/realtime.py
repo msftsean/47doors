@@ -19,7 +19,6 @@ import json
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from uuid import uuid4
 
 import httpx
 from azure.core.credentials import AccessToken
@@ -283,47 +282,131 @@ class AzureRealtimeService(RealtimeServiceInterface):
         arguments: dict,
         session_id: str,
     ) -> ToolCallResponse:
-        """Delegate a Realtime API tool call through the pipeline."""
-        if tool_name == "analyze_and_route_query":
-            result = json.dumps({
-                "intent": "general_question",
-                "department": "IT",
-                "confidence": 0.85,
-                "requires_escalation": False,
-                "ticket_id": f"TKT-IT-{uuid4().hex[:8].upper()}",
-            })
-        elif tool_name == "check_ticket_status":
-            ticket_id = arguments.get("ticket_id", "TKT-UNKNOWN")
-            result = json.dumps({
-                "ticket_id": ticket_id,
-                "status": "in_progress",
-                "department": "IT",
-                "assigned_to": "Support Team",
-            })
-        elif tool_name == "search_knowledge_base":
-            result = json.dumps({
-                "articles": [
-                    {
-                        "article_id": "KB-001",
-                        "title": "General Help",
-                        "snippet": "Contact the help desk for further assistance.",
-                        "relevance_score": 0.80,
-                    }
-                ]
-            })
-        elif tool_name == "escalate_to_human":
-            result = json.dumps({
-                "escalated": True,
-                "reason": arguments.get("reason", ""),
-                "department": arguments.get("department", "IT"),
-                "ticket_id": f"ESC-{uuid4().hex[:8].upper()}",
-                "message": "A human agent will be with you shortly.",
-            })
-        else:
+        """Delegate a Realtime API tool call to real backend services."""
+        from app.core.dependencies import (
+            get_knowledge_service,
+            get_llm_service,
+            get_ticket_service,
+        )
+
+        ticket_svc = get_ticket_service()
+        knowledge_svc = get_knowledge_service()
+
+        try:
+            if tool_name == "analyze_and_route_query":
+                query = arguments.get("query", "")
+                logger.info("execute_tool: analyze_and_route_query query=%s", query[:100])
+
+                # Classify intent via LLM (same as text chat QueryAgent)
+                llm_svc = get_llm_service()
+                query_result = await llm_svc.classify_intent(query)
+                dept_enum = query_result.department_suggestion
+                intent = query_result.intent
+
+                from app.models.enums import Priority
+
+                # Escalation-worthy queries get URGENT, else MEDIUM
+                priority_enum = Priority.URGENT if query_result.requires_escalation else Priority.MEDIUM
+
+                # Create a real ticket
+                ticket_id, ticket_url = await ticket_svc.create_ticket(
+                    department=dept_enum,
+                    priority=priority_enum,
+                    summary=f"Phone call: {query[:150]}",
+                    description=f"Submitted via phone call (session {session_id}). Query: {query}",
+                    student_id_hash=f"phone-{session_id}",
+                )
+                logger.info("execute_tool: created ticket %s dept=%s", ticket_id, dept_enum.value)
+
+                result = json.dumps({
+                    "intent": intent or "general_question",
+                    "department": dept_enum.value,
+                    "confidence": query_result.confidence,
+                    "requires_escalation": query_result.requires_escalation,
+                    "ticket_id": ticket_id,
+                    "ticket_url": ticket_url,
+                })
+
+            elif tool_name == "check_ticket_status":
+                ticket_id = arguments.get("ticket_id", "")
+                logger.info("execute_tool: check_ticket_status id=%s", ticket_id)
+
+                status_resp = await ticket_svc.get_ticket_status(ticket_id)
+                if status_resp:
+                    result = json.dumps({
+                        "ticket_id": status_resp.ticket_id,
+                        "status": status_resp.status.value if hasattr(status_resp.status, 'value') else str(status_resp.status),
+                        "department": status_resp.department.value if hasattr(status_resp.department, 'value') else str(status_resp.department),
+                        "assigned_to": status_resp.assigned_to or "Unassigned",
+                        "summary": status_resp.summary or "",
+                    })
+                else:
+                    result = json.dumps({
+                        "ticket_id": ticket_id,
+                        "status": "not_found",
+                        "message": f"No ticket found with ID {ticket_id}",
+                    })
+
+            elif tool_name == "search_knowledge_base":
+                query = arguments.get("query", "")
+                logger.info("execute_tool: search_knowledge_base query=%s", query[:100])
+
+                articles = await knowledge_svc.search(query=query, limit=3)
+                result = json.dumps({
+                    "articles": [
+                        {
+                            "article_id": a.article_id,
+                            "title": a.title,
+                            "snippet": a.snippet or "",
+                            "relevance_score": float(a.relevance_score) if a.relevance_score else 0.0,
+                        }
+                        for a in articles
+                    ]
+                })
+                logger.info("execute_tool: KB returned %d articles", len(articles))
+
+            elif tool_name == "escalate_to_human":
+                reason = arguments.get("reason", "Caller requested human agent")
+                department = arguments.get("department", "IT")
+                logger.info("execute_tool: escalate_to_human reason=%s dept=%s", reason[:80], department)
+
+                from app.models.enums import Department, Priority
+
+                try:
+                    dept_enum = Department(department)
+                except ValueError:
+                    dept_enum = Department.ESCALATE_TO_HUMAN
+
+                ticket_id, ticket_url = await ticket_svc.create_ticket(
+                    department=dept_enum,
+                    priority=Priority.URGENT,
+                    summary=f"ESCALATION: {reason[:150]}",
+                    description=f"Phone caller requested human escalation. Reason: {reason}. Session: {session_id}",
+                    student_id_hash=f"phone-{session_id}",
+                )
+                logger.info("execute_tool: escalation ticket created %s", ticket_id)
+
+                result = json.dumps({
+                    "escalated": True,
+                    "reason": reason,
+                    "department": department,
+                    "ticket_id": ticket_id,
+                    "ticket_url": ticket_url,
+                    "message": f"Escalation ticket {ticket_id} created. A human agent will follow up.",
+                })
+            else:
+                return ToolCallResponse(
+                    call_id=call_id,
+                    result="",
+                    error=f"Unknown tool: {tool_name}",
+                )
+
+        except Exception as exc:
+            logger.error("execute_tool: %s failed: %s", tool_name, exc, exc_info=True)
             return ToolCallResponse(
                 call_id=call_id,
                 result="",
-                error=f"Unknown tool: {tool_name}",
+                error=f"Tool execution failed: {exc}",
             )
 
         return ToolCallResponse(call_id=call_id, result=result, error=None)
