@@ -114,16 +114,20 @@ class AzurePhoneService(PhoneServiceInterface):
         """
         client = await self._get_client()
 
-        # Azure OpenAI Realtime WebSocket URL for media streaming
-        realtime_ws_url = (
-            f"{self.openai_endpoint.replace('https://', 'wss://')}"
-            f"/openai/realtime?deployment={self.openai_deployment}"
-            f"&api-version=2025-04-01-preview"
+        # Media streaming URL — route through the backend's WebSocket bridge
+        # so the bridge can authenticate to Azure OpenAI with managed identity.
+        # Derive the WebSocket URL from the callback URL (same host).
+        ws_base = callback_url.rsplit("/api/phone/", 1)[0]
+        media_ws_url = (
+            ws_base
+            .replace("https://", "wss://")
+            .replace("http://", "ws://")
+            + "/ws/acs-media"
         )
 
         logger.info(
             f"Phone: answering call from {caller_id}, "
-            f"streaming to {self.openai_deployment}"
+            f"media_ws={media_ws_url}"
         )
 
         try:
@@ -136,7 +140,7 @@ class AzurePhoneService(PhoneServiceInterface):
             )
 
             media_streaming = MediaStreamingOptions(
-                transport_url=realtime_ws_url,
+                transport_url=media_ws_url,
                 transport_type=StreamingTransportType.WEBSOCKET,
                 content_type=MediaStreamingContentType.AUDIO,
                 audio_channel_type=MediaStreamingAudioChannelType.MIXED,

@@ -147,27 +147,41 @@ async def handle_call_callbacks(request: Request) -> JSONResponse:
     phone_service = _resolve_phone_service()
 
     for event in events:
-        # Support flat format (event_type key) and CloudEvents format (type/eventType key)
+        # ACS Call Automation sends CloudEvents: type at top, payload in "data".
+        # Also support flat format for backward compatibility.
         event_type = (
-            event.get("event_type")
-            or event.get("type")
+            event.get("type")
             or event.get("eventType")
+            or event.get("event_type")
             or ""
         )
+
+        # CloudEvents nests payload in "data"; flat format has fields at top level
+        data = event.get("data", event)
+
         call_connection_id = (
-            event.get("call_connection_id")
+            data.get("callConnectionId")
+            or data.get("call_connection_id")
             or event.get("callConnectionId")
+            or event.get("call_connection_id")
             or ""
         )
 
         if not event_type:
-            raise HTTPException(status_code=400, detail="Missing event_type in callback payload")
+            logger.warning(f"Phone callback: missing event_type, keys={list(event.keys())}")
+            results.append({"error": "missing_event_type"})
+            continue
         if not call_connection_id:
-            raise HTTPException(status_code=400, detail="Missing call_connection_id in callback payload")
+            logger.warning(
+                f"Phone callback: missing call_connection_id for {event_type}, "
+                f"data_keys={list(data.keys())}"
+            )
+            results.append({"error": "missing_call_connection_id", "event_type": event_type})
+            continue
 
-        # Build a normalised event_data for the service (preserve original keys too)
+        # Pass the inner data dict (not the CloudEvents envelope) to the service
         event_data = {
-            **event,
+            **data,
             "callConnectionId": call_connection_id,
         }
 

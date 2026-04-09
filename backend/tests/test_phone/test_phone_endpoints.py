@@ -294,17 +294,21 @@ class TestCallCallbacks:
         assert response.status_code in (400, 422)
 
     def test_missing_event_type_returns_error(self, client):
-        """Body missing event_type should return 400 or 422."""
+        """Body missing event_type should return 200 with error detail (resilient parsing)."""
         response = client.post(
             "/api/phone/callbacks",
             json={"call_connection_id": "conn-test-789"},
         )
-        assert response.status_code in (400, 422)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["results"][0]["error"] == "missing_event_type"
 
     def test_missing_connection_id_returns_error(self, client):
-        """Body missing call_connection_id should return 400 or 422."""
+        """Body missing call_connection_id should return 200 with error detail (resilient parsing)."""
         response = client.post(
             "/api/phone/callbacks",
             json={"event_type": "CallConnected"},
         )
-        assert response.status_code in (400, 422)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["results"][0]["error"] == "missing_call_connection_id"
