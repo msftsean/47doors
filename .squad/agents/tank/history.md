@@ -399,6 +399,14 @@ output_audio_transcription={"model": "whisper-1"}
 - Confirmed the deployed backend image timestamp matched recent deployment.
 - Fixed by removing duplicate params, deployed via `azd deploy backend`, all tests passed.
 
+### 2026-04-09 — Transcript Event Name Mismatch (Preview vs GA API)
+
+**Root cause:** Commit 2669075 changed the transcript handler in `media_ws.py` from the preview event name (`response.audio_transcript.done`) to the GA name (`response.output_audio_transcript.done`). But our API version is still `2025-04-01-preview`, which sends the preview name. Events never matched → agent transcripts silently dropped.
+
+**Fix (commit 297e7f7):** Changed the handler to accept BOTH preview and GA event names using `if t in (...)`. The delta ignore list already had both names. Forward-compatible — works on preview now and won't break when we upgrade to GA.
+
+**Key lesson:** When an API has preview vs GA event name differences, always handle both names until the version pin is explicitly upgraded. The API version string in `config.py` is the source of truth for which wire format the server will actually send.
+
 **Key lesson: OpenAI Realtime API session config format**
 
 - For direct WebSocket (phone bridge), transcription config MUST be nested under `audio.input.transcription` and `audio.output.transcription`.
