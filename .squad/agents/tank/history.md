@@ -448,3 +448,31 @@ PSTN Caller → ACS → WS [backend /ws/acs-media] → WS [Azure OpenAI Realtime
 **Commit:** b2d7abc — `feat(voice): add WebSocket bridge for ACS-to-OpenAI audio relay`
 
 **Deployed:** Revision `frontdoor-tlijy2xjo4fvg-backend--azd-1775699845` active. 447 tests pass.
+
+### 2026-04-09 — SSE Transcript Streaming Endpoint
+
+**What:** Added real-time transcript streaming so the frontend can display phone conversations as they happen. Three new components:
+
+1. `backend/app/services/transcript_bus.py` — In-memory async pub/sub using `asyncio.Queue` per subscriber. Module-level singleton (`transcript_bus`). Auto-drops slow subscribers when queue (256) overflows.
+2. `backend/app/api/transcripts.py` — SSE endpoint at `GET /api/phone/transcripts/stream`. Returns `text/event-stream` with 15s keepalive. Uses `StreamingResponse`.
+3. Wired into `media_ws.py` — publishes `call_started`, `user_speech`, `agent_speech`, `tool_call`, `call_ended` events as they flow through the OpenAI Realtime bridge.
+
+**Naming collision fixed:** OpenAI's `response.function_call_arguments.done` has a `call_id` field (function call ID). Renamed to `fn_call_id` in the bridge to avoid shadowing the phone `call_id` (UUID).
+
+**SSE test pattern:** Testing infinite SSE streams with httpx hangs because the client tries to drain the body on context exit. Solution: test the async generator directly with `AsyncMock` request + `asyncio.wait_for` wrapper + task-based publish/consume pattern.
+
+**Key files:**
+- `backend/app/services/transcript_bus.py` — pub/sub bus
+- `backend/app/api/transcripts.py` — SSE endpoint
+- `backend/app/api/media_ws.py` — event publishing hooks
+- `backend/tests/test_transcripts/test_transcript_bus.py` — 8 tests
+
+**API contract (shared with Switch for frontend):**
+```
+GET /api/phone/transcripts/stream → text/event-stream
+Events: call_started, user_speech, agent_speech, tool_call, call_ended
+```
+
+**Commit:** 66ff243 — `feat(voice): add SSE endpoint for live phone transcript streaming`
+
+**Deployed:** 455 tests pass. SSE endpoint live at production URL (200, text/event-stream).

@@ -110,3 +110,34 @@
 **Verification:** TypeScript compiles clean. Code review passed (Morpheus).
 
 **Orchestration Log:** `.squad/orchestration-log/2026-03-15T01-53-switch.md`
+
+### 2026-03-20 — Demo Runbook Page with Live Transcript Viewer
+
+**What was built:**
+- New `demo` view added to the app's view switcher (alongside chat, tickets, admin)
+- Two-section page: Demo Runbook (phone number + 9 demo questions table) + Live Phone Conversation (SSE transcript viewer)
+- SSE hook (`useTranscriptStream`) connects to `/api/phone/transcripts/stream` and renders real-time call events
+- Chat-bubble UI for caller vs AI agent speech, info badges for tool calls, status indicators for call state
+
+**Key file paths:**
+- `frontend/src/types/demo.ts` — SSE event types (CallStarted, UserSpeech, AgentSpeech, ToolCall, CallEnded)
+- `frontend/src/hooks/useTranscriptStream.ts` — EventSource hook with useReducer state machine
+- `frontend/src/components/DemoPage.tsx` — Full page component (Runbook + LiveConversation)
+- `frontend/src/App.tsx` — View type extended with 'demo', DemoPage wired in
+- `frontend/src/components/Header.tsx` — Demo tab added with PresentationChartBarIcon
+
+**Patterns used:**
+- View switcher pattern matches existing chat/tickets/admin pattern exactly
+- Header tab style matches existing tabs (border-b-2 active indicator, Heroicons)
+- Message bubbles follow same visual pattern as MessageBubble.tsx (primary-600 for user, white border for agent)
+- `aria-live="polite"` on transcript area for screen reader support
+- Auto-scroll via useEffect + scrollRef on event changes
+- EventSource auto-reconnection (built-in browser behavior)
+
+**API contract (backend dependency on Tank):**
+- SSE endpoint: `GET /api/phone/transcripts/stream`
+- Event types: call_started, user_speech, agent_speech, tool_call, call_ended
+- Frontend is ready; backend SSE endpoint must be implemented by Tank
+
+**Build verification:**
+- TypeScript + Vite build passes clean: 720 modules, 226.28 kB JS (65.23 kB gzip), built in 2.54s
