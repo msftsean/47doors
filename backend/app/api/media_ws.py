@@ -137,6 +137,8 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                         "type": "session.update",
                         "session": {
                             "instructions": PHONE_SYSTEM_PROMPT,
+                            "input_audio_transcription": {"model": "whisper-1"},
+                            "output_audio_transcription": {"model": "whisper-1"},
                             "audio": {
                                 "input": {
                                     "format": "pcm16",
@@ -145,6 +147,7 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                                 "output": {
                                     "format": "pcm16",
                                     "voice": settings.realtime_voice,
+                                    "transcription": {"model": "whisper-1"},
                                 },
                             },
                             "turn_detection": {
