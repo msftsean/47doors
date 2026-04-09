@@ -221,6 +221,11 @@ class Settings(BaseSettings):
         default="",
         description="Phone number provisioned in ACS for inbound calls (E.164 format, e.g. +15551234567)"
     )
+    phone_callback_base_url: str = Field(
+        default="",
+        description="Public HTTPS base URL for ACS call-back webhooks. "
+                    "When empty, inferred from X-Forwarded-Proto/Host headers."
+    )
     max_call_duration: int = Field(
         default=600,
         description="Maximum phone call duration in seconds (default 10 minutes)"

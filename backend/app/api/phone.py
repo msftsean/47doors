@@ -11,6 +11,8 @@ from app.core.dependencies import get_phone_service, get_settings
 from app.models.phone_schemas import PhoneHealthResponse
 from app.services.interfaces import PhoneServiceInterface
 
+settings = get_settings()
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -80,7 +82,22 @@ async def handle_incoming_call(request: Request) -> JSONResponse:
             logger.warning("Phone: IncomingCall event missing incomingCallContext")
             return JSONResponse(content={"status": "skipped", "reason": "missing_context"})
 
-        callback_url = str(request.base_url).rstrip("/") + "/api/phone/callbacks"
+        # ACS requires a publicly-reachable HTTPS callback URL.
+        # Container Apps terminate TLS at the ingress, so request.base_url
+        # yields an internal http:// URL.  Prefer the explicit config; fall
+        # back to reconstructing from forwarded headers.
+        if settings.phone_callback_base_url:
+            base = settings.phone_callback_base_url.rstrip("/")
+        else:
+            scheme = request.headers.get("x-forwarded-proto", "https")
+            host = (
+                request.headers.get("x-forwarded-host")
+                or request.headers.get("host")
+                or ""
+            )
+            base = f"{scheme}://{host}" if host else str(request.base_url).rstrip("/")
+        callback_url = f"{base}/api/phone/callbacks"
+        logger.info(f"Phone: using callback URL: {callback_url}")
 
         phone_service = _resolve_phone_service()
         try:
