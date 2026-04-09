@@ -434,3 +434,74 @@ The health endpoint reported green because it only tests client initialization, 
 - All meaningful changes require team consensus
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
+
+
+# Decision: SSE Transcript Streaming Architecture
+
+**Timestamp:** 2026-04-09  
+**Author:** Tank (Backend Dev)  
+**Status:** Implemented & Deployed
+
+## Decision
+
+Added server-sent events (SSE) endpoint at `GET /api/phone/transcripts/stream` for real-time phone call transcript streaming to the frontend.
+
+## Architecture
+
+- **In-memory pub/sub** (`TranscriptBus`) — no external dependencies, no persistence. Each SSE client gets its own `asyncio.Queue(maxsize=256)`. Slow clients are auto-dropped.
+- **Event types:** `call_started`, `user_speech`, `agent_speech`, `tool_call`, `call_ended` — matches the shared API contract with Switch.
+- **Integration point:** Events published from `media_ws.py` WebSocket bridge as they flow through the OpenAI Realtime session.
+- **Router mounted** under `/api/phone` prefix alongside existing phone endpoints.
+
+## Trade-offs
+
+- In-memory only — no transcript history survives container restart. Acceptable for live-view use case.
+- No authentication on the SSE endpoint — same as existing phone endpoints. Can add later if needed.
+- Single-process fan-out — works for Azure Container Apps single-replica. For multi-replica, would need Redis pub/sub or similar.
+
+## Impact
+
+- No changes to existing phone/voice functionality
+- 455 tests pass (8 new)
+- Frontend team (Switch) can connect to the stream immediately
+
+
+# Decision: Demo page added as new view
+
+**Date:** 2026-03-20
+**Author:** Switch (Frontend Dev)
+**Status:** Implemented
+
+## Context
+
+Sean needs a live demo page for executive stakeholders. The page shows a demo runbook (phone number + scripted questions) and a real-time phone transcript viewer that consumes an SSE stream from the backend.
+
+## Decision
+
+- Added `demo` as a 4th view in the existing view switcher (`chat | tickets | admin | demo`)
+- Single `DemoPage` component contains both sections (Runbook + LiveConversation)
+- SSE connection via `EventSource` API in a dedicated `useTranscriptStream` hook
+- State managed with `useReducer` (idle → active → ended lifecycle)
+
+## API Contract with Tank
+
+Frontend expects SSE at `GET /api/phone/transcripts/stream` with these event types:
+- `call_started` (call_id, timestamp, phone_number)
+- `user_speech` (text, timestamp, call_id)
+- `agent_speech` (text, timestamp, call_id)
+- `tool_call` (tool, summary, timestamp, call_id)
+- `call_ended` (call_id, timestamp, duration_seconds)
+
+## Files Changed
+
+- `frontend/src/types/demo.ts` — new
+- `frontend/src/hooks/useTranscriptStream.ts` — new
+- `frontend/src/components/DemoPage.tsx` — new
+- `frontend/src/App.tsx` — modified (added demo view)
+- `frontend/src/components/Header.tsx` — modified (added Demo tab)
+
+## Risks
+
+- SSE endpoint not yet built by Tank — frontend will show empty state gracefully until backend is ready
+- EventSource auto-reconnects on failure, so transient backend unavailability is handled
+
