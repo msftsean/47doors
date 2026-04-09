@@ -128,18 +128,21 @@ class AzurePhoneService(PhoneServiceInterface):
 
         try:
             from azure.communication.callautomation import (
+                AudioFormat,
                 MediaStreamingOptions,
-                MediaStreamingTransportType,
+                StreamingTransportType,
                 MediaStreamingContentType,
                 MediaStreamingAudioChannelType,
             )
 
             media_streaming = MediaStreamingOptions(
                 transport_url=realtime_ws_url,
-                transport_type=MediaStreamingTransportType.WEBSOCKET,
+                transport_type=StreamingTransportType.WEBSOCKET,
                 content_type=MediaStreamingContentType.AUDIO,
                 audio_channel_type=MediaStreamingAudioChannelType.MIXED,
                 start_media_streaming=True,
+                enable_bidirectional=True,
+                audio_format=AudioFormat.PCM24_K_MONO,
             )
 
             answer_result = client.answer_call(
