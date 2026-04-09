@@ -79,3 +79,36 @@
 - Realtime deployment migration confirmed as `gpt-realtime` (Tank's decision on naming).
 
 **Session coordination:** Parallel spawn 2026-04-08T17:25 with Tank. Orchestration log: `.squad/orchestration-log/2026-04-08T17-25-mouse.md`
+
+### Playwright Deployment Eval Suite — 2026-04-09
+
+**What was created:**
+- `frontend/tests/e2e/eval.spec.ts` — 24-test evaluation suite for live deployment testing
+- Updated `frontend/playwright.config.ts` — added `BASE_URL` env var override, skips local `webServer` when targeting live
+
+**Existing test baseline (run against live deployment):**
+- 43 total existing tests: 32 passed, 10 failed, 1 skipped
+- 5 smoke tests failed: hardcoded `http://localhost:8000` backend URLs (ECONNREFUSED)
+- 4 accessibility tests failed: real axe-core violations (color contrast, WCAG compliance)
+- 1 chat test failed: "Talk to Human" button not found (timeout — likely UI label mismatch)
+- 1 voice test skipped: placeholder only
+
+**Eval suite results (live deployment):**
+- 24 total eval tests: 22 passed, 2 failed
+- Homepage, chat, sessions, error handling, voice UI, performance: ALL PASS
+- Two KB quality failures detected (real issues, not test bugs):
+  1. "How do I register for classes?" → AI asked clarifying question instead of answering
+  2. "How do I apply for financial aid?" → AI routed to IT Support instead of Financial Aid
+- Performance: page loads ~1.3s, chat API ~3-4s avg, health endpoint ~1s (warm), 5.4s (cold start)
+
+**Config patterns established:**
+- `BASE_URL` env var overrides `baseURL` in playwright config (defaults to localhost:5173)
+- `BACKEND_URL` env var for direct API tests (auto-derived from BASE_URL by replacing `-frontend` with `-backend`)
+- `webServer` block conditionally skipped when `BASE_URL` is set (no local server startup for live testing)
+- Health endpoint threshold set to 10s to accommodate Azure Container App cold starts
+- All eval tests tagged with `@eval` for selective execution
+
+**Key finding:**
+- The 3-agent pipeline (QueryAgent → RouterAgent → ActionAgent) misroutes some queries:
+  registration goes to clarification loop, financial aid goes to IT.
+  These are real demo risks that should be addressed before the next demo.

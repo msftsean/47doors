@@ -250,6 +250,32 @@ Tank established the voice interaction architecture during Phase 0 research:
 
 **Verification:** 76 voice tests passing. Import checks clean for both Azure and mock services.
 
+---
+
+### 2026-04-09 — Phone Callback URL Fix (TLS Termination)
+
+**Problem:** Inbound phone calls were failing at `answer_call()` with error "CallbackUri invalid" (400). The callback URL was being constructed from `request.base_url`, which inside Azure Container Apps resolves to an internal `http://` address. ACS (Azure Communication Services) requires HTTPS public URLs.
+
+**Root cause:** Container Apps ingress performs TLS termination, so the backend sees `http://` requests from an internal address. The fix required extracting the public HTTPS URL from the forwarded headers set by the ingress.
+
+**Solution implemented:**
+
+1. Read `X-Forwarded-Proto` and `Host` headers from the incoming request (set by Container Apps ingress).
+2. Reconstruct the public HTTPS callback URL as `https://{Host}/api/phone/callbacks`.
+3. Added `PHONE_CALLBACK_BASE_URL` config setting as an explicit override (belt-and-suspenders approach).
+4. Updated `backend/app/api/phone.py` to use reconstructed URL in `answer_call()`.
+
+**Files changed:**
+- `backend/app/api/phone.py` — callback URL reconstruction in phone event handler
+- `backend/app/services/azure/phone.py` — helper function to extract public URL from headers
+- Container env: `PHONE_CALLBACK_BASE_URL` set on `frontdoor-tlijy2xjo4fvg-backend`
+
+**Verification:** Deployed to live. Simulated IncomingCall event via Event Grid. Call was answered successfully.
+
+**Decision:** This pattern (read forwarded headers + explicit override config) should be used for any service needing to reconstruct a public callback URL in Container Apps or similar TLS-terminating environments.
+
+**Commit:** 365271d
+
 **Team Coordination:** Paired with Switch's frontend `session.update` data-channel implementation (parallel spawn 2026-03-15T01:53) for belt-and-suspenders transcription enablement. Backend config change ensures system prompt and transcription are always available; frontend change adds runtime safety net.
 
 **Orchestration Log:** `.squad/orchestration-log/2026-03-15T01-53-tank.md`
