@@ -15,6 +15,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import uuid4
 
 import websockets
 from azure.core.credentials import AccessToken
@@ -22,6 +23,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.core.dependencies import get_realtime_service, get_settings
 from app.services.azure.phone import PHONE_SYSTEM_PROMPT
+from app.services.transcript_bus import transcript_bus
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +70,17 @@ async def acs_media_bridge(ws: WebSocket) -> None:
     """
     await ws.accept()
     settings = get_settings()
-    logger.info("Media bridge: ACS WebSocket connected")
+    call_id = str(uuid4())
+    call_start = datetime.now(timezone.utc)
+    logger.info("Media bridge: ACS WebSocket connected (call_id=%s)", call_id)
+
+    # Notify SSE subscribers that a new call has started
+    await transcript_bus.publish({
+        "type": "call_started",
+        "call_id": call_id,
+        "timestamp": call_start.isoformat(),
+        "phone_number": "+19132171946",
+    })
 
     openai_ws = None
     session_ready = asyncio.Event()
@@ -171,22 +183,32 @@ async def acs_media_bridge(ws: WebSocket) -> None:
 
                 # -- Transcript logging -----------------------------------
                 if t == "response.audio_transcript.done":
+                    text = msg.get("transcript", "")
                     logger.info(
-                        f"Media bridge: AI said: "
-                        f"{msg.get('transcript', '')[:120]}"
+                        f"Media bridge: AI said: {text[:120]}"
                     )
+                    await transcript_bus.publish({
+                        "type": "agent_speech",
+                        "text": text,
+                        "call_id": call_id,
+                    })
                     continue
 
                 if t == "conversation.item.input_audio_transcription.completed":
+                    text = msg.get("transcript", "")
                     logger.info(
-                        f"Media bridge: Caller said: "
-                        f"{msg.get('transcript', '')[:120]}"
+                        f"Media bridge: Caller said: {text[:120]}"
                     )
+                    await transcript_bus.publish({
+                        "type": "user_speech",
+                        "text": text,
+                        "call_id": call_id,
+                    })
                     continue
 
                 # -- Tool calls -------------------------------------------
                 if t == "response.function_call_arguments.done":
-                    call_id = msg.get("call_id", "")
+                    fn_call_id = msg.get("call_id", "")
                     name = msg.get("name", "")
                     logger.info(f"Media bridge: tool call '{name}'")
                     try:
@@ -194,18 +216,25 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                     except json.JSONDecodeError:
                         args = {}
                     result = await realtime_svc.execute_tool(
-                        call_id, name, args, "phone-call"
+                        fn_call_id, name, args, "phone-call"
                     )
                     await openai_ws.send(json.dumps({
                         "type": "conversation.item.create",
                         "item": {
                             "type": "function_call_output",
-                            "call_id": call_id,
+                            "call_id": fn_call_id,
                             "output": result.result or result.error or "",
                         },
                     }))
                     await openai_ws.send(json.dumps({"type": "response.create"}))
                     logger.info(f"Media bridge: tool '{name}' result sent")
+                    summary = (result.result or result.error or "")[:200]
+                    await transcript_bus.publish({
+                        "type": "tool_call",
+                        "tool": name,
+                        "summary": summary,
+                        "call_id": call_id,
+                    })
                     continue
 
                 # -- Errors -----------------------------------------------
@@ -287,10 +316,20 @@ async def acs_media_bridge(ws: WebSocket) -> None:
     except Exception as exc:
         logger.error(f"Media bridge: fatal error: {exc}", exc_info=True)
     finally:
+        # Publish call_ended before tearing down connections
+        duration = (datetime.now(timezone.utc) - call_start).total_seconds()
+        try:
+            await transcript_bus.publish({
+                "type": "call_ended",
+                "call_id": call_id,
+                "duration_seconds": round(duration),
+            })
+        except Exception:
+            pass
         if openai_ws and not openai_ws.closed:
             await openai_ws.close()
         try:
             await ws.close()
         except Exception:
             pass
-        logger.info("Media bridge: session ended")
+        logger.info("Media bridge: session ended (call_id=%s)", call_id)
