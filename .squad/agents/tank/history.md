@@ -380,3 +380,48 @@ The issue: `callback_url = str(request.base_url).rstrip("/") + "/api/phone/callb
 3. Health check (`/api/phone/health`) does NOT test the answer_call path — it only verifies client initialization
 
 **Commit:** 365271d — `fix(phone): use public HTTPS callback URL for ACS answer_call`
+
+### 2026-04-09 — Silent Audio Fix (WebSocket Bridge for ACS→OpenAI)
+
+**Problem:** Phone call to +19132171946 connected (call picked up, no more 503 or callback errors) but audio was completely silent — dead air in both directions.
+
+**Root cause (two issues):**
+
+1. **ACS media streaming could not authenticate to Azure OpenAI.** The `transport_url` in `MediaStreamingOptions` pointed directly to `wss://{openai}/openai/realtime?deployment=gpt-realtime`. But the OpenAI resource has `disableLocalAuth=true` (only Entra ID/token auth), the ACS resource has NO managed identity (`identity: null`), and there is no ACS→OpenAI RBAC role assignment. ACS simply could not open the WebSocket — silent failure.
+
+2. **Callback handler rejected all events with 400.** ACS Call Automation sends CloudEvents format where `callConnectionId` is nested in the `data` field. The handler looked for it at the top level. Every callback (CallConnected, MediaStreamingStarted/Failed) was rejected with 400, so we never saw the `MediaStreamingFailed` event that would have diagnosed issue #1.
+
+**Fix: Backend WebSocket bridge (`backend/app/api/media_ws.py`)**
+
+Instead of ACS connecting directly to OpenAI (which requires ACS to have its own identity/auth), the backend now acts as a WebSocket relay:
+
+```
+PSTN Caller → ACS → WS [backend /ws/acs-media] → WS [Azure OpenAI Realtime API]
+                         ↑ backend bridges audio, uses its own managed identity ↑
+```
+
+- New `media_ws.py` at route `/ws/acs-media`:
+  - Accepts ACS media streaming WebSocket connection
+  - Opens authenticated WebSocket to Azure OpenAI Realtime API using backend's managed identity (which already has the RBAC role)
+  - Bridges audio bidirectionally (ACS AudioData → OpenAI input_audio_buffer.append, OpenAI response.audio.delta → ACS AudioData)
+  - Sends session.update with PHONE_SYSTEM_PROMPT, voice config, VAD, tool definitions
+  - Handles tool calls (analyze_and_route_query, check_ticket_status, etc.)
+  - Supports barge-in (StopAudio on user speech)
+- Updated `phone.py` service: `transport_url` now points to `wss://{hostname}/ws/acs-media` (derived from callback URL)
+- Fixed `phone.py` API: callback handler parses CloudEvents (data.callConnectionId) with graceful fallback
+- Registered `/ws` router in `main.py`
+
+**Audio format compatibility:** ACS `PCM24_K_MONO` (24kHz, 16-bit, mono) maps directly to OpenAI Realtime `pcm16` (24kHz, 16-bit, mono). No conversion needed.
+
+**Key architectural insight:** ACS media streaming's `transport_url` is a dumb WebSocket pipe. It has NO authentication mechanism. When the target requires auth (like Azure OpenAI with disableLocalAuth), a backend WebSocket bridge is required. This is also the pattern used in all official Azure samples.
+
+**Files changed:**
+- `backend/app/api/media_ws.py` (NEW) — WebSocket bridge
+- `backend/app/services/azure/phone.py` — transport_url → backend WS
+- `backend/app/api/phone.py` — CloudEvents callback parsing
+- `backend/app/main.py` — /ws router registration
+- `backend/tests/test_phone/test_phone_endpoints.py` — updated for resilient 200 responses
+
+**Commit:** b2d7abc — `feat(voice): add WebSocket bridge for ACS-to-OpenAI audio relay`
+
+**Deployed:** Revision `frontdoor-tlijy2xjo4fvg-backend--azd-1775699845` active. 447 tests pass.
