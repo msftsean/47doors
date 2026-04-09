@@ -359,6 +359,48 @@
 
 **Rationale:** GPT-4o retirement deadline drives immediate action. GPT-4.1 is direct successor with same capability tier. `gpt-realtime` is production GA successor to preview realtime model. Parameterized infrastructure enables future model swaps without code changes. Test updates ensure mock mode and fixture-driven configuration remain compatible.
 
+### ACS Phone Number Configuration & Event Grid Webhook
+**Timestamp:** 2026-04-09T00:57:00Z  
+**Authority:** Tank (Backend Dev)  
+**Status:** ✅ Implemented  
+
+**Decision:** Configure purchased phone number `+19132171946` on the existing deployed ACS resource (`frontdoor-tlijy2xjo4fvg-acs`) with Event Grid webhooks for call handling.
+
+**Background:** 
+- User purchased phone number `+19132171946` 
+- `.env` referenced non-existent resource `acs-47doors`
+- Phone was actually purchased on the already-deployed `frontdoor-tlijy2xjo4fvg-acs`
+
+**Configuration Applied:**
+1. **Container App Environment Variables** (on `frontdoor-tlijy2xjo4fvg-backend`):
+   - `ACS_PHONE_NUMBER=+19132171946`
+   - `AZURE_ACS_CONNECTION_STRING` — connection string for `frontdoor-tlijy2xjo4fvg-acs`
+   - `AZURE_ACS_ENDPOINT` — already correct (`https://frontdoor-tlijy2xjo4fvg-acs.unitedstates.communication.azure.com`)
+
+2. **Event Grid System Topic** (`acs-events-topic`):
+   - Type: `Microsoft.Communication.CommunicationServices`
+   - Source: `frontdoor-tlijy2xjo4fvg-acs`
+   - Location: `global`
+
+3. **Event Grid Subscription** (`incoming-call-webhook`):
+   - Event filter: `Microsoft.Communication.IncomingCall`
+   - Webhook endpoint: `https://frontdoor-tlijy2xjo4fvg-backend.jollypond-d33839e3.eastus2.azurecontainerapps.io/api/phone/incoming`
+   - Validation: ✅ Succeeded
+
+**Verification:**
+- `/api/phone/health` → `phone_available: true`, `phone_enabled: true`
+- All backend services operational
+- Event Grid subscription state: `Succeeded`
+- Managed identity already has Contributor role on ACS resource (from Bicep)
+
+**Team Impact:**
+- **Switch (Frontend):** Phone call-in feature is now live. Incoming calls to `+1 (913) 217-1946` will trigger Event Grid → backend webhook pipeline.
+
+**Infrastructure Note:**
+Event Grid resources created via CLI. Recommend migrating to `infra/main.bicep` for IaC reproducibility.
+
+**Rationale:** No need to create/switch to a separate ACS resource. Phone was purchased on the already-deployed instance. Event Grid webhooks enable the backend to receive and process incoming calls through the existing 4-tool pipeline (same as voice via WebRTC).
+
 ## Governance
 
 - All meaningful changes require team consensus

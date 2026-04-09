@@ -276,3 +276,41 @@ Tank established the voice interaction architecture during Phase 0 research:
 - `.squad/decisions/inbox/tank-gpt41-migration.md` — full decision record (merged to decisions.md 2026-04-08)
 
 **Verification:** 447 tests passed, 97 skipped. Mock mode confirmed working. Session log: `.squad/log/2026-04-08T17-25-gpt41-migration.md`
+
+### 2026-04-09 — ACS Phone Number Provisioning & Event Grid Webhook
+
+**Phone number discovery**
+
+- The `.env` referenced an `acs-47doors` resource, but it does NOT exist in subscription `b1ade9aa-...`. Only two ACS resources exist: `frontdoor-tlijy2xjo4fvg-acs` (rg-vvoice) and `cahack-adf7nmuxdcchc-acs` (rg-ca-hack).
+- Phone number `+19132171946` was purchased on `frontdoor-tlijy2xjo4fvg-acs` — the already-deployed ACS resource. No resource switch needed.
+
+**Container app environment variables**
+
+- Set `ACS_PHONE_NUMBER=+19132171946` on `frontdoor-tlijy2xjo4fvg-backend`.
+- Set `AZURE_ACS_CONNECTION_STRING` with the connection string for `frontdoor-tlijy2xjo4fvg-acs`.
+- `AZURE_ACS_ENDPOINT` was already correctly set to `https://frontdoor-tlijy2xjo4fvg-acs.unitedstates.communication.azure.com`.
+
+**Event Grid configuration**
+
+- Created system topic `acs-events-topic` (type `Microsoft.Communication.CommunicationServices`, source: `frontdoor-tlijy2xjo4fvg-acs`, location: `global`).
+- Created event subscription `incoming-call-webhook` filtering on `Microsoft.Communication.IncomingCall`, pointing to `https://frontdoor-tlijy2xjo4fvg-backend.jollypond-d33839e3.eastus2.azurecontainerapps.io/api/phone/incoming`.
+- Event Grid webhook validation handshake succeeded automatically — confirms the backend's `/api/phone/incoming` endpoint correctly handles `SubscriptionValidationEvent`.
+
+**Verification results**
+
+- `/api/phone/health` → `phone_available: true`, `mock_mode: false`, `phone_enabled: true`, latency 284ms.
+- `/api/health` → all services up (LLM, ticketing, knowledge_base, session_store).
+- Event Grid subscription provisioning state: `Succeeded`.
+- Managed identity (`2eb87eef-7f9f-4855-a964-74f1c7af104f`) already has Contributor on the ACS resource (from Bicep).
+
+**Gotchas**
+
+- `az eventgrid system-topic event-subscription create` uses `--included-event-types`, NOT `--event-types` (the latter is for non-system-topic subscriptions).
+- `az communication phonenumber list` requires `--connection-string` flag; resource-name-based listing uses `--comm-service-name` which is separate CLI syntax.
+- ACS system topic must use `--location global` (ACS resources are global).
+- If `.env` references an ACS resource name, always verify it actually exists in the subscription before using it. The `.env` had `acs-47doors` which was the portal display name, not the deployed resource name.
+
+**Session logs**
+
+- Orchestration log: `.squad/orchestration-log/2026-04-09T00-57-tank.md`
+- Session log: `.squad/log/2026-04-09T00-57-phone-provisioning.md`
