@@ -3,12 +3,13 @@ import { ChatContainer } from './components/ChatContainer';
 import { Header } from './components/Header';
 import { TicketDashboard } from './components/TicketDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
+import { DemoPage } from './components/DemoPage';
 import { useChat } from './hooks/useChat';
 import { useTickets } from './hooks/useTickets';
 import { useAdminTickets } from './hooks/useAdminTickets';
 import { useHighContrast } from './hooks/useHighContrast';
 
-type View = 'chat' | 'tickets' | 'admin';
+type View = 'chat' | 'tickets' | 'admin' | 'demo';
 
 function App() {
   const [highContrast, toggleHighContrast] = useHighContrast();
@@ -70,6 +71,8 @@ function App() {
         return 'Your support tickets';
       case 'admin':
         return 'Admin ticket management';
+      case 'demo':
+        return 'Live demo runbook and phone transcript';
     }
   };
 
@@ -134,6 +137,7 @@ function App() {
             onDeleteTicket={deleteTicket}
           />
         )}
+        {currentView === 'demo' && <DemoPage />}
       </main>
     </div>
   );

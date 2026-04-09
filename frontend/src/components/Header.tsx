@@ -3,10 +3,10 @@
  * Displays dynamic institution branding (logo, name, tagline).
  */
 
-import { SunIcon, MoonIcon, TrashIcon, ChatBubbleLeftRightIcon, TicketIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon, TrashIcon, ChatBubbleLeftRightIcon, TicketIcon, Cog6ToothIcon, PresentationChartBarIcon } from '@heroicons/react/24/outline';
 import { useBranding } from '../context/BrandingContext';
 
-type View = 'chat' | 'tickets' | 'admin';
+type View = 'chat' | 'tickets' | 'admin' | 'demo';
 
 interface HeaderProps {
   highContrast: boolean;
@@ -159,6 +159,21 @@ export function Header({
             >
               <Cog6ToothIcon className="w-5 h-5" aria-hidden="true" />
               Admin
+            </button>
+            <button
+              onClick={() => onViewChange('demo')}
+              className={`
+                flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500
+                ${currentView === 'demo'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }
+              `}
+              aria-current={currentView === 'demo' ? 'page' : undefined}
+            >
+              <PresentationChartBarIcon className="w-5 h-5" aria-hidden="true" />
+              Demo
             </button>
           </div>
         </nav>
