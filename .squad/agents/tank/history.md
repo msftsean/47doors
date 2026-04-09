@@ -513,3 +513,18 @@ Events: call_started, user_speech, agent_speech, tool_call, call_ended
 
 **Tests:** 455 pass (mock service unchanged — tests still use MockRealtimeService)
 **Deployed:** `azd deploy backend` SUCCESS, SSE keepalive confirmed, all services healthy.
+
+### 2026-03-16 — Nginx SSE Proxy Buffering Fix
+
+**Problem:** Live transcript page (`/live`) showed "Call connected" but no transcript text. SSE events from `/api/transcripts/stream` were buffered by nginx and never reached the browser in real time.
+
+**Root cause:** The single `/api/` location block used `Connection "upgrade"` (WebSocket header) and had no `proxy_buffering off`. Nginx buffered the entire SSE response, so `text/event-stream` events piled up instead of streaming through. The backend's `X-Accel-Buffering: no` header was insufficient without explicit `proxy_buffering off` in the nginx config.
+
+**Fix:** Added a dedicated `location /api/transcripts/stream` block BEFORE the general `/api/` block with:
+- `proxy_buffering off` + `proxy_cache off` — events stream immediately
+- `proxy_set_header Connection ""` — SSE needs keep-alive, not WebSocket upgrade
+- Same proxy_pass, SSL, and forwarding headers as the main block
+
+The existing `/api/` block with `Connection "upgrade"` remains intact for WebSocket support (`/api/realtime/ws/`).
+
+**Key lesson:** SSE and WebSocket need different nginx proxy settings. WebSocket needs `Connection "upgrade"` + `Upgrade $http_upgrade`. SSE needs `Connection ""` (keep-alive) + `proxy_buffering off`. When a backend serves both, use separate location blocks with the more-specific SSE path first (nginx longest-prefix match).
