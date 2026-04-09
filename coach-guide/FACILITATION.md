@@ -341,6 +341,29 @@ Use this rapid triage sequence when multiple participants are blocked by Azure a
 - Guide toward: Simple, debuggable patterns first
 - Post-lunch energy dip: Consider 5-min energizer at 2:00
 
+### Voice & Phone Live Demo (5–10 minutes)
+
+**Setup (before boot camp):**
+- Verify `VOICE_ENABLED=true` in backend `.env`
+- Verify `PHONE_ENABLED=true` (or `MOCK_MODE=true` for mock)
+- Open two browser tabs: main app + `/live` for LivePage
+- Have RunbookPage (`/runbook`) open on your phone or second device (private — not projected)
+
+**Demo Flow:**
+1. **Browser Voice** (2 min): Click the mic button in the main UI. Ask "How do I reset my password?" Show the transcript appearing alongside the spoken response. Point out: "Same three agents. Same pipeline. Just a different input."
+2. **Phone Call** (3 min): Switch to LivePage on the projector. Call +1-913-217-1946 from your phone. Walk through the RunbookPage questions in order. Audience sees real-time transcript bubbles, tool calls, and agent responses.
+3. **Architecture Callback** (1 min): "Notice the phone call used the SAME knowledge base, the SAME routing, the SAME ticket creation. Voice and phone are just modalities—the intelligence layer is what you built in Labs 01–05."
+
+**Contingencies:**
+- **Voice fails:** "Voice requires Azure OpenAI Realtime deployment. In mock mode, you'll see simulated responses. The architecture is identical."
+- **Phone fails:** "Phone requires Azure Communication Services. Let me show you the architecture diagram instead." Switch to workshop-site Voice & Accessibility tab.
+- **High latency:** "Real-time audio has ~200ms latency through WebRTC. Phone adds ACS routing. This is production-grade, not a toy."
+
+**Pacing:**
+- 🟢 Green: Demo works perfectly, audience engaged → proceed
+- 🟡 Yellow: Partial demo, some features down → show architecture diagram, explain what would happen
+- 🔴 Red: Complete failure → skip, reference workshop-site slides, move to Lab 06
+
 ---
 
 ### 2:30 - 3:45 | Lab 06: Deploy with azd (75 min)
@@ -479,6 +502,10 @@ Use this framework to decide when to intervene:
 - Create impromptu help tables (those ahead help those behind)
 - Simplify remaining exercises
 - Ensure everyone completes core path even if reduced scope
+
+### If Voice/Phone Demo fails:
+
+- **Voice/Phone Demo Failure:** If Azure OpenAI Realtime or ACS is unavailable, switch to mock mode (`MOCK_MODE=true`) and demonstrate the mock responses. Emphasize that mock mode uses the same code paths—only the Azure service calls are simulated.
 
 ### If running ahead:
 

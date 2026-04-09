@@ -164,6 +164,16 @@ Verify your constitution:
 
 5. **Consider Failure Modes:** What happens when detection fails? What's the fallback?
 
+### Extension: Voice-Aware Specification
+
+When writing specs for agents that may be accessed via voice, consider adding these constraints:
+- **Response length** — spoken responses should be 2–3 sentences max
+- **Phonetic clarity** — IDs and codes should be spelled out ("T-K-T dash I-T dash 0-0-4-2")
+- **PII handling** — never echo back sensitive data the caller provides
+- **Silence handling** — what happens when the caller stops talking? (VAD timeout)
+
+Try adding a "Voice Modality" section to your Escalation Detection Agent spec that addresses these constraints.
+
 ## Deliverables
 
 When complete, you should have:

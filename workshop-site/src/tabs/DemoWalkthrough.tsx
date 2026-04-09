@@ -271,6 +271,63 @@ export default function DemoWalkthrough() {
           </div>
         </div>
 
+        <div className="card mt-8 border-l-4 border-green-500">
+          <h3 className="font-semibold text-lg mb-4 text-dark-text flex items-center gap-2">
+            <span>📞</span> Phone Demo
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Live phone demo — the audience watches the call happen on the projector via LivePage.
+          </p>
+          <ol className="space-y-3 mb-6">
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm">1</span>
+              <p className="text-gray-700">Open LivePage (<code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">/live</code>) on the projector</p>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm">2</span>
+              <p className="text-gray-700">Call <strong>+1-913-217-1946</strong> from your phone</p>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm">3</span>
+              <p className="text-gray-700">Follow the RunbookPage script (<code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">/runbook</code>) — presenter only</p>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm">4</span>
+              <p className="text-gray-700">Audience watches real-time transcript on LivePage</p>
+            </li>
+          </ol>
+
+          <h4 className="font-semibold text-dark-text mb-3">🔥 Phone Demo Prompts</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="text-left p-3 font-semibold text-dark-text border-b">Scenario</th>
+                  <th className="text-left p-3 font-semibold text-dark-text border-b">Department</th>
+                  <th className="text-left p-3 font-semibold text-dark-text border-b">What to Say (spoken)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-3 font-mono text-xs">IT Support</td>
+                  <td className="p-3">🖥️ IT</td>
+                  <td className="p-3 italic">"I need to reset my password"</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-3 font-mono text-xs">Financial Aid</td>
+                  <td className="p-3">💰 Financial Aid</td>
+                  <td className="p-3 italic">"What scholarships are available?"</td>
+                </tr>
+                <tr className="hover:bg-green-50">
+                  <td className="p-3 font-mono text-xs">Escalation</td>
+                  <td className="p-3">🗣️ Human Handoff</td>
+                  <td className="p-3 italic">"I want to speak to a human"</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <CollapsibleNotes>
           <p className="mb-3">
             <strong>Full Demo Script:</strong> The complete demo follows a 5-scene arc from the project's 

@@ -1,8 +1,8 @@
 # 47 Doors Boot Camp Assessment Rubric
 
-**Total Points: 115**
+**Total Points: 125**
 **Passing Score: 75 points**
-**Certificate Threshold: 75 points (core labs only)**
+**Certificate Threshold: 75 points (core labs only — the 10 bonus voice/phone points do not change the passing threshold)**
 
 ---
 
@@ -22,6 +22,7 @@ This rubric provides standardized assessment criteria for the 47 Doors boot camp
 | Agent Orchestration | 25 | Lab 05 |
 | Deployment | 15 | Lab 06 |
 | MCP Server (stretch) | 10 | Lab 07 |
+| Voice & Phone Extensions (bonus) | 10 | Post-Lab 05 |
 
 **Note:** The MCP Server criterion (Lab 07) is a stretch goal. Participants can earn a certificate with 75 points from core labs (00-06) without completing the stretch goal.
 
@@ -456,19 +457,33 @@ This rubric provides standardized assessment criteria for the 47 Doors boot camp
 
 ---
 
+### Voice & Phone Extensions (Bonus: 10 points)
+
+| Criterion | Points | Evidence |
+|-----------|--------|----------|
+| Browser voice session created (mock or live) | 3 | Screenshot of VoiceMicButton in Listening state, or `/api/realtime/health` returning available |
+| Voice transcript displayed alongside spoken response | 3 | Screenshot showing dual-modality output (text + voice indicator) |
+| Explained ephemeral token pattern and why 60s TTL | 2 | Written explanation or verbal explanation to coach |
+| Identified what's shared between text/voice/phone pipelines | 2 | Answer: same 3-agent pipeline, same tools, same knowledge base |
+
+**Note:** Voice/phone exercises are bonus only. Students should not attempt these until Labs 00–05 are complete. Mock mode is acceptable for full credit—the architecture understanding matters more than live Azure connectivity.
+
+---
+
 ## Scoring Guidelines
 
 ### Calculating Final Score
 
 1. **Core Labs (00-06):** Sum points from criteria 1-7 (maximum 105 points)
 2. **Stretch Goal (Lab 07):** Add points from criterion 8 (maximum 10 points)
-3. **Total:** Sum of all earned points (maximum 115 points)
+3. **Voice & Phone Extensions (Bonus):** Add points from criterion 9 (maximum 10 points)
+4. **Total:** Sum of all earned points (maximum 125 points)
 
 ### Passing and Certification
 
 | Score Range | Result |
 |-------------|--------|
-| 75-115 | Pass - Certificate Awarded |
+| 75-125 | Pass - Certificate Awarded |
 | 65-74 | Near Pass - May resubmit specific labs |
 | Below 65 | Not Passing - Significant work needed |
 
@@ -486,9 +501,10 @@ To receive a 47 Doors Boot Camp completion certificate, participants must:
 The MCP Server (Lab 07) is designed as a stretch goal to challenge advanced participants:
 
 - **Not required for certification:** Participants can earn a certificate with 75+ points from core labs alone
-- **Bonus points:** Stretch goal points can push total score above 105
-- **Maximum display score:** While mathematically possible to earn 115 points, certificates will show "115" as the maximum
+- **Bonus points:** Stretch goal and voice/phone bonus points can push total score above 105
+- **Maximum display score:** While mathematically possible to earn 125 points, certificates will show "125" as the maximum
 - **Recognition:** Participants who complete the stretch goal receive special recognition (e.g., "With Distinction" notation)
+- **Voice/Phone bonus:** The 10 voice/phone bonus points do not change the 75-point passing threshold. These are purely additive for participants who explore the voice modality
 
 ### Special Circumstances
 
@@ -524,7 +540,7 @@ When providing assessment feedback:
 ```
 ## Assessment Feedback for [Participant/Team Name]
 
-### Overall Score: [X]/115
+### Overall Score: [X]/125
 
 ### Breakdown:
 - Environment Setup (Lab 00): [X]/10
@@ -535,6 +551,7 @@ When providing assessment feedback:
 - Agent Orchestration (Lab 05): [X]/25
 - Deployment (Lab 06): [X]/15
 - MCP Server (Lab 07 - stretch): [X]/10
+- Voice & Phone Extensions (bonus): [X]/10
 
 ### Strengths:
 - [Specific strength 1]
@@ -602,3 +619,9 @@ When providing assessment feedback:
 - [ ] Custom tools defined
 - [ ] Integration working
 - [ ] Tool invocations handled
+
+### Voice & Phone Extensions (Bonus) - 10 pts
+- [ ] Browser voice session created
+- [ ] Voice transcript displayed
+- [ ] Ephemeral token pattern explained
+- [ ] Shared pipeline components identified

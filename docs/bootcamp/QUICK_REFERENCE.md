@@ -150,6 +150,60 @@ npm run lint
 
 ---
 
+## Voice & Phone Quick Reference
+
+### Voice Health Check
+```bash
+curl http://localhost:8000/api/realtime/health
+```
+
+### Phone Health Check
+```bash
+curl http://localhost:8000/api/phone/health
+```
+
+### Voice Environment Variables
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VOICE_ENABLED` | Enable browser voice | `true` |
+| `AZURE_OPENAI_REALTIME_DEPLOYMENT` | Realtime API deployment name | `gpt-realtime` |
+| `REALTIME_VOICE` | Voice model (marin, cedar, alloy, shimmer, echo) | `marin` |
+| `MAX_VOICE_SESSION_DURATION` | Max session in seconds | `600` |
+
+### Phone Environment Variables
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PHONE_ENABLED` | Enable phone integration | `true` |
+| `AZURE_ACS_ENDPOINT` | ACS resource endpoint | — |
+| `ACS_PHONE_NUMBER` | E.164 phone number | — |
+| `PHONE_CALLBACK_BASE_URL` | Public HTTPS callback URL | — |
+
+### Key Voice/Phone URLs
+| URL | Purpose |
+|-----|---------|
+| `/api/realtime/health` | Voice availability check |
+| `/api/realtime/session` | Create ephemeral voice token |
+| `/api/phone/health` | Phone availability check |
+| `/api/phone/incoming` | Event Grid webhook (ACS) |
+| `/api/phone/transcripts/stream` | SSE live transcript stream |
+| `/ws/acs-media` | ACS media WebSocket bridge |
+| `/live` | Audience-facing call transcript view |
+| `/runbook` | Presenter's demo script (private) |
+
+### Architecture Flows
+
+**Voice:**
+```
+Browser mic → WebRTC → Azure OpenAI Realtime → Tool calls → 3-agent pipeline → Spoken + text response
+```
+
+**Phone:**
+```
+Caller → PSTN → ACS → Event Grid → Backend → WS bridge → Azure OpenAI Realtime → 3-agent pipeline → Audio → Caller
+```
+
+---
+
 ## File Locations by Lab
 
 | Lab | Key Files |
@@ -315,6 +369,8 @@ LOG_LEVEL=INFO
 | API Documentation (Swagger) | http://localhost:8000/docs |
 | API Documentation (ReDoc) | http://localhost:8000/redoc |
 | Health Check | http://localhost:8000/api/health |
+| LivePage (phone demo audience view) | http://localhost:5173/live |
+| RunbookPage (presenter demo script) | http://localhost:5173/runbook |
 
 ---
 

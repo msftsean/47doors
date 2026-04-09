@@ -192,6 +192,24 @@ Azure resource names must be globally unique. Set a unique prefix:
 azd env set AZURE_ENV_NAME frontdoor-<your-initials>
 ```
 
+### Voice & Phone Configuration (Optional)
+
+If your deployment includes voice or phone features, add these to your Container App configuration:
+
+```env
+# Voice (browser)
+VOICE_ENABLED=true
+AZURE_OPENAI_REALTIME_DEPLOYMENT=gpt-realtime
+
+# Phone (requires ACS resource — coach will demo this)
+PHONE_ENABLED=true
+AZURE_ACS_ENDPOINT=https://your-acs.communication.azure.com
+ACS_PHONE_NUMBER=+15551234567
+PHONE_CALLBACK_BASE_URL=https://your-app.azurecontainerapps.io
+```
+
+> **Note:** Phone requires a public HTTPS URL for Event Grid webhooks. Your Container App URL works for this. Voice works with the same Azure OpenAI endpoint—just needs the Realtime deployment.
+
 **Checkpoint:** `azd env get-values` shows your configuration.
 
 ---
@@ -334,6 +352,18 @@ curl -s -X POST "$BACKEND_URL/api/chat" \
 
 **Expected:** JSON response with agent reply and session_id.
 
+### Verify Voice & Phone (Optional)
+
+```bash
+# Voice health
+curl https://your-app.azurecontainerapps.io/api/realtime/health
+
+# Phone health
+curl https://your-app.azurecontainerapps.io/api/phone/health
+```
+
+Both should return `{"available": true}` when properly configured, or `{"available": true, "mock_mode": true}` if running in mock mode.
+
 ### 5.5 Access Frontend (Optional)
 
 The baseline deployment path in this lab validates backend deployment first. Add frontend static hosting once your subscription supports the required provider registrations and infra targets.
@@ -349,6 +379,12 @@ The baseline deployment path in this lab validates backend deployment first. Add
    - Log Analytics Workspace
 
 - Static Web App (optional)
+
+**Additional Resources for Voice/Phone (Optional):**
+- Azure OpenAI: `gpt-4o-realtime-preview` deployment (for voice)
+- Azure Communication Services resource (for phone)
+- Event Grid system topic + webhook subscription pointing to `/api/phone/incoming`
+- Managed Identity: `Cognitive Services OpenAI User` role on the OpenAI resource
 
 **Checkpoint:** Health endpoint returns 200 with healthy status.
 

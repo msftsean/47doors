@@ -301,6 +301,48 @@ Citation format: [Source: <document_id>]
 
 ---
 
+## Exercise 4: Voice System Prompt (Extension)
+
+Voice interactions use the **same three-agent pipeline** but need a different system prompt because spoken responses must be:
+- **Concise** (2–3 sentences max — nobody wants a lecture in their ear)
+- **Phonetically clear** (spell out ticket IDs character-by-character: "T-K-T dash I-T dash 0-0-4-2")
+- **PII-safe** (never echo back SSN, phone numbers, student IDs — the caller already knows them)
+
+### Your Task
+
+Write a voice-specific system prompt for the QueryAgent that:
+1. Maintains the same intent classification accuracy as your text prompt
+2. Adds constraints for spoken output (conciseness, phonetic clarity)
+3. Includes a PII-filtering instruction
+4. Handles the "I didn't catch that" case (VAD silence timeout)
+
+### Starter Template
+
+```text
+You are a university student support agent responding by VOICE.
+[Your prompt here — adapt your QueryAgent text prompt for spoken interaction]
+```
+
+<details>
+<summary>💡 Hint: What makes voice prompts different?</summary>
+
+Compare the production voice prompt in `backend/app/services/azure/realtime.py`:
+- "Keep answers to 2–3 sentences"
+- "Spell out ticket IDs character by character"
+- "Never repeat PII the student provides"
+- "If you're unsure, ask a clarifying question rather than guessing"
+
+The key insight: **the intelligence is the same, but the output format changes for the modality.**
+</details>
+
+### Checkpoint
+- [ ] Voice prompt classifies "How do I reset my password?" correctly (it_support)
+- [ ] Response would be ≤3 sentences when spoken aloud
+- [ ] Prompt includes PII-filtering instruction
+- [ ] Prompt handles silence/unclear input gracefully
+
+---
+
 ## Best Practices
 
 ### 1. Be Specific
@@ -469,6 +511,7 @@ Before moving on, verify you can:
 - [ ] Define clear output formats using JSON schemas
 - [ ] Identify and fix common prompt engineering mistakes
 - [ ] Test prompts iteratively using Copilot
+- [ ] (Extension) Voice system prompt written with modality-specific constraints
 
 ---
 

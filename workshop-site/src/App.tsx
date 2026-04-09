@@ -9,6 +9,7 @@ import ChatbotsToAgents from './tabs/ChatbotsToAgents'
 import TrustBoundaries from './tabs/TrustBoundaries'
 import Architecture from './tabs/Architecture'
 import VoiceAccessibility from './tabs/VoiceAccessibility'
+import Telephony from './tabs/Telephony'
 import DemoWalkthrough from './tabs/DemoWalkthrough'
 import ResponsibleAI from './tabs/ResponsibleAI'
 import ReuseAcrossCampus from './tabs/ReuseAcrossCampus'
@@ -22,6 +23,7 @@ const tabs = [
   { id: 'trust', label: 'Trust & Boundaries', component: TrustBoundaries },
   { id: 'architecture', label: 'Architecture', component: Architecture },
   { id: 'voice', label: 'Voice & Accessibility', component: VoiceAccessibility },
+  { id: 'telephony', label: 'Phone Integration', component: Telephony },
   { id: 'demo', label: 'Demo Walkthrough', component: DemoWalkthrough },
   { id: 'responsible-ai', label: 'Responsible AI', component: ResponsibleAI },
   { id: 'reuse', label: 'Reuse Across Campus', component: ReuseAcrossCampus },

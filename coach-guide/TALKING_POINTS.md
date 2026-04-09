@@ -145,6 +145,18 @@ Deployment makes it real—code on your laptop doesn't help anyone. Azure gives 
 
 ---
 
+## Voice & Phone Demo Transition
+
+**Key message:** "Everything you just built—the intent classifier, the router, the action agents, the RAG pipeline—it all works over voice too. Same pipeline, different input modality."
+
+**Talking points:**
+- "The phone integration proves this architecture scales beyond the browser. A caller dials a real phone number, and the same three-agent pipeline answers."
+- "Notice what DIDN'T change: the agent prompts, the routing logic, the knowledge base. That's the power of separating interface from intelligence."
+- "Voice uses ephemeral tokens with 60-second TTL—no persistent credentials in the browser. The backend uses managed identity to Azure OpenAI."
+- "Raw audio is never stored. Only PII-filtered transcripts are published to the transcript bus. This is a Constitution Principle III requirement."
+
+---
+
 ## 7. Closing & Stretch Goal Intro
 
 ### Key Message
@@ -178,6 +190,7 @@ You did it—you built and deployed a production multi-agent AI system in one da
 | Break (→ Lab 04) | 11:15 AM         | Refresh before deep dive  |
 | Lunch (→ Lab 05) | 12:30 PM         | Re-fuel                   |
 | Lab 05 → 06      | 2:30 PM          | Home stretch energy       |
+| Voice & Phone Demo | After Lab 05 | 5–10 min | Browser voice + phone call with LivePage |
 | Closing          | 4:00 PM          | Celebration + inspiration |
 
 ---

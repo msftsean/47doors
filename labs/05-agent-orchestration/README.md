@@ -35,6 +35,8 @@ By the end of this lab, you will be able to:
 
 ---
 
+> 💡 **Extension:** Once your pipeline is working, Exercise 05x shows how the same three-agent architecture handles voice and phone input—no agent changes needed.
+
 ## 🔁 Recap: The Three-Agent Pattern
 
 In Lab 01, you learned about the three-agent architecture. Now you will implement it:
@@ -70,6 +72,8 @@ UserQuery --> QueryAgent --> RouterAgent --> ActionAgent --> Response
     |                                                            |
     +------------------- Session Context ------------------------+
 ```
+
+> The orchestration pipeline is modality-agnostic. Text, voice (WebRTC), and phone (ACS) all enter through different endpoints but converge at the QueryAgent.
 
 ### 👥 Agent Responsibilities Recap
 
@@ -581,6 +585,8 @@ By the end of this lab, you should have:
 | 🔄 Pipeline | Full orchestration working end-to-end |
 | 💾 Session Management | Multi-turn conversations maintain context |
 | 🧪 Test Results | All test conversations complete successfully |
+
+- **(Optional) Exercise 05x:** [Voice & Phone Extensions](exercises/05x-voice-phone-extensions.md) — See your pipeline respond to spoken queries and phone calls
 
 ---
 

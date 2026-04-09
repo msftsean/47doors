@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Boot Camp Content Updates
+- Added phone/telephony coverage to all boot camp materials
+- New Exercise 05x: Voice & Phone Extensions (optional stretch goal)
+- New workshop-site Phone Integration tab with architecture diagrams
+- Updated coach guide with voice/phone facilitation notes, talking points, troubleshooting, and assessment rubric
+- Updated participant guide and quick reference with voice/phone content
+- Updated Lab 00 setup with voice/phone environment variables
+- Updated Lab 01 prompt engineering with voice system prompt exercise
+- Updated Lab 06 deployment exercises with voice/phone configuration
+
 ### Added
 
 - **Voice Interaction Feature** (`002-voice-interaction`): Real-time spoken conversation channel via Azure OpenAI GPT-4o Realtime API + WebRTC

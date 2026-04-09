@@ -179,6 +179,15 @@ export default function VoiceAccessibility() {
           </p>
         </div>
 
+        <div className="card mt-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">What's Next: Phone Integration</h3>
+          <p className="text-gray-700">
+            Voice in the browser is just the beginning. The same architecture extends to phone calls—real
+            PSTN numbers that anyone can dial. See the <strong>Phone Integration</strong> tab for how Azure
+            Communication Services bridges traditional telephony and your AI pipeline.
+          </p>
+        </div>
+
         <CollapsibleNotes>
           <p className="mb-3">
             <strong>The most important design decision:</strong> Voice is additive, not replacement.
@@ -201,8 +210,16 @@ export default function VoiceAccessibility() {
             <li><code>create_ticket</code></li>
             <li><code>escalate_to_human</code></li>
           </ol>
-          <p>
+          <p className="mb-3">
             This is constitutional consistency. The modality changes. The trust model does not.
+          </p>
+          <p className="mb-3">
+            <strong>Browser Voice vs Phone:</strong>
+          </p>
+          <p className="mb-3">
+            Browser Voice uses WebRTC for direct peer-to-peer audio with Azure OpenAI.
+            Phone calls use a WebSocket bridge because ACS can't authenticate directly to Azure OpenAI.
+            Both use the same Realtime API and the same 4 tools.
           </p>
         </CollapsibleNotes>
       </div>

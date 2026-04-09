@@ -262,6 +262,20 @@ curl -X POST http://localhost:8000/api/chat \
 
 **Expected:** JSON response with agent reply.
 
+### Verify Voice & Phone Services (Optional)
+
+After `docker compose up`, verify voice and phone endpoints are available:
+
+```bash
+# Voice endpoint
+curl http://localhost:8000/api/realtime/health
+
+# Phone endpoint
+curl http://localhost:8000/api/phone/health
+```
+
+In mock mode, both should return `{"available": true, "mock_mode": true}`.
+
 ### 4.6 View Container Logs
 
 ```bash

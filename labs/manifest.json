@@ -90,7 +90,11 @@
       "learning_objectives": [
         "Wire up three-agent pipeline",
         "Implement handoff protocols",
-        "Add session context for multi-turn"
+        "Add session context for multi-turn",
+        "(Optional) Understand how voice and phone modalities use the same agent pipeline"
+      ],
+      "exercises": [
+        {"id": "05x-voice-phone-extensions", "title": "Voice & Phone Extensions", "duration": "30-45 min", "optional": true}
       ],
       "prerequisites": ["04"],
       "has_start_code": true,

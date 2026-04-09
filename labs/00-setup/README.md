@@ -49,6 +49,7 @@ Before starting this lab, ensure you have:
 | 🤖 GitHub Copilot    | Active subscription (required for labs)         |
 | ☁️ Azure Credentials | Provided by your instructor for labs 04, 05, 07 |
 | 🌐 Web Browser       | Chrome, Edge, or Firefox (latest version)       |
+| 🎤 Microphone         | For optional voice exercises in Lab 05 — Chrome/Edge recommended |
 
 > 💡 **Note:** All development will be done in GitHub Codespaces - no local installation required!
 
@@ -179,6 +180,22 @@ MOCK_MODE=true
 
 > 💰 **Cost-Saving Tip:** Keep `MOCK_MODE=true` until you reach Lab 04. Mock mode uses no Azure resources and costs nothing.
 
+### Voice Configuration (Optional — used in Lab 05 extension)
+
+```env
+# Voice / Realtime API (required for browser voice)
+AZURE_OPENAI_REALTIME_DEPLOYMENT=gpt-realtime
+VOICE_ENABLED=true
+REALTIME_VOICE=marin
+
+# Phone / ACS (coach demo only — students don't need these)
+PHONE_ENABLED=false
+# AZURE_ACS_ENDPOINT=https://your-acs.communication.azure.com
+# ACS_PHONE_NUMBER=+15551234567
+```
+
+> **Note:** Voice and phone features work in mock mode (`MOCK_MODE=true`) without any Azure credentials. Students can explore voice exercises using mock mode. Phone demo is coach-led.
+
 ### 🔹 Step 6: Start the Backend Server
 
 Start the FastAPI backend server:
@@ -247,6 +264,17 @@ You should see a response like:
     "session_store": { "status": "up", "latency_ms": 2, "error": null }
   }
 }
+```
+
+### Verify Voice Availability (Optional)
+
+```bash
+curl http://localhost:8000/api/realtime/health
+```
+
+**Expected output (mock mode):**
+```json
+{"available": true, "mock_mode": true}
 ```
 
 ### 🔹 Step 9: Start the Frontend Application

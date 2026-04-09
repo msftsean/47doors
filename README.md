@@ -25,6 +25,8 @@ The **Universal Front Door Support Agent** is a three-agent AI system that provi
 - 📚 **Retrieves knowledge** articles for self-service
 - 👤 **Escalates to humans** for policy-related requests
 - 🎤 **Voice interaction** via Azure OpenAI GPT-4o Realtime API with WebRTC — speak naturally with the same AI pipeline
+- 📱 **Phone support** via Azure Communication Services — callers dial a real number and interact with the same AI pipeline
+- 📺 **Live demo dashboard** — audience sees real-time phone call transcripts on LivePage
 
 **🎯 Target Impact**: Increase first-contact resolution from **40%** to **65%**
 
@@ -88,6 +90,8 @@ Labs 00-03 and 06 can run entirely in **mock mode** without Azure credentials. L
 | ✅ Mock Mode OK          |   ✓    |   ✓    |   ✓    |   ✓    |              |              |   ✓    |              |
 | 🤖 Azure OpenAI (GPT-4o) |        |        |        |        | **Required** | **Required** |        | **Required** |
 | 🔍 Azure AI Search       |        |        |        |        | **Required** | **Required** |        |              |
+| 🎤 Voice (browser)       | Azure OpenAI Realtime deployment | | | | | Lab 05x extension | | Mock-OK |
+| 📱 Phone (PSTN)          | Azure Communication Services + Event Grid | | | | | Coach demo | | Mock-OK |
 
 > 💡 **Cost-Saving Tip**: Run Labs 00-03 with `USE_MOCK_MODE=true` to validate your setup before provisioning Azure services. Switch to live Azure OpenAI starting in Lab 04 when you build the RAG pipeline.
 
@@ -230,6 +234,8 @@ docker-compose up --build
 ### 🔄 Three-Agent Conversation Flow
 
 ![Agent Workflow](./docs/architecture/agent-workflow.jpg)
+
+The system supports three input modalities—text chat, browser voice (WebRTC), and phone calls (ACS/PSTN)—all routing through the same three-agent pipeline.
 
 The three-agent system processes each user query through a coordinated pipeline:
 

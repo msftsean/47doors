@@ -8,6 +8,9 @@ Welcome to the 47 Doors Boot Camp! This guide will help you get started and navi
 
 You will build a **three-agent AI system** that eliminates the "47 Front Doors" problem in university student support. Instead of students navigating multiple disconnected support channels, they interact with one intelligent interface that detects intent, routes requests to the correct department, retrieves knowledge base articles, and creates support tickets automatically. By the end of this boot camp, you will have a working agent pipeline deployed to Azure that can classify student queries, search a knowledge base with RAG, and orchestrate multi-turn conversations.
 
+- 🎤 **Voice interaction** — speak to the same AI pipeline via browser microphone
+- 📱 **Phone support** — the same agents answer real phone calls (coach demo)
+
 ---
 
 ## Prerequisites Checklist
@@ -21,6 +24,7 @@ Before starting Lab 00, verify you have:
 - [ ] **Docker Desktop** installed and running
 - [ ] **Git** - `git --version`
 - [ ] **Azure subscription** with access credentials (provided by instructor)
+- Microphone (for optional voice exercises in Lab 05)
 
 ---
 
@@ -33,7 +37,7 @@ Before starting Lab 00, verify you have:
 | **02** | Azure MCP Setup | 30 min | Configure MCP Server for Copilot, test Azure queries |
 | **03** | Spec-Driven Development | 45 min | Write SPEC.md, create constitution, generate code from spec |
 | **04** | Build RAG Pipeline | 120 min | Set up Azure AI Search, create embeddings, build RetrieveAgent |
-| **05** | Agent Orchestration | 120 min | Wire up three-agent pipeline, implement handoffs, add multi-turn |
+| **05** | Agent Orchestration | 120 min | Wire up three-agent pipeline, implement handoffs, add multi-turn; optional voice/phone extension |
 | **06** | Deploy with azd | 90 min | Containerize with Docker, deploy to Azure, configure monitoring |
 | **07** | MCP Server (Stretch) | 60 min | Expose 47 Doors as MCP server for Copilot Agent Mode |
 
@@ -64,6 +68,7 @@ Your progress will be evaluated on these deliverables:
 | 04 | RAG pipeline | Hybrid search returns relevant KB articles with citations |
 | 05 | Agent orchestration | Full pipeline handles multi-turn conversations |
 | 06 | Azure deployment | Agent deployed and health check responds |
+| **Bonus** | **Voice & Phone Extensions (Bonus):** 10 points | Browser voice, architecture understanding |
 
 ---
 

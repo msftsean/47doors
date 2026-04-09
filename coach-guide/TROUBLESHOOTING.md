@@ -478,6 +478,58 @@ Quick reference for coaches to resolve common participant issues. Each fix shoul
 
 ---
 
+## Voice & Phone Troubleshooting
+
+### Voice: Mic button not appearing
+**Symptom:** VoiceMicButton not rendered or hidden
+**5-min fix:**
+1. Check `VOICE_ENABLED=true` in `.env`
+2. Check browser supports `navigator.mediaDevices.getUserMedia` (requires HTTPS or localhost)
+3. Check `/api/realtime/health` returns `{"available": true}`
+4. If mock mode: verify `MOCK_MODE=true` — mock realtime service always reports available
+
+### Voice: "VoiceUnavailableError" on session creation
+**Symptom:** POST /api/realtime/session returns 503
+**5-min fix:**
+1. Check `AZURE_OPENAI_REALTIME_DEPLOYMENT` is set and matches your Azure deployment name
+2. Verify deployment exists: `az cognitiveservices account deployment list --name <account> --resource-group <rg>`
+3. Check managed identity has `Cognitive Services OpenAI User` role
+4. Fallback: set `MOCK_MODE=true` to use mock realtime service
+
+### Voice: WebRTC connection fails
+**Symptom:** State stuck on "Connecting", never reaches "Listening"
+**5-min fix:**
+1. Check browser console for ICE/SDP errors
+2. Ensure no corporate firewall blocking WebRTC (TURN/STUN on ports 3478/443)
+3. Try a different browser (Chrome/Edge recommended, Firefox WebRTC support varies)
+4. Check ephemeral token hasn't expired (60s TTL) — if session creation is slow, token may expire before SDP exchange
+
+### Phone: Incoming calls not routing
+**Symptom:** Dialing the ACS number, but no Event Grid webhook fires
+**5-min fix:**
+1. Verify Event Grid subscription exists and points to correct callback URL
+2. Check `PHONE_CALLBACK_BASE_URL` is the public HTTPS URL of your backend
+3. For local dev: use ngrok or similar tunnel — ACS Event Grid requires public HTTPS
+4. Verify the phone number is assigned to the ACS resource
+
+### Phone: Call connects but no audio
+**Symptom:** Call answers, but silence on both ends
+**5-min fix:**
+1. Check WebSocket `/ws/acs-media` is reachable from ACS (same HTTPS host as callback)
+2. Check managed identity token for OpenAI WebSocket (`media_ws.py` logs auth errors)
+3. Verify `AZURE_OPENAI_REALTIME_DEPLOYMENT` points to a `gpt-4o-realtime-preview` model
+4. Check ACS media streaming config: should be PCM 24kHz mono bidirectional
+
+### Phone: LivePage not showing transcripts
+**Symptom:** Phone call works, but LivePage stays empty
+**5-min fix:**
+1. Check browser is connected to SSE: `/api/phone/transcripts/stream` should return `text/event-stream`
+2. Check `transcript_bus` has subscribers: the media bridge publishes to it, SSE endpoint subscribes
+3. Check for CORS issues if frontend and backend are on different origins
+4. Try the mock phone service — it simulates events without needing a real call
+
+---
+
 ## General Tips for Coaches
 
 1. **Start with the basics**: Always verify environment setup first (Python, Node, Azure CLI, Docker)
