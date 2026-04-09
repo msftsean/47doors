@@ -3,13 +3,14 @@ import { ChatContainer } from './components/ChatContainer';
 import { Header } from './components/Header';
 import { TicketDashboard } from './components/TicketDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
-import { DemoPage } from './components/DemoPage';
+import { RunbookPage } from './components/RunbookPage';
+import { LivePage } from './components/LivePage';
 import { useChat } from './hooks/useChat';
 import { useTickets } from './hooks/useTickets';
 import { useAdminTickets } from './hooks/useAdminTickets';
 import { useHighContrast } from './hooks/useHighContrast';
 
-type View = 'chat' | 'tickets' | 'admin' | 'demo';
+type View = 'chat' | 'tickets' | 'admin' | 'runbook' | 'live';
 
 function App() {
   const [highContrast, toggleHighContrast] = useHighContrast();
@@ -71,8 +72,10 @@ function App() {
         return 'Your support tickets';
       case 'admin':
         return 'Admin ticket management';
-      case 'demo':
-        return 'Live demo runbook and phone transcript';
+      case 'runbook':
+        return 'Demo runbook and instructions';
+      case 'live':
+        return 'Live phone transcript for audience';
     }
   };
 
@@ -86,59 +89,67 @@ function App() {
         Skip to main content
       </a>
 
-      <Header
-        highContrast={highContrast}
-        onToggleHighContrast={toggleHighContrast}
-        onClearChat={clearChat}
-        onTalkToHuman={handleTalkToHuman}
-        currentView={currentView}
-        onViewChange={handleViewChange}
-      />
+      {/* Hide header in Live view for clean full-screen projection */}
+      {currentView !== 'live' && (
+        <Header
+          highContrast={highContrast}
+          onToggleHighContrast={toggleHighContrast}
+          onClearChat={clearChat}
+          onTalkToHuman={handleTalkToHuman}
+          currentView={currentView}
+          onViewChange={handleViewChange}
+        />
+      )}
 
-      <main
-        id="main-content"
-        className="flex-1 flex flex-col max-w-4xl w-full mx-auto"
-        role="main"
-        aria-label={getAriaLabel()}
-      >
-        {currentView === 'chat' && (
-          <ChatContainer
-            messages={messages}
-            isLoading={chatLoading}
-            sessionId={sessionId}
-            onSendMessage={sendMessage}
-          />
-        )}
-        {currentView === 'tickets' && (
-          <TicketDashboard
-            tickets={tickets}
-            selectedTicket={selectedTicket}
-            isLoading={ticketsLoading}
-            error={ticketsError}
-            onRefresh={refreshTickets}
-            onSelectTicket={selectTicket}
-            onClearSelection={clearSelection}
-          />
-        )}
-        {currentView === 'admin' && (
-          <AdminDashboard
-            tickets={adminTickets}
-            selectedTicket={adminSelectedTicket}
-            isLoading={adminLoading}
-            error={adminError}
-            statusFilter={statusFilter}
-            departmentFilter={departmentFilter}
-            onRefresh={adminRefreshTickets}
-            onSelectTicket={adminSelectTicket}
-            onClearSelection={adminClearSelection}
-            onSetStatusFilter={setStatusFilter}
-            onSetDepartmentFilter={setDepartmentFilter}
-            onUpdateStatus={updateTicketStatus}
-            onDeleteTicket={deleteTicket}
-          />
-        )}
-        {currentView === 'demo' && <DemoPage />}
-      </main>
+      {/* Live page is a full-screen overlay — render outside main container */}
+      {currentView === 'live' && <LivePage onExit={() => handleViewChange('runbook')} />}
+
+      {currentView !== 'live' && (
+        <main
+          id="main-content"
+          className="flex-1 flex flex-col max-w-4xl w-full mx-auto"
+          role="main"
+          aria-label={getAriaLabel()}
+        >
+          {currentView === 'chat' && (
+            <ChatContainer
+              messages={messages}
+              isLoading={chatLoading}
+              sessionId={sessionId}
+              onSendMessage={sendMessage}
+            />
+          )}
+          {currentView === 'tickets' && (
+            <TicketDashboard
+              tickets={tickets}
+              selectedTicket={selectedTicket}
+              isLoading={ticketsLoading}
+              error={ticketsError}
+              onRefresh={refreshTickets}
+              onSelectTicket={selectTicket}
+              onClearSelection={clearSelection}
+            />
+          )}
+          {currentView === 'admin' && (
+            <AdminDashboard
+              tickets={adminTickets}
+              selectedTicket={adminSelectedTicket}
+              isLoading={adminLoading}
+              error={adminError}
+              statusFilter={statusFilter}
+              departmentFilter={departmentFilter}
+              onRefresh={adminRefreshTickets}
+              onSelectTicket={adminSelectTicket}
+              onClearSelection={adminClearSelection}
+              onSetStatusFilter={setStatusFilter}
+              onSetDepartmentFilter={setDepartmentFilter}
+              onUpdateStatus={updateTicketStatus}
+              onDeleteTicket={deleteTicket}
+            />
+          )}
+          {currentView === 'runbook' && <RunbookPage />}
+        </main>
+      )}
     </div>
   );
 }

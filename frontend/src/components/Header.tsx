@@ -3,10 +3,10 @@
  * Displays dynamic institution branding (logo, name, tagline).
  */
 
-import { SunIcon, MoonIcon, TrashIcon, ChatBubbleLeftRightIcon, TicketIcon, Cog6ToothIcon, PresentationChartBarIcon } from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon, TrashIcon, ChatBubbleLeftRightIcon, TicketIcon, Cog6ToothIcon, ClipboardDocumentListIcon, TvIcon } from '@heroicons/react/24/outline';
 import { useBranding } from '../context/BrandingContext';
 
-type View = 'chat' | 'tickets' | 'admin' | 'demo';
+type View = 'chat' | 'tickets' | 'admin' | 'runbook' | 'live';
 
 interface HeaderProps {
   highContrast: boolean;
@@ -161,19 +161,34 @@ export function Header({
               Admin
             </button>
             <button
-              onClick={() => onViewChange('demo')}
+              onClick={() => onViewChange('runbook')}
               className={`
                 flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors
                 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500
-                ${currentView === 'demo'
+                ${currentView === 'runbook'
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }
               `}
-              aria-current={currentView === 'demo' ? 'page' : undefined}
+              aria-current={currentView === 'runbook' ? 'page' : undefined}
             >
-              <PresentationChartBarIcon className="w-5 h-5" aria-hidden="true" />
-              Demo
+              <ClipboardDocumentListIcon className="w-5 h-5" aria-hidden="true" />
+              Runbook
+            </button>
+            <button
+              onClick={() => onViewChange('live')}
+              className={`
+                flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500
+                ${currentView === 'live'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }
+              `}
+              aria-current={currentView === 'live' ? 'page' : undefined}
+            >
+              <TvIcon className="w-5 h-5" aria-hidden="true" />
+              Live
             </button>
           </div>
         </nav>
