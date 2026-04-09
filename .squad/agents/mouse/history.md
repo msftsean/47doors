@@ -112,3 +112,65 @@
 - The 3-agent pipeline (QueryAgent → RouterAgent → ActionAgent) misroutes some queries:
   registration goes to clarification loop, financial aid goes to IT.
   These are real demo risks that should be addressed before the next demo.
+
+### Live Transcript SSE Pipeline Diagnosis — 2026-04-10
+
+**Symptom:**
+- Live page (`/live`) shows "Call connected" but no user_speech or agent_speech
+  transcript events appear during phone calls.
+
+**What was tested:**
+- `test_sse_http.py` — 6 new tests: route configuration (path, method, prefix
+  sharing), response headers (text/event-stream, no-cache, X-Accel-Buffering=no),
+  generator integration with singleton TranscriptBus, SSE frame format validation.
+- `live-transcript.spec.ts` — 10 new Playwright E2E tests: idle state "Waiting for
+  call…", call_started rendering, user_speech caller bubble, agent_speech AI bubble,
+  tool_call pulsing badge, call_ended with duration, full lifecycle (7 events),
+  SSE URL path verification, accessibility (role=log, aria-live=polite),
+  malformed data resilience.
+- Ran all existing `test_transcripts/` tests — 8 pre-existing + 6 new = 14 pass.
+- Ran Playwright suite — 10/10 pass (chromium).
+
+**Components verified working:**
+- ✅ TranscriptBus pub/sub (singleton, multiple subscribers, slow subscriber drop)
+- ✅ SSE generator (_event_generator) yields correct `data: {json}\n\n` frames
+- ✅ Route registered at `/api/phone/transcripts/stream` (GET, under /api/phone prefix)
+- ✅ Response headers: text/event-stream, no-cache, keep-alive, X-Accel-Buffering=no
+- ✅ nginx location block `/api/phone/transcripts/stream` with proxy_buffering off
+- ✅ Frontend useTranscriptStream hook → EventSource → LivePage rendering
+
+**ROOT CAUSE FOUND — media_ws.py session.update schema is WRONG:**
+- The code (lines 136-158) sends a nested `audio` object:
+  ```json
+  "audio": {
+    "input": { "format": "pcm16", "transcription": {"model": "whisper-1"} },
+    "output": { "format": "pcm16", "voice": "marin" }
+  }
+  ```
+- The Azure OpenAI Realtime API expects FLAT session properties:
+  ```json
+  "input_audio_format": "pcm16",
+  "input_audio_transcription": { "model": "whisper-1" },
+  "voice": "marin"
+  ```
+- Confirmed via official Azure SDK (azure-samples/aoai-realtime-audio-sdk README).
+- The API silently ignores the nested `audio` object → transcription is never enabled.
+- `call_started` still works because it's published on WebSocket accept (before OpenAI).
+- `user_speech`/`agent_speech` never fire because the transcription events from OpenAI
+  (`conversation.item.input_audio_transcription.completed`,
+  `response.output_audio_transcript.done`) are never generated.
+
+**Fix required (for Tank):**
+- In `backend/app/api/media_ws.py` lines 140-149, replace:
+  ```python
+  "audio": {
+      "input": {"format": "pcm16", "transcription": {"model": "whisper-1"}},
+      "output": {"format": "pcm16", "voice": settings.realtime_voice},
+  },
+  ```
+  with:
+  ```python
+  "input_audio_format": "pcm16",
+  "input_audio_transcription": {"model": "whisper-1"},
+  "voice": settings.realtime_voice,
+  ```
