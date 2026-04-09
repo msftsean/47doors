@@ -329,3 +329,28 @@ Tank established the voice interaction architecture during Phase 0 research:
 
 - Orchestration log: `.squad/orchestration-log/2026-04-09T00-57-tank.md`
 - Session log: `.squad/log/2026-04-09T00-57-phone-provisioning.md`
+
+### 2026-04-09 — Phone CallbackUri Invalid Fix (Second Failure)
+
+**Root cause:** After the SDK `StreamingTransportType` fix (a885b62), inbound calls still failed with `(400) The field CallbackUri is invalid`. Container logs showed this error on every call attempt from Sean's phone.
+
+The issue: `callback_url = str(request.base_url).rstrip("/") + "/api/phone/callbacks"` in `backend/app/api/phone.py` constructs the callback URL from FastAPI's `request.base_url`. Inside Azure Container Apps, TLS is terminated at the ingress. The container sees `http://` scheme (not `https://`). ACS Call Automation requires a publicly-reachable HTTPS callback URL — the internal `http://` URL is rejected.
+
+**Fix applied:**
+1. `backend/app/api/phone.py` — Reconstruct public callback URL from `X-Forwarded-Proto` + `Host` headers (set by Container Apps ingress). Falls back to `request.base_url` only if headers are missing.
+2. `backend/app/core/config.py` — Added `phone_callback_base_url` config field as an explicit override (belt-and-suspenders).
+3. Set `PHONE_CALLBACK_BASE_URL=https://frontdoor-tlijy2xjo4fvg-backend.jollypond-d33839e3.eastus2.azurecontainerapps.io` as container env var.
+
+**Verification:** Simulated IncomingCall event now fails with `(8523) Incoming Call Context is invalid` (expected for fake context) — no more CallbackUri error. Health check green. 100% traffic on latest revision.
+
+**Critical pattern for Azure Container Apps:**
+- `request.base_url` inside a Container App returns an internal `http://` URL, NOT the public `https://` URL.
+- Any callback URL passed to external services (ACS, Event Grid, etc.) must be reconstructed from forwarded headers or configured explicitly.
+- Azure Container Apps ingress sets `X-Forwarded-Proto` and preserves the `Host` header from the original request.
+
+**Debugging sequence for phone failures:**
+1. `az containerapp logs show` — look for the actual ACS SDK error (400 vs 8523 vs ImportError)
+2. The error `The field CallbackUri is invalid` always means the URL scheme/format is wrong
+3. Health check (`/api/phone/health`) does NOT test the answer_call path — it only verifies client initialization
+
+**Commit:** 365271d — `fix(phone): use public HTTPS callback URL for ACS answer_call`
