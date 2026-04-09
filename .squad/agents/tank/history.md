@@ -383,6 +383,28 @@ output_audio_transcription={"model": "whisper-1"}
 - Created event subscription `incoming-call-webhook` filtering on `Microsoft.Communication.IncomingCall`, pointing to `https://frontdoor-tlijy2xjo4fvg-backend.jollypond-d33839e3.eastus2.azurecontainerapps.io/api/phone/incoming`.
 - Event Grid webhook validation handshake succeeded automatically — confirms the backend's `/api/phone/incoming` endpoint correctly handles `SubscriptionValidationEvent`.
 
+### 2026-04-09 — Phone Transcript Pipeline Fix (OpenAI Session Config)
+
+**Root cause: duplicate transcription config**
+
+- Live transcript page showed "Call connected" but NO transcripts appeared. Logs revealed OpenAI error: `unknown_parameter: 'session.output_audio_transcription'`.
+- The `session.update` payload in `media_ws.py` had BOTH root-level `input_audio_transcription` / `output_audio_transcription` AND nested `audio.input.transcription` / `audio.output.transcription` configs.
+- OpenAI Realtime API (direct WebSocket) only accepts the nested format under `audio.{input,output}.transcription`. The root-level params are invalid and cause the session config to be rejected.
+- Removed the duplicate root-level config (lines 140-141 in media_ws.py). Session config now only sends the nested transcription params.
+
+**Debugging process**
+
+- Used `az containerapp logs show` with grep filters to find OpenAI error in live logs.
+- Error appeared at 2026-04-09T04:15:07 UTC: `bridge: OpenAI error: {'type': 'invalid_request_error', 'code': 'unknown_parameter', 'message': "Unknown parameter: 'session.output_audio_transcription'."}`.
+- Confirmed the deployed backend image timestamp matched recent deployment.
+- Fixed by removing duplicate params, deployed via `azd deploy backend`, all tests passed.
+
+**Key lesson: OpenAI Realtime API session config format**
+
+- For direct WebSocket (phone bridge), transcription config MUST be nested under `audio.input.transcription` and `audio.output.transcription`.
+- Do NOT send `input_audio_transcription` or `output_audio_transcription` at the session root level.
+- The WebRTC `/client_secrets` endpoint may accept different formats, but the direct WebSocket API enforces strict nesting.
+
 **Verification results**
 
 - `/api/phone/health` → `phone_available: true`, `mock_mode: false`, `phone_enabled: true`, latency 284ms.
