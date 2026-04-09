@@ -141,3 +141,37 @@
 
 **Build verification:**
 - TypeScript + Vite build passes clean: 720 modules, 226.28 kB JS (65.23 kB gzip), built in 2.54s
+
+### 2026-03-20 — Split Demo Page into Runbook + Live Pages
+
+**What was built:**
+- Split the combined DemoPage into two separate pages for live demo workflow
+- `RunbookPage.tsx` — Sean's private cheat sheet: phone number, 9 demo questions table, presenter tips section
+- `LivePage.tsx` — audience-facing full-screen dark theme transcript viewer for projector display
+- Live view hides the app header entirely for clean projection (Escape key or back arrow to exit)
+
+**Key file paths:**
+- `frontend/src/components/RunbookPage.tsx` — Presenter-only runbook page
+- `frontend/src/components/LivePage.tsx` — Full-screen audience transcript viewer
+- `frontend/src/components/DemoPage.tsx` — Original combined page (still exists, no longer routed)
+- `frontend/src/App.tsx` — View type extended with 'runbook' | 'live', replaces 'demo'
+- `frontend/src/components/Header.tsx` — Runbook (ClipboardDocumentListIcon) + Live (TvIcon) tabs replace Demo tab
+
+**Design decisions for LivePage:**
+- `fixed inset-0` overlay with `bg-slate-950` — full viewport dark theme
+- Agent speech: cyan-on-dark (`bg-cyan-900/50`, `text-cyan-50`), caller: slate-on-dark (`bg-slate-700/80`, `text-slate-100`)
+- Tool calls: pulsing cyan badges (`animate-pulse`) for visual feedback
+- Large text (`text-lg` on messages, `text-2xl` on empty state) for back-of-room readability
+- Smooth auto-scroll with `scrollTo({ behavior: 'smooth' })`
+- Escape key handler + floating ArrowLeftIcon button for exit
+- Subtle "47 Doors" branding in top bar with phone number
+
+**Patterns used:**
+- Reuses existing `useTranscriptStream` SSE hook — no new data layer needed
+- Header hidden via conditional rendering when `currentView === 'live'`
+- `onExit` callback prop returns to Runbook view
+- Same View type union pattern as existing chat/tickets/admin
+
+**Build verification:**
+- TypeScript + Vite build passes clean: 721 modules, 231.67 kB JS (66.49 kB gzip), built in 4.49s
+- Deployed to Azure Container Apps successfully
