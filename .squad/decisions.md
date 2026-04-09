@@ -426,6 +426,35 @@ The health endpoint reported green because it only tests client initialization, 
 
 **Future Guidance:**
 - Monitor Azure SDK release notes for API surface changes in communication services SDKs
+
+### OpenAI Realtime API Session Configuration Format
+**Timestamp:** 2026-04-09T00:30:49Z  
+**Authority:** Tank (Backend Dev)  
+**Status:** ✅ Resolved  
+
+**Problem:** Live transcript page (`/live`) showed no user_speech or agent_speech events despite SSE connection working. Root cause: OpenAI Realtime API direct WebSocket rejected session config with `unknown_parameter` error on `output_audio_transcription`.
+
+The `session.update()` payload in `media_ws.py` contained DUPLICATE transcription configurations:
+- Root-level: `input_audio_transcription`, `output_audio_transcription` (invalid for direct WebSocket)
+- Nested: `audio.input.transcription`, `audio.output.transcription` (valid)
+
+**Decision:** When configuring Azure OpenAI Realtime API sessions for phone bridge (direct WebSocket):
+- Use ONLY the nested transcription config under `audio.input.transcription` and `audio.output.transcription`
+- Do NOT send `input_audio_transcription` or `output_audio_transcription` at the session root level
+- The REST `/client_secrets` API may accept different formats — if phone bridge switches to REST endpoint in future, validate config format against that specific API's schema
+
+**Changes:**
+- **File:** `backend/app/api/media_ws.py` (session.update payload, lines 140-141)
+- Removed 2 invalid root-level transcription config lines
+- Kept only valid nested transcription config
+- **Commit:** `37425e6` (fix(voice): remove duplicate transcription config)
+
+**Verification:**
+- ✅ Backend deployed successfully
+- ✅ All tests pass
+- ✅ Session config now accepted by OpenAI Realtime API (no unknown_parameter error)
+
+**Learning:** OpenAI's direct WebSocket API (phone bridge) and REST `/client_secrets` API accept DIFFERENT session configuration formats. Direct WebSocket strictly enforces nested structure under `audio.input` and `audio.output`.
 - Consider tighter version pinning (e.g., `~=1.5.0` or `>=1.5.0,<2.0`) for ACS packages to prevent surprise breakage
 - Ensure health checks cover all code paths (e.g., media streaming endpoints)
 
