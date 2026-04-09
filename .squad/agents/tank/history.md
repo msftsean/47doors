@@ -62,7 +62,22 @@ Tank established the voice interaction architecture during Phase 0 research:
 
 - Added `azure-communication-callautomation>=1.4.0` to both `requirements.txt` and `pyproject.toml`
 
+### 2026-04-09 — Phone Call Failure Diagnosis (SDK Import Break)
 
+**Root cause:** Inbound PSTN calls to `+19132171946` were never answered. Event Grid delivered `IncomingCall` events successfully to `/api/phone/incoming`, but the handler crashed with `ImportError: cannot import name 'MediaStreamingTransportType' from 'azure.communication.callautomation'`. The SDK (v1.5.0, installed via `>=1.4.0` pin) renamed `MediaStreamingTransportType` → `StreamingTransportType`. Every call attempt returned 503 Service Unavailable.
+
+**Fix:** Updated `backend/app/services/azure/phone.py` to import `StreamingTransportType` (correct name) and `AudioFormat`. Also enabled `enable_bidirectional=True` and set `audio_format=AudioFormat.PCM24_K_MONO` per current SDK docs for Azure OpenAI Realtime integration.
+
+**Debugging pattern for phone issues:**
+1. Hit `/api/phone/health` first — health check only tests client init, not the answer_call path, so it can show green while calls fail
+2. Check `az containerapp logs show` for the actual runtime error — the ImportError only fires at call-answer time (lazy import inside `handle_incoming_call`)
+3. Event Grid subscription was healthy (provisioningState=Succeeded, correct endpoint URL, correct filter)
+4. Managed identity had Contributor role on ACS — sufficient for Call Automation
+5. The SDK `>=` pin in requirements.txt means the container may get a newer version than dev tested with — watch for API surface changes in `azure-communication-callautomation`
+
+**Key takeaway:** Pin SDK versions more tightly (e.g., `~=1.4.0` or `>=1.4.0,<2.0`) to avoid surprise breaking changes from enum renames in minor releases.
+
+**SDK fix applied:** `StreamingTransportType` is the correct enum name for `azure-communication-callautomation >= 1.5.0`. Future work: migrate SDK pins to `~=1.5.0` or `>=1.5.0,<2.0` to lock this version and prevent future enum renames from breaking production calls.
 
 ### 2026-03-14 — Phase 1 Setup (T001, T002, T003)
 

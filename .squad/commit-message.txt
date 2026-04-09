@@ -1,0 +1,1 @@
+docs(squad): log phone fix session - SDK StreamingTransportType migration

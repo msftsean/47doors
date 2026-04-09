@@ -401,6 +401,34 @@ Event Grid resources created via CLI. Recommend migrating to `infra/main.bicep` 
 
 **Rationale:** No need to create/switch to a separate ACS resource. Phone was purchased on the already-deployed instance. Event Grid webhooks enable the backend to receive and process incoming calls through the existing 4-tool pipeline (same as voice via WebRTC).
 
+### ACS SDK v1.5.0 Migration: MediaStreamingTransportType → StreamingTransportType
+**Timestamp:** 2026-04-09T01:20Z  
+**Authority:** Tank (Backend Dev)  
+**Status:** ✅ Resolved  
+
+**Problem:** Inbound PSTN calls to `+19132171946` were silently failing. No answer, no error logs. Root cause: Azure Communication Services SDK v1.5.0 renamed `MediaStreamingTransportType` → `StreamingTransportType`. The production container had pinned `>=1.4.0`, allowing v1.5.0 to install. When an inbound call arrived, the answer-call path imported the old enum name, causing `ImportError` at runtime.
+
+The health endpoint reported green because it only tests client initialization, not the media streaming code path where the enum is used.
+
+**Decision:** Use `StreamingTransportType` for `azure-communication-callautomation >= 1.5.0`.
+
+**Changes:**
+- **File:** `backend/app/services/azure/phone.py`
+  - Updated import from `MediaStreamingTransportType` → `StreamingTransportType`
+  - Enabled bidirectional audio with PCM24K mono format (per Realtime API spec)
+- **Bicep:** Version constraint remains flexible; Team should review Azure SDK changelogs before minor-version bumps
+
+**Verification:**
+- ✅ All 447 backend tests pass
+- ✅ Commit: `a885b62`
+- ✅ Deployed via `azd deploy`
+- ✅ Phone calls now answered successfully
+
+**Future Guidance:**
+- Monitor Azure SDK release notes for API surface changes in communication services SDKs
+- Consider tighter version pinning (e.g., `~=1.5.0` or `>=1.5.0,<2.0`) for ACS packages to prevent surprise breakage
+- Ensure health checks cover all code paths (e.g., media streaming endpoints)
+
 ## Governance
 
 - All meaningful changes require team consensus
