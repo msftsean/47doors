@@ -187,9 +187,8 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                     continue
 
                 # -- Transcript logging -----------------------------------
-                # GA event name: response.output_audio_transcript.done
-                # (preview used response.audio_transcript.done — no longer sent)
-                if t == "response.output_audio_transcript.done":
+                # Support both preview and GA event names for agent speech transcript
+                if t in ("response.audio_transcript.done", "response.output_audio_transcript.done"):
                     text = msg.get("transcript", "")
                     logger.info(
                         "Media bridge: AI said (call_id=%s): %s",
