@@ -1,6 +1,6 @@
 # Decisions Log
 
-**Last Updated:** 2026-04-09T02:00
+**Last Updated:** 2026-04-09T03:30Z
 
 ## Active Decisions
 
@@ -55,3 +55,30 @@ Made `playwright.config.ts` environment-portable: `BASE_URL` env var overrides `
 2. Financial aid queries misroute to IT Support instead of Financial Aid
 
 **Impact:** Eval can be run against any environment. Existing tests need refactor to use `BACKEND_URL` env var. WCAG violations in accessibility tests are real and need fixing.
+
+---
+
+### Dedicated Nginx Location Block for SSE Streaming — 2026-04-09
+
+**Author:** Tank  
+**Status:** Implemented & Deployed  
+**Commits:** db2d48c, dd66ad6  
+
+Live transcript page (`/live`) connected successfully but displayed no transcript text. SSE events from `/api/phone/transcripts/stream` were silently buffered by nginx because the single `/api/` location block was configured with WebSocket semantics (`Connection "upgrade"`, no `proxy_buffering off`).
+
+**Decision:** Added dedicated `location /api/transcripts/stream` block in `frontend/nginx.conf` with SSE-specific proxy settings:
+- `proxy_buffering off` + `proxy_cache off` — disables nginx response buffering
+- `proxy_set_header Connection ""` — uses HTTP keep-alive instead of WebSocket upgrade
+- `proxy_read_timeout 86400` — allows long-lived SSE connections (24h)
+
+The existing `/api/` block remains unchanged for regular REST calls and WebSocket (`/api/realtime/ws/`).
+
+**Rationale:** SSE and WebSocket have fundamentally different proxy requirements:
+- WebSocket: needs `Connection "upgrade"` + `Upgrade` header
+- SSE: needs `Connection ""` (keep-alive) + `proxy_buffering off`
+
+Nginx longest-prefix matching ensures `/api/transcripts/stream` matches before falling through to general `/api/` block.
+
+**Files Changed:** `frontend/nginx.conf` — added SSE location block before existing `/api/` block
+
+**Impact:** Live transcript viewer now functional. Change is additive. Existing `/api/` block untouched, so WebSocket and REST traffic unaffected. If additional SSE endpoints added, they should nest under `/api/transcripts/` (already covered by prefix match) or get own location block.
