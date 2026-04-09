@@ -175,3 +175,23 @@
 **Build verification:**
 - TypeScript + Vite build passes clean: 721 modules, 231.67 kB JS (66.49 kB gzip), built in 4.49s
 - Deployed to Azure Container Apps successfully
+
+### 2026-04-09 — Exercise Content Alignment with Voice/Phone Features
+
+**Exercise Updates (via Anvil):**
+- All 8 labs (00-06 + Exercise 05x) updated to reference voice and phone capabilities
+- Coach guide (4 files) updated with voice/telephony facilitation guidance
+- Workshop site: new "Telephony" tab added to navigation
+- Participant guide, quick reference, README, CHANGELOG all updated to reflect integrated voice/phone features
+
+**Connection to Switch's work:**
+- RunbookPage/LivePage split (commit 830a09a) is now explicitly featured in exercise walkthroughs as the demo interface pattern
+- Participants see how Switch's UI/UX decisions enable live presenter control of what the audience sees
+- Exercise content makes clear that voice transcript streaming is a key feature for live demonstrations
+
+**Context for facilitators:**
+- Coach guide now points facilitators to the RunbookPage for preparation and LivePage for projection
+- Demo questions explicitly mention phone call capability (via Tank's transcript fix)
+- Presentation notes explain the architectural rationale for the split-page design
+
+**Orchestration Log:** `.squad/orchestration-log/2026-04-09T03-01-38Z-anvil.md`

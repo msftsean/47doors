@@ -301,6 +301,8 @@ PSTN → ACS → WS [backend /ws/acs-media] → WS [Azure OpenAI Realtime API]
 
 **Team Coordination:** Paired with Switch's frontend `session.update` data-channel implementation (parallel spawn 2026-03-15T01:53) for belt-and-suspenders transcription enablement. Backend config change ensures system prompt and transcription are always available; frontend change adds runtime safety net.
 
+**Exercise Content Alignment:** Anvil updated all 8 labs and coach guide to reference this phone transcript streaming fix and real tool execution (commit 2669075). Hackathon participants now see voice and phone features as integrated into the wider 47 Doors architecture.
+
 **Orchestration Log:** `.squad/orchestration-log/2026-03-15T01-53-tank.md`
 
 ### 2026-03-15 — GPT-4o → GPT-4.1 Model Migration
