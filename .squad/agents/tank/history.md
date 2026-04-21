@@ -594,3 +594,29 @@ Events: call_started, user_speech, agent_speech, tool_call, call_ended
 The existing `/api/` block with `Connection "upgrade"` remains intact for WebSocket support (`/api/realtime/ws/`).
 
 **Key lesson:** SSE and WebSocket need different nginx proxy settings. WebSocket needs `Connection "upgrade"` + `Upgrade $http_upgrade`. SSE needs `Connection ""` (keep-alive) + `proxy_buffering off`. When a backend serves both, use separate location blocks with the more-specific SSE path first (nginx longest-prefix match).
+
+## Learnings
+
+### 2026 — Azure OpenAI Realtime API schema varies by endpoint (phone bridge transcript fix)
+
+**Authoritative fact — store this.** The Azure OpenAI Realtime API uses **two different session.update schemas** depending on which endpoint you connect to:
+
+| Endpoint | api-version | Schema |
+|---|---|---|
+| wss://…/openai/realtime?api-version=2025-04-01-preview&deployment=gpt-realtime (direct WS — ACS phone bridge) | 2025-04-01-preview | **FLAT** — top-level voice, input_audio_format, output_audio_format, input_audio_transcription |
+| /openai/v1/realtime/calls (WebRTC — browser voice) | GA | **NESTED** — audio: { input: {...}, output: {...} } with transcription sub-object |
+
+If you send the wrong shape you get an **exact error signature** — look for this in the container logs:
+
+```
+{'type': 'invalid_request_error', 'code': 'unknown_parameter',
+ 'message': "Unknown parameter: 'session.audio'.", 'param': 'session.audio'}
+```
+
+When the direct-WS path silently rejects session.audio, whisper-1 never runs on caller audio, no conversation.item.input_audio_transcription.* events fire, and caller transcripts are empty — even though agent speech still transcribes fine (because response.audio_transcript.done is independent of the input-transcription config).
+
+**The trap:** A stored memory previously claimed flat fields cause unknown_parameter errors. That was true — but only for the *WebRTC* endpoint. Do NOT generalize the schema of one endpoint to the other. Always check which endpoint media_ws.py is hitting before changing the session shape.
+
+**Fix applied in backend/app/api/media_ws.py:** replaced the nested audio:{input,output} block with flat fields (voice, input_audio_format, output_audio_format, input_audio_transcription) for the phone bridge session.update. Also fixed AttributeError: 'ClientConnection' object has no attribute 'closed' in the finally block (newer websockets library removed .closed — wrap close in try/except instead of gating on it). Added temp diagnostic logging marked "# TEMP_DIAG — revert after verification".
+
+Tests: 461 passed, 97 skipped. No test pinned the old nested shape.

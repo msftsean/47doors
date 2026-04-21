@@ -159,24 +159,26 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                 msg = json.loads(raw)
                 t = msg.get("type", "")
 
+                # TEMP_DIAG — revert after verification
+                if t != "response.audio.delta":  # avoid log flood
+                    logger.info("Media bridge: event type=%s", t)
+
                 # -- Session lifecycle ------------------------------------
                 if t == "session.created":
                     logger.info("Media bridge: session.created — sending config")
+                    # NOTE: This endpoint (`/openai/realtime?api-version=2025-04-01-preview`)
+                    # requires FLAT session-level fields and REJECTS the nested
+                    # `audio: {input, output}` block with
+                    # `unknown_parameter: session.audio`. The nested schema is only
+                    # valid on the `/openai/v1/realtime/calls` WebRTC endpoint.
                     await openai_ws.send(json.dumps({
                         "type": "session.update",
                         "session": {
                             "instructions": PHONE_SYSTEM_PROMPT,
-                            "audio": {
-                                "input": {
-                                    "format": "pcm16",
-                                    "transcription": {"model": "whisper-1"},
-                                },
-                                "output": {
-                                    "format": "pcm16",
-                                    "voice": settings.realtime_voice,
-                                    "transcription": {"model": "whisper-1"},
-                                },
-                            },
+                            "voice": settings.realtime_voice,
+                            "input_audio_format":  "pcm16",
+                            "output_audio_format": "pcm16",
+                            "input_audio_transcription": {"model": "whisper-1"},
                             "turn_detection": {
                                 "type": "server_vad",
                                 "threshold": 0.5,
@@ -327,7 +329,7 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                 ):
                     continue
 
-                logger.debug(f"Media bridge: unhandled OpenAI event: {t}")
+                logger.info(f"Media bridge: unhandled OpenAI event: {t}")  # TEMP_DIAG — revert after verification
 
         # ------------------------------------------------------------------
         # Coroutine: read ACS media messages, forward audio to OpenAI
@@ -399,8 +401,11 @@ async def acs_media_bridge(ws: WebSocket) -> None:
             )
         except Exception:
             pass
-        if openai_ws and not openai_ws.closed:
-            await openai_ws.close()
+        if openai_ws is not None:
+            try:
+                await openai_ws.close()
+            except Exception:
+                pass
         try:
             await ws.close()
         except Exception:
