@@ -467,3 +467,11 @@ When the direct-WS path silently rejects session.audio, whisper-1 never runs on 
 **Fix applied in backend/app/api/media_ws.py:** replaced the nested audio:{input,output} block with flat fields (voice, input_audio_format, output_audio_format, input_audio_transcription) for the phone bridge session.update. Also fixed AttributeError: 'ClientConnection' object has no attribute 'closed' in the finally block (newer websockets library removed .closed — wrap close in try/except instead of gating on it). Added temp diagnostic logging marked "# TEMP_DIAG — revert after verification".
 
 Tests: 461 passed, 97 skipped. No test pinned the old nested shape.
+
+**Production verification (2026-04-21):**
+- Deployed as revision azd-1776792457 and tested with phone number +1 (913) 217-1946
+- Caller speech transcripts ("conversation.item.input_audio_transcription.completed") now firing correctly on `/live` page
+- Agent speech transcripts ("response.audio_transcript.done" / "response.output_audio_transcript.done") already worked
+- Fix confirmed by msftsean (Sean) — phone→/live caller transcripts rendering as expected
+- TEMP_DIAG logging reverted in commit e687215, pushed, and redeployed successfully (30s deploy)
+- Learnings documented in `.squad/skills/azure-realtime-api-schema/SKILL.md` and decision drop at `.squad/decisions/inbox/tank-phone-bridge-verified.md`
