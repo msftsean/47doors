@@ -685,3 +685,52 @@ Handle **both** event names in `media_ws.py` using `if t in (preview_name, ga_na
 - The delta ignore list already covered both names — only the `.done` handler needed fixing.
 - Pattern to follow: any event name that differs between preview/GA should be handled with a tuple check, not a single string comparison.
 
+
+### Azure OpenAI Realtime API — session.update schema per endpoint
+
+# DECISION: Azure OpenAI Realtime API — session.update schema per endpoint
+
+**Author:** Tank (Backend)
+**Status:** Proposed (awaiting ratification)
+**Context:** Phone bridge caller transcripts were empty in production. Root cause (verified via container logs and anvil review): Azure OpenAI's Realtime API rejected the nested `session.audio` block on the direct-WS endpoint, silently disabling whisper-1 input transcription.
+
+## Decision
+
+For the **phone bridge direct-WS path** — `wss://<resource>.openai.azure.com/openai/realtime?api-version=2025-04-01-preview&deployment=gpt-realtime` — use **FLAT session-level fields** in `session.update`:
+
+- `voice`
+- `input_audio_format`
+- `output_audio_format`
+- `input_audio_transcription: { model: "whisper-1" }`
+- `turn_detection: {...}`
+- `tools: [...]`
+
+**Do NOT use a nested `audio: { input: {...}, output: {...} }` block on this endpoint.** It will be rejected with:
+
+```
+invalid_request_error / unknown_parameter / "Unknown parameter: 'session.audio'." / param: 'session.audio'
+```
+
+This failure is **silent to the app** (connection stays open) but disables whisper-1 on caller audio, so `conversation.item.input_audio_transcription.*` events never fire and caller transcripts stay empty.
+
+## Scope / Non-scope
+
+- **In scope:** `backend/app/api/media_ws.py` (ACS ↔ Azure OpenAI phone bridge).
+- **Out of scope:** `/openai/v1/realtime/calls` WebRTC endpoint used by the browser voice feature — that endpoint DOES accept the nested `audio.input` / `audio.output` schema. Do not "unify" these two schemas. They are owned by different Azure OpenAI surfaces and evolve independently.
+
+## Rationale
+
+Two endpoints = two schemas. A prior memory note claimed flat fields cause `unknown_parameter` errors; that note was scoped to the WebRTC endpoint and was over-generalized. This decision pins the correct schema per endpoint so the next contributor doesn't re-introduce the regression.
+
+## Consequences
+
+- Caller transcripts flow again (`conversation.item.input_audio_transcription.delta` + `.completed` events fire).
+- Future edits to `media_ws.py` must preserve the flat schema on the phone path.
+- If Azure OpenAI later unifies these endpoints, revisit — but verify against live error logs, not assumptions.
+
+## Evidence
+
+- Container log line observed prior to fix: `unknown_parameter: session.audio`.
+- Post-fix: backend test suite 461 passed, 97 skipped (no tests pinned the old nested shape).
+- Also fixed incidental `AttributeError: 'ClientConnection' object has no attribute 'closed'` in the finally block — newer `websockets` library dropped `.closed`; wrap in try/except instead.
+

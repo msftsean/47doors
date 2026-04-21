@@ -233,3 +233,15 @@ Switch added URL routing for direct access to /live and /runbook pages in `front
 - TypeScript + Vite build passes clean: 721 modules, 231.85 kB JS (66.55 kB gzip)
 - Deployed to Azure Container Apps successfully
 - Commit: `dc90d44` on main
+
+### 2026-04-21T17:30Z - Voice Schema Clarification (Phone Bridge vs WebRTC)
+
+**Cross-agent note from Tank/Anvil diagnosis:**
+- Phone bridge caller transcripts returned empty parameter errors due to nested session.audio being incompatible with direct-WS Azure OpenAI endpoint
+- CLARIFICATION FOR SWITCH: The WebRTC endpoint used by browser useVoice.ts DOES accept nested audio.input / audio.output schema
+- Do NOT change browser voice implementation - the nested schema is the correct one for the WebRTC path
+- The regression was specific to the phone bridge (direct-WS) endpoint, which requires flat top-level fields
+- No changes needed to Switch's frontend voice code; it remains production-correct
+
+**Impact:** Frontend voice feature unaffected. Commit 234c2ec applies only to backend phone bridge path.
+
