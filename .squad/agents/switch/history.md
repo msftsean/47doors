@@ -6,18 +6,55 @@
 - **Architecture:** Three-agent pipeline (QueryAgent → RouterAgent → ActionAgent) with voice interaction via Azure OpenAI GPT-4o Realtime API / WebRTC
 - **Created:** 2026-03-13
 
+## Core Context
+
+Historical team updates and architectural learnings are consolidated below for future reference.
+
+### Workshop Companion Site (2026-03-19)
+Built standalone React + TypeScript + Tailwind CSS site at `workshop-site/` as executive briefing tool.
+- **Architecture:** 10 tab-based sections, Tab navigation with keyboard accessibility, reusable components (TabNavigation, CollapsibleNotes, CalloutCard, DiagramSVG)
+- **Visual Language:** Microsoft Fluent 2 (generous whitespace, calm typography); Primary: #0078D4 blue, gray #F3F2F1, dark #323130; IU crimson (#990000) as accent only
+- **Key Paths:** Site root `workshop-site/`, main app `workshop-site/src/App.tsx`, tabs `workshop-site/src/tabs/*.tsx`, components `workshop-site/src/components/*.tsx`
+- **Build:** TypeScript passes, prod build 222.94 kB JS (63.50 kB gzipped), 371 modules, 2.15s
+
+### Azure SWA Auth Migration (2026-03-14)
+Runbook docs migrated to Azure Static Web Apps with built-in authentication.
+- **Config:** Azure AD (Entra ID) only; `/.auth/login/aad` + `/.auth/logout` anonymous; all other routes require `authenticated` role; 401 redirects to AAD login
+- **Integration:** Auth bar in sticky nav (right-aligned), uses `/.auth/me` fetch; graceful degradation on local dev (silent catch if unavailable)
+- **Files:** Config `docs/staticwebapp.config.json`, setup guide `docs/AZURE_SWA_SETUP.md`, deployment workflow `.github/workflows/deploy-docs-swa.yml`
+
+### Voice Architecture Constraints (2026-03-14)
+Foundational WebRTC + Azure OpenAI design rules:
+- **Audio Path:** Never transits backend — WebRTC connects browser → Azure OpenAI directly; backend only relays tool-call results via `/api/realtime/ws`
+- **Token Security:** Ephemeral token TTL ≤ 60s (single-use, non-renewable) — hard constitutional constraint
+- **Session Context:** `session_id` shared between text chat and voice — voice attaches to existing `Session` entity; modality switching preserves context
+
+### session.update via Data Channel (2026-03-14)
+Added `dc.onopen` handler in `useVoice.ts` to send `session.update` event via WebRTC data channel enabling `input_audio_transcription` (whisper-1). Belt-and-suspenders with backend: frontend ensures transcription active before listening.
+
+### Demo Pages Split (2026-03-20)
+Split combined DemoPage into RunbookPage (presenter-only cheat sheet with questions table) + LivePage (full-screen dark-theme audience viewer).
+- **RunbookPage:** Runbook, phone number, 9 demo questions, presenter tips
+- **LivePage:** Full-screen dark theme (`bg-slate-950`), agent cyan-on-dark, caller slate-on-dark, tool badges animate-pulse, large text for back-of-room, smooth auto-scroll
+- **Exit:** Escape key or arrow button returns to runbook
+
+### URL-Based Routing (2026-04-09)
+Added `window.location.pathname` reading at module load for direct URL navigation.
+- **Routes:** `/live` = audience mode (no header/exit), `/runbook` = presenter mode, `/` = default chat
+- **Implementation:** No react-router — simple `getInitialView()` function, `isDirectLiveRoute` flag controls exit prop
+- **Design:** Direct `/live` URL removes exit controls for audience; tab navigation includes exit
+
+---
+
 ## Team Updates
 
 ### 2026-04-09T04:52Z — Direct URL Routing for /live and /runbook
 
 Switch added URL routing for direct access to /live and /runbook pages in `frontend/src/App.tsx`:
-- **Implementation:** Pathname check in App.tsx for route detection
-- **Approach:** No react-router required; direct pathname-based navigation
-- **Test Status:** Build successful, no errors
 - **Commit:** dc90d44
-- **Deploy:** Frontend deployed and pushed
+- **Build:** 721 modules, 231.85 kB JS (66.55 kB gzipped)
 
-**Cross-agent note:** Tank simultaneously fixed event name mismatch in media_ws.py (commit 297e7f7, all 461 tests passed). Both changes deployed without blocking issues. Voice interaction pipeline remains stable.
+**Cross-agent note:** Tank simultaneously fixed event name mismatch in media_ws.py (commit 297e7f7, all 461 tests passed). Both changes deployed without blocking issues.
 
 ---
 
@@ -25,7 +62,7 @@ Switch added URL routing for direct access to /live and /runbook pages in `front
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### 2026-03-19 — Workshop Companion Site Build
+### 2026-03-19 — Workshop Companion Site Build (Archived to Core Context)
 
 **Architecture decisions:**
 - Built standalone React + TypeScript + Tailwind CSS site at `workshop-site/` as executive briefing tool for "Trustworthy Agentic AI in Higher Education" workshop
