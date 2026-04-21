@@ -282,3 +282,32 @@ Switch added URL routing for direct access to /live and /runbook pages in `front
 
 **Impact:** Frontend voice feature unaffected. Commit 234c2ec applies only to backend phone bridge path.
 
+### 2026-04-21T19:15Z - Runbook Website Phone Documentation Update
+
+**What was verified:**
+- All workshop-site runbook tabs already updated in commit 599cc8e (by Anvil/msftsean) to reflect production phone bridge
+- Telephony.tsx: Production callout added for April 21, 2026 verification + technical note on Realtime API schema asymmetry
+- VoiceAccessibility.tsx: "What's Next" changed to "Phone Integration Is Live" with production date
+- DemoWalkthrough.tsx: Phone demo section updated to reflect production-ready status (+1-913-217-1946)
+- PresenterScript.tsx: No phone-specific content, no changes needed
+- Architecture.tsx, Overview.tsx, App.tsx: No phone content, correctly unchanged
+
+**Copy patterns standardized:**
+- Production callouts use "production-verified" language with specific date (April 21, 2026) and revision (azd-1776792457)
+- Phone number consistently shown as +1-913-217-1946 in all contexts
+- "Same 3-agent pipeline" messaging emphasized across all tabs
+- Technical details (Realtime API schema) placed in amber-bordered callouts for presenter context
+- Tone remains factual, academic, presenter-facing (no marketing fluff)
+
+**Tabs updated in commit 599cc8e:**
+- Telephony.tsx - Production callout + Realtime API technical note
+- VoiceAccessibility.tsx - Live phone integration callout
+- DemoWalkthrough.tsx - Production-ready phone demo section
+
+**Verification:**
+- TypeScript type-check passed clean (npx tsc --noEmit)
+- No new commits needed — documentation already current on main branch
+
+**Key learning:**
+Workshop-site documentation was already updated in parallel commit stream. Cross-agent coordination via commit log inspection confirmed all requested changes already present.
+
