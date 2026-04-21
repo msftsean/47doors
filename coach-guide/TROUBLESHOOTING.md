@@ -504,29 +504,33 @@ Quick reference for coaches to resolve common participant issues. Each fix shoul
 3. Try a different browser (Chrome/Edge recommended, Firefox WebRTC support varies)
 4. Check ephemeral token hasn't expired (60s TTL) — if session creation is slow, token may expire before SDP exchange
 
-### Phone: Incoming calls not routing
-**Symptom:** Dialing the ACS number, but no Event Grid webhook fires
-**5-min fix:**
-1. Verify Event Grid subscription exists and points to correct callback URL
-2. Check `PHONE_CALLBACK_BASE_URL` is the public HTTPS URL of your backend
-3. For local dev: use ngrok or similar tunnel — ACS Event Grid requires public HTTPS
-4. Verify the phone number is assigned to the ACS resource
+### Phone: Verify Production Connection
 
-### Phone: Call connects but no audio
-**Symptom:** Call answers, but silence on both ends
-**5-min fix:**
-1. Check WebSocket `/ws/acs-media` is reachable from ACS (same HTTPS host as callback)
-2. Check managed identity token for OpenAI WebSocket (`media_ws.py` logs auth errors)
-3. Verify `AZURE_OPENAI_REALTIME_DEPLOYMENT` points to a `gpt-4o-realtime-preview` model
-4. Check ACS media streaming config: should be PCM 24kHz mono bidirectional
+**Phone Bridge Status:** ✅ **LIVE** — Production-verified 2026-04-21 (revision azd-1776792457)
+**Live Number:** +1 (913) 217-1946 — Real ACS integration with Realtime API backend
 
-### Phone: LivePage not showing transcripts
-**Symptom:** Phone call works, but LivePage stays empty
-**5-min fix:**
-1. Check browser is connected to SSE: `/api/phone/transcripts/stream` should return `text/event-stream`
-2. Check `transcript_bus` has subscribers: the media bridge publishes to it, SSE endpoint subscribes
-3. Check for CORS issues if frontend and backend are on different origins
-4. Try the mock phone service — it simulates events without needing a real call
+**Verification steps (2 min):**
+1. Call +1 (913) 217-1946 from any phone
+2. You should hear the agent greeting within 3–5 seconds
+3. Open `/live` in your browser while the call is active
+4. Verify you see **bidirectional transcripts**: caller speech AND agent responses rendering in real time
+5. Ask "How do I reset my password?" and wait 2–3 seconds for response (same 3-agent pipeline as browser voice)
+
+**Expected signals on `/live`:**
+- "Caller:" messages appear as you speak
+- Tool calls show routing, knowledge base search, and ticket creation
+- "Agent:" responses appear 2–3 seconds after you finish speaking
+
+**If call doesn't connect:**
+1. Verify backend is running: `curl http://localhost:8000/api/phone/health`
+2. Check `PHONE_ENABLED=true` in `.env`
+3. Verify `AZURE_ACS_ENDPOINT` and `ACS_PHONE_NUMBER` are configured (production only; skip for mock mode)
+4. For local dev with mock mode: set `MOCK_MODE=true` — simulated events still appear on `/live`
+
+**If transcripts not appearing on `/live`:**
+1. Check SSE connection: open browser DevTools → Network → filter for "transcripts/stream"
+2. Should show long-running HTTP response with `text/event-stream`
+3. Check for CORS issues if frontend and backend are on different domains
 
 ---
 

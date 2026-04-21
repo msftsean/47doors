@@ -147,13 +147,14 @@ Deployment makes it real—code on your laptop doesn't help anyone. Azure gives 
 
 ## Voice & Phone Demo Transition
 
-**Key message:** "Everything you just built—the intent classifier, the router, the action agents, the RAG pipeline—it all works over voice too. Same pipeline, different input modality."
+**Key message:** "Everything you just built—the intent classifier, the router, the action agents, the RAG pipeline—it all works over voice too. Same pipeline, different input modality. And now the phone integration is production-ready and proven."
 
 **Talking points:**
-- "The phone integration proves this architecture scales beyond the browser. A caller dials a real phone number, and the same three-agent pipeline answers."
+- "The phone integration proves this architecture scales beyond the browser. A caller dials a real phone number (+1-913-217-1946), and the same three-agent pipeline answers."
 - "Notice what DIDN'T change: the agent prompts, the routing logic, the knowledge base. That's the power of separating interface from intelligence."
 - "Voice uses ephemeral tokens with 60-second TTL—no persistent credentials in the browser. The backend uses managed identity to Azure OpenAI."
 - "Raw audio is never stored. Only PII-filtered transcripts are published to the transcript bus. This is a Constitution Principle III requirement."
+- "This backend stack is production-verified: ACS Call Automation → WebSocket bridge (managed identity auth) → Azure OpenAI Realtime API direct WS (verified 2026-04-21)."
 
 ---
 

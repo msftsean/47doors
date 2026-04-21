@@ -179,12 +179,17 @@ export default function VoiceAccessibility() {
           </p>
         </div>
 
-        <div className="card mt-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">What's Next: Phone Integration</h3>
+        <div className="card mt-8 bg-green-50 border-l-4 border-green-500">
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>📞</span> Phone Integration Is Live
+          </h3>
+          <p className="text-gray-700 mb-3">
+            <strong>Production-verified as of April 21, 2026.</strong> The same architecture now extends to phone calls—real
+            PSTN numbers that anyone can dial (+1-913-217-1946). Caller transcripts render on <code>/live</code> during active calls.
+          </p>
           <p className="text-gray-700">
-            Voice in the browser is just the beginning. The same architecture extends to phone calls—real
-            PSTN numbers that anyone can dial. See the <strong>Phone Integration</strong> tab for how Azure
-            Communication Services bridges traditional telephony and your AI pipeline.
+            See the <strong>Phone Integration</strong> tab for the full telephony architecture. Same 3-agent pipeline, same 4 tools, 
+            same constitutional principles—just a different transport.
           </p>
         </div>
 

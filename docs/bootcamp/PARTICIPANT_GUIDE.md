@@ -9,7 +9,7 @@ Welcome to the 47 Doors Boot Camp! This guide will help you get started and navi
 You will build a **three-agent AI system** that eliminates the "47 Front Doors" problem in university student support. Instead of students navigating multiple disconnected support channels, they interact with one intelligent interface that detects intent, routes requests to the correct department, retrieves knowledge base articles, and creates support tickets automatically. By the end of this boot camp, you will have a working agent pipeline deployed to Azure that can classify student queries, search a knowledge base with RAG, and orchestrate multi-turn conversations.
 
 - 🎤 **Voice interaction** — speak to the same AI pipeline via browser microphone
-- 📱 **Phone support** — the same agents answer real phone calls (coach demo)
+- 📱 **Phone support** — the same agents answer real phone calls at +1 (913) 217-1946 (now live!)
 
 ---
 
@@ -68,7 +68,7 @@ Your progress will be evaluated on these deliverables:
 | 04 | RAG pipeline | Hybrid search returns relevant KB articles with citations |
 | 05 | Agent orchestration | Full pipeline handles multi-turn conversations |
 | 06 | Azure deployment | Agent deployed and health check responds |
-| **Bonus** | **Voice & Phone Extensions (Bonus):** 10 points | Browser voice, architecture understanding |
+| **Bonus** | **Voice & Phone Extensions (Bonus):** 10 points | Browser voice works; phone bridge demonstrates end-to-end (live at +1 (913) 217-1946) |
 
 ---
 

@@ -351,7 +351,7 @@ Use this rapid triage sequence when multiple participants are blocked by Azure a
 
 **Demo Flow:**
 1. **Browser Voice** (2 min): Click the mic button in the main UI. Ask "How do I reset my password?" Show the transcript appearing alongside the spoken response. Point out: "Same three agents. Same pipeline. Just a different input."
-2. **Phone Call** (3 min): Switch to LivePage on the projector. Call +1-913-217-1946 from your phone. Walk through the RunbookPage questions in order. Audience sees real-time transcript bubbles, tool calls, and agent responses.
+2. **Phone Call** (3 min): Switch to LivePage on the projector. Call +1 (913) 217-1946 from your phone. Walk through the RunbookPage questions in order. Audience sees real-time transcript bubbles, tool calls, and agent responses.
 3. **Architecture Callback** (1 min): "Notice the phone call used the SAME knowledge base, the SAME routing, the SAME ticket creation. Voice and phone are just modalities—the intelligence layer is what you built in Labs 01–05."
 
 **Contingencies:**

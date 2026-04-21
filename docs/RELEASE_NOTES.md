@@ -1,5 +1,33 @@
 # 📋 Release Notes
 
+## Version 0.1.5 - Phone Bridge Live 📞
+
+**Release Date**: 2026-04-21
+**Branch**: `main`
+**Status**: Production
+**Revision**: azd-1776792457
+
+---
+
+### 🎉 Major Release: Phone Bridge is Production
+
+The phone-to-Realtime integration is live and verified on real Azure Communication Services hardware.
+
+#### What's New
+- **Real Phone Integration**: Call +1 (913) 217-1946 from any phone to reach the agent
+- **Full Bidirectional Transcripts**: Caller speech AND agent responses render in real time on `/live`
+- **Same 3-Agent Pipeline**: Phone calls run through QueryAgent → RouterAgent → ActionAgent, identical to browser voice
+- **Production Architecture**: ACS Call Automation → WebSocket bridge (managed identity auth) → Azure OpenAI Realtime API
+- **No Persistent Credentials**: Ephemeral tokens; backend uses managed identity for Azure access
+
+#### Verification
+- Browser voice (WebRTC) ✅ Working
+- Phone bridge (ACS → Realtime) ✅ Working  
+- Real-time transcripts on `/live` ✅ Bidirectional (caller + agent)
+- Same knowledge base, routing, ticket creation ✅ Full parity
+
+---
+
 ## Version 0.1.4 - Test Fixes & Hackathon-to-Bootcamp Rename 🛠️
 
 **Release Date**: 2026-03-01

@@ -162,6 +162,8 @@ curl http://localhost:8000/api/realtime/health
 curl http://localhost:8000/api/phone/health
 ```
 
+**Live Phone Number:** +1 (913) 217-1946 — Real ACS integration, production-verified on 2026-04-21
+
 ### Voice Environment Variables
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -171,12 +173,12 @@ curl http://localhost:8000/api/phone/health
 | `MAX_VOICE_SESSION_DURATION` | Max session in seconds | `600` |
 
 ### Phone Environment Variables
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Variable | Description | Required |
+|----------|-------------|----------|
 | `PHONE_ENABLED` | Enable phone integration | `true` |
-| `AZURE_ACS_ENDPOINT` | ACS resource endpoint | — |
-| `ACS_PHONE_NUMBER` | E.164 phone number | — |
-| `PHONE_CALLBACK_BASE_URL` | Public HTTPS callback URL | — |
+| `AZURE_ACS_ENDPOINT` | ACS resource endpoint | Yes (production) |
+| `ACS_PHONE_NUMBER` | E.164 phone number (+1-913-217-1946) | Yes (production) |
+| `PHONE_CALLBACK_BASE_URL` | Public HTTPS callback URL | Yes (production) |
 
 ### Key Voice/Phone URLs
 | URL | Purpose |

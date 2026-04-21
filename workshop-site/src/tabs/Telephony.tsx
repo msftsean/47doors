@@ -165,6 +165,12 @@ export default function Telephony() {
           </div>
         </div>
 
+        <CalloutCard variant="accent" title="Production Update — April 21, 2026">
+          <strong>🎉 Phone bridge is production-verified.</strong> Caller transcripts render on <code>/live</code> during 
+          active ACS phone calls. The full 3-agent pipeline works identically for PSTN callers as it does for browser 
+          voice and text chat. Deployed as revision azd-1776792457.
+        </CalloutCard>
+
         <CalloutCard variant="accent" title="Protocol Bridging">
           ACS can&apos;t authenticate to Azure OpenAI directly — they speak different WebSocket protocols.
           The backend&apos;s <strong>managed identity</strong> bridges the gap, maintaining two concurrent WebSocket
@@ -315,6 +321,28 @@ export default function Telephony() {
             The phone doesn&apos;t create a new agent or a new pipeline. It&apos;s a new <strong>transport</strong> to
             the same trusted system. Text, browser voice, and phone all converge on the identical 3-agent
             pipeline with the same 4 tools. The trust model is transport-independent.
+          </p>
+        </div>
+
+        <div className="card mt-8 border-l-4 border-amber-500 bg-amber-50">
+          <h3 className="font-semibold text-lg mb-3 text-dark-text flex items-center gap-2">
+            <span>⚙️</span> Technical Note: Realtime API Schema
+          </h3>
+          <p className="text-gray-700 mb-3 text-sm">
+            Azure OpenAI&apos;s Realtime API has <strong>two endpoints with different <code>session.update</code> schemas</strong>:
+          </p>
+          <ul className="list-disc pl-6 mb-3 space-y-1 text-sm text-gray-700">
+            <li>
+              <strong>WebRTC calls</strong> (browser voice): uses nested <code>audio: &#123; input: &#123;...&#125;, output: &#123;...&#125; &#125;</code> shape
+            </li>
+            <li>
+              <strong>Direct WebSocket</strong> (phone bridge): uses flat top-level fields like <code>input_audio_format</code>, <code>output_audio_format</code>
+            </li>
+          </ul>
+          <p className="text-gray-700 text-sm">
+            The two schemas are <strong>not interchangeable</strong>. Using the wrong shape for an endpoint causes silent 
+            <code>unknown_parameter</code> errors. The phone bridge regression (empty caller transcripts) was caused by 
+            sending the nested schema to the direct-WS endpoint. See <code>.squad/skills/azure-realtime-api-schema/SKILL.md</code> for details.
           </p>
         </div>
 

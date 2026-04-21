@@ -271,12 +271,16 @@ export default function DemoWalkthrough() {
           </div>
         </div>
 
-        <div className="card mt-8 border-l-4 border-green-500">
+        <div className="card mt-8 border-l-4 border-green-500 bg-green-50">
           <h3 className="font-semibold text-lg mb-4 text-dark-text flex items-center gap-2">
-            <span>📞</span> Phone Demo
+            <span>📞</span> Phone Demo (Production-Ready)
           </h3>
+          <p className="text-sm text-gray-600 mb-2">
+            <strong>🎉 Live phone demo — production-verified April 21, 2026.</strong> The audience watches the call 
+            happen on the projector via LivePage. Caller AND agent speech both appear as real-time transcript.
+          </p>
           <p className="text-sm text-gray-600 mb-4">
-            Live phone demo — the audience watches the call happen on the projector via LivePage.
+            Call <strong>+1-913-217-1946</strong> from any phone. Full bidirectional transcripts render on <code>/live</code>.
           </p>
           <ol className="space-y-3 mb-6">
             <li className="flex items-start gap-3">
