@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Lab 01 prompt engineering with voice system prompt exercise
 - Updated Lab 06 deployment exercises with voice/phone configuration
 
+### Fixed
+
+- **Voice (phone bridge):** Caller speech transcripts now render on `/live` during ACS phone calls. Azure OpenAI Realtime API `/openai/realtime` direct-WS endpoint requires flat session-level fields (`voice`, `input_audio_format`, `output_audio_format`, `input_audio_transcription`); the nested `session.audio` block used by the WebRTC `/openai/v1/realtime/calls` endpoint is rejected with `unknown_parameter: session.audio`. See `.squad/skills/azure-realtime-api-schema/SKILL.md`. (backend/app/api/media_ws.py, commit 234c2ec, revision azd-1776792457)
+- **Voice (phone bridge):** Fixed `AttributeError: closed` on websocket cleanup with newer `websockets` library by switching to try/except close in the finally block. (backend/app/api/media_ws.py)
+
 ### Added
 
 - **Voice Interaction Feature** (`002-voice-interaction`): Real-time spoken conversation channel via Azure OpenAI GPT-4o Realtime API + WebRTC

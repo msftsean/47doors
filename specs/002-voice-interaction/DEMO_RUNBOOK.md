@@ -18,7 +18,7 @@ Test Coverage   [████████████████████] 1
 
 ## 🎯 Demo Overview
 
-The **47 Doors Universal Front Door Support Agent** now speaks. Students can click a single microphone button and have a natural spoken conversation with the same AI pipeline that powers text chat — getting ticket confirmations, knowledge article summaries, and escalation notices, all by voice. This demo shows how a university can replace dozens of disconnected support portals with **one trusted digital colleague** that works whether you type or talk.
+The **47 Doors Universal Front Door Support Agent** now speaks. Students can click a single microphone button and have a natural spoken conversation with the same AI pipeline that powers text chat — or call +1 (913) 217-1946 for phone-based voice support via Azure Communication Services — getting ticket confirmations, knowledge article summaries, and escalation notices, all by voice. This demo shows how a university can replace dozens of disconnected support portals with **one trusted digital colleague** that works whether you type, talk, or call.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

@@ -159,9 +159,8 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                 msg = json.loads(raw)
                 t = msg.get("type", "")
 
-                # TEMP_DIAG — revert after verification
                 if t != "response.audio.delta":  # avoid log flood
-                    logger.info("Media bridge: event type=%s", t)
+                    logger.debug("Media bridge: event type=%s", t)
 
                 # -- Session lifecycle ------------------------------------
                 if t == "session.created":
@@ -329,7 +328,7 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                 ):
                     continue
 
-                logger.info(f"Media bridge: unhandled OpenAI event: {t}")  # TEMP_DIAG — revert after verification
+                logger.debug(f"Media bridge: unhandled OpenAI event: {t}")
 
         # ------------------------------------------------------------------
         # Coroutine: read ACS media messages, forward audio to OpenAI

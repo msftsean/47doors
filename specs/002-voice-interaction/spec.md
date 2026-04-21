@@ -14,7 +14,7 @@ The current 47 Doors support agent only accepts text input. Many students — es
 
 ## Vision
 
-Add a voice channel to the existing 47 Doors support agent so students can have a natural spoken conversation with the system. The voice agent uses the same 3-agent pipeline (intent detection, routing, ticket creation, KB retrieval) as the text chat, but through the Azure OpenAI GPT-4o Realtime API with WebRTC transport. Students click a microphone button, speak their request, and hear the agent respond in real-time — including ticket confirmations, knowledge article summaries, and escalation notices. Text chat remains fully functional alongside voice.
+Add a voice channel to the existing 47 Doors support agent so students can have a natural spoken conversation with the system. The voice agent uses the same 3-agent pipeline (intent detection, routing, ticket creation, KB retrieval) as the text chat, but through the Azure OpenAI GPT-4o Realtime API with WebRTC transport (browser) or direct WebSocket (phone bridge). Students click a microphone button, speak their request, and hear the agent respond in real-time — including ticket confirmations, knowledge article summaries, and escalation notices. Alternatively, students can call +1 (913) 217-1946 to access the same voice agent via Azure Communication Services. Text chat remains fully functional alongside voice.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -237,9 +237,12 @@ The GA endpoint has significant differences from preview documentation. These di
 - Backend WebSocket support — **FastAPI native (Starlette WebSocket)**
 - Existing 3-agent pipeline — **already implemented, will be wrapped as tools**
 
+## Implemented & Production-Verified
+
+- **Phone/Telephony Channel** (2026-04-21): Azure Communication Services (ACS) media streaming bridge to Azure OpenAI Realtime API supports phone calls to +1 (913) 217-1946. Production-verified with full caller speech transcription. See `.squad/skills/azure-realtime-api-schema/SKILL.md` for endpoint schema asymmetry details.
+
 ## Out of Scope (v1)
 
-- Phone/telephony (SIP/PSTN) voice channel
 - Visual avatar or lip-sync animation
 - Voice biometric authentication
 - Multi-language voice support (English only)

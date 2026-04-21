@@ -2,7 +2,7 @@
 
 > **Feature branch**: `002-voice-interaction` | **Spec**: [spec.md](./spec.md) | **API contract**: [contracts/voice-api.yaml](./contracts/voice-api.yaml)
 
-The voice feature adds a real-time spoken conversation channel to the 47 Doors Support Agent using the Azure OpenAI GPT-4o Realtime API over WebRTC. Audio travels **directly** from the browser to Azure — nothing audio-related passes through the backend. The backend only relays tool call results via a lightweight WebSocket connection.
+The voice feature adds a real-time spoken conversation channel to the 47 Doors Support Agent using the Azure OpenAI GPT-4o Realtime API over WebRTC (browser) or direct WebSocket (phone bridge via Azure Communication Services). Audio travels **directly** from the browser to Azure — nothing audio-related passes through the backend. The backend only relays tool call results via a lightweight WebSocket connection. For phone calls to +1 (913) 217-1946, audio flows through an ACS media streaming bridge at `backend/app/api/media_ws.py`.
 
 ---
 

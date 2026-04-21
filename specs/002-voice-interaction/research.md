@@ -170,3 +170,39 @@ listening  → error → idle
 - **westus2**: Higher latency for East Coast users; suitable as a failover region.
 - **swedencentral**: Available region for Realtime API but adds ~120 ms RTT for US users. Not suitable as primary.
 - **Multi-region active-active**: Unnecessary complexity for MVP; noted as Phase 6 resilience option.
+
+---
+
+## 11. Azure OpenAI Realtime API Endpoint Schema Asymmetry (Lessons Learned — 2026-04-21)
+
+**Discovery**: The Azure OpenAI Realtime API has **two endpoints with different `session.update` schemas**. They are NOT interchangeable.
+
+**Background**:
+- Phone bridge (Azure Communication Services media streaming → Azure OpenAI) uses the **direct WebSocket endpoint**: `wss://<resource>.openai.azure.com/openai/realtime?api-version=2025-04-01-preview&deployment=<name>`.
+- Browser voice uses the **WebRTC calls endpoint**: `https://<resource>.openai.azure.com/openai/v1/realtime/calls`.
+
+**Schema difference**:
+
+1. **Direct WebSocket endpoint** (`/openai/realtime`):
+   - Requires **FLAT** session-level fields: `voice`, `input_audio_format`, `output_audio_format`, `input_audio_transcription`.
+   - REJECTS the nested `audio: { input: {...}, output: {...} }` block with error: `unknown_parameter: session.audio`.
+   - Used by: `backend/app/api/media_ws.py` (ACS phone bridge).
+
+2. **WebRTC calls endpoint** (`/openai/v1/realtime/calls`):
+   - Requires **NESTED** `audio` block with `input`/`output` sub-objects containing `format`, `voice`, `transcription`.
+   - REJECTS the flat `input_audio_transcription`, `input_audio_format` fields as unknown parameters.
+   - Used by: browser-based voice (frontend `useVoice` hook).
+
+**Impact**:
+- Silent transcription failure if the wrong schema is used — the WebSocket stays open but `conversation.item.input_audio_transcription.completed` events never fire.
+- Azure reports `unknown_parameter` in server-side logs but does NOT close the connection, making the error hard to detect client-side.
+
+**Resolution**:
+- Fixed in commit 234c2ec (deployed as revision `azd-1776792457`).
+- Media bridge (`media_ws.py`) now uses flat session-level fields for the direct WS endpoint.
+- Caller speech transcripts verified working on production phone number +1 (913) 217-1946 as of 2026-04-21.
+
+**References**:
+- Skill documentation: `.squad/skills/azure-realtime-api-schema/SKILL.md` (reusable pattern for both endpoints).
+- Decision: `.squad/decisions/inbox/tank-realtime-api-schema.md`.
+- Production verification: `.squad/agents/tank/history.md`.
