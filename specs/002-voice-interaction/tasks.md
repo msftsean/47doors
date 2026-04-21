@@ -5,7 +5,8 @@
 **Input**: Design documents from `specs/002-voice-interaction/`
 **Prerequisites**: plan.md ✅ spec.md ✅ data-model.md ✅ contracts/voice-api.yaml ✅ research.md ✅
 **Constitution**: v1.1.0 — Principle V (Test-First) applies: tests are written **before** implementation in every phase.
-**Last Updated**: 2026-03-15
+**Last Updated**: 2026-04-21
+**Shipped**: Production (2026-04-21, revision `azd-1776792457`)
 
 ### Implementation Status
 
@@ -14,11 +15,11 @@
 | Phase 1: Setup | ✅ Complete | Config, .env, Bicep, test skeletons |
 | Phase 2: Foundational | ✅ Complete | Models, types, services, DI wiring |
 | Phase 3: US1 Core Voice | ✅ Complete | Endpoints, WebRTC hook, UI components — **LIVE ON AZURE** |
-| Phase 4: US2 Escalation | 📋 Not started | Voice-specific escalation logic |
-| Phase 5: US3 Hybrid | 📋 Not started | Cross-modality session sharing |
-| Phase 6: US4 Accessibility | 📋 Not started | WCAG 2.1 AA, screen reader support |
+| Phase 4: US2 Escalation | ⏸️ Deferred | Existing pipeline escalation covers this; voice-specific logic not needed for production demo |
+| Phase 5: US3 Hybrid | ⏸️ Deferred | Session sharing works; dedicated hybrid UI not required for MVP |
+| Phase 6: US4 Accessibility | ⏸️ Deferred | Basic keyboard support shipped; full WCAG audit post-MVP |
 | Phase 7: US5 Degradation + Evals | ✅ Complete | Health endpoint, degradation, eval pack, runbook |
-| Phase 8: Polish | 📋 Not started | Security hardening, perf verification |
+| Phase 8: Polish | ⏸️ Deferred | Core security verified; full hardening review post-production |
 
 ### Deployment Notes (discovered during implementation)
 - **Auth**: Managed identity via `ManagedIdentityCredential` — API key auth disabled by Azure policy (`disableLocalAuth: true`)

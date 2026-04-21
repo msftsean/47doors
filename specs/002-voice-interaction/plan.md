@@ -3,7 +3,7 @@
 **Branch**: `002-voice-interaction` | **Date**: 2026-03-15 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/002-voice-interaction/spec.md`
 **Constitution**: v1.1.0 (voice-specific principles in III, VI, VII)
-**Status**: ✅ MVP Live on Azure — Phases 1-3 + Phase 7 complete
+**Status**: ✅ Shipped — Production (2026-04-21, revision `azd-1776792457`) — Phases 1-3 + Phase 7 complete; Phases 4, 6, 8 deferred
 
 ## Summary
 

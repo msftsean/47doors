@@ -2,8 +2,8 @@
 
 **Feature Branch**: `002-voice-interaction`
 **Created**: 2026-02-06
-**Updated**: 2026-03-16
-**Status**: ✅ MVP Live on Azure — P1 (Core Voice) + P5 (Degradation) deployed to Azure Container Apps, voice transcripts fully working
+**Updated**: 2026-04-21
+**Status**: ✅ Shipped — Production (2026-04-21, revision `azd-1776792457`) — Browser voice + phone bridge (+1-913-217-1946) verified on Azure Container Apps
 **Constitution**: v1.1.0 (voice-specific principles in III, VI, VII)
 **Input**: User description: "Add real-time voice conversation using Azure OpenAI GPT-4o Realtime API via WebRTC, enabling students to speak naturally with the support agent instead of typing"
 **MVP Scope**: User Stories P1 (Core Voice) + P5 (Degradation) + Eval Pack — Azure Container Apps deployment (local dev as fallback)

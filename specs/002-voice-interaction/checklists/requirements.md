@@ -45,3 +45,4 @@
 
 - All items pass. Spec is ready for `/speckit.clarify` and `/speckit.plan`.
 - Existing spec was comprehensive — updated header for Constitution v1.1.0 alignment.
+- **Production Status (2026-04-21)**: Feature shipped to production, revision `azd-1776792457`. All P1 (Core Voice) and P5 (Degradation) requirements verified. P2 (Escalation), P3 (Hybrid), P4 (Accessibility) covered by existing pipeline; dedicated voice-specific enhancements deferred post-MVP.

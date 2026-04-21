@@ -1,7 +1,8 @@
 # 🎤 Feature Summary: Voice Interaction (002-voice-interaction)
 
-> **Branch**: `002-voice-interaction` | **Status**: ✅ MVP Live on Azure — 435 backend tests passing (338 unit/mock + 97 GPT-4o evals)
+> **Branch**: `002-voice-interaction` | **Status**: ✅ Shipped — Production (2026-04-21, revision `azd-1776792457`)
 > **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Tasks**: [tasks.md](./tasks.md)
+> **Post-Ship Artifacts**: [Azure Realtime API Schema Skill](../../../.squad/skills/azure-realtime-api-schema/SKILL.md) | [CHANGELOG](../../../CHANGELOG.md) | [Release v0.1.5](../../../docs/RELEASE_NOTES.md)
 
 ---
 

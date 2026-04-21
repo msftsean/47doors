@@ -6,7 +6,7 @@
 ```
 
 > 👥 **Audience**: EDU customers, stakeholders, internal demos
-> 📅 **Last updated**: 2026-03-16 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: LIVE ON AZURE
+> 📅 **Last updated**: 2026-04-21 &nbsp;|&nbsp; ⏱️ **Estimated demo time**: 12–15 minutes &nbsp;|&nbsp; 🟢 **Status**: Production (revision `azd-1776792457`)
 
 ```
 Demo Readiness  [████████████████████] 100%  ✅ All systems go
