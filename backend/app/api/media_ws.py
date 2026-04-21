@@ -88,6 +88,35 @@ async def acs_media_bridge(ws: WebSocket) -> None:
 
     openai_ws = None
     session_ready = asyncio.Event()
+    # Accumulator for caller transcription deltas keyed by item_id.
+    # Some Azure Realtime API (preview) sessions emit `.delta` events but
+    # never a `.completed` event, which would leave the caller transcript
+    # invisible. We buffer deltas and flush on `.completed` OR when the
+    # caller stops speaking.
+    caller_transcript_buf: dict[str, str] = {}
+    caller_published: set[str] = set()
+
+    async def _flush_caller_transcript(item_id: str | None) -> None:
+        if not item_id:
+            # Flush anything buffered if we don't know the item_id.
+            for iid in list(caller_transcript_buf.keys()):
+                await _flush_caller_transcript(iid)
+            return
+        if item_id in caller_published:
+            return
+        text = caller_transcript_buf.pop(item_id, "").strip()
+        if not text:
+            return
+        caller_published.add(item_id)
+        logger.info(
+            "Media bridge: Caller said (call_id=%s, item=%s): %s",
+            call_id, item_id, text[:120],
+        )
+        await transcript_bus.publish({
+            "type": "user_speech",
+            "text": text,
+            "call_id": call_id,
+        })
 
     try:
         token = await _token_mgr.get_token()
@@ -186,6 +215,13 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                         pass
                     continue
 
+                # Flush any buffered caller transcript deltas when speech ends
+                # or the buffer is committed — guards against missing `.completed`.
+                if t in ("input_audio_buffer.speech_stopped",
+                         "input_audio_buffer.committed"):
+                    await _flush_caller_transcript(msg.get("item_id"))
+                    continue
+
                 # -- Transcript logging -----------------------------------
                 # Support both preview and GA event names for agent speech transcript
                 if t in ("response.audio_transcript.done", "response.output_audio_transcript.done"):
@@ -206,20 +242,34 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                     continue
 
                 if t == "conversation.item.input_audio_transcription.completed":
-                    text = msg.get("transcript", "")
-                    logger.info(
-                        "Media bridge: Caller said (call_id=%s): %s",
-                        call_id, text[:120],
-                    )
-                    await transcript_bus.publish({
-                        "type": "user_speech",
-                        "text": text,
-                        "call_id": call_id,
-                    })
-                    logger.debug(
-                        "Media bridge: published user_speech to %d subscribers",
-                        transcript_bus.subscriber_count,
-                    )
+                    item_id = msg.get("item_id")
+                    text = (msg.get("transcript") or "").strip()
+                    if text and item_id and item_id not in caller_published:
+                        caller_published.add(item_id)
+                        caller_transcript_buf.pop(item_id, None)
+                        logger.info(
+                            "Media bridge: Caller said (call_id=%s): %s",
+                            call_id, text[:120],
+                        )
+                        await transcript_bus.publish({
+                            "type": "user_speech",
+                            "text": text,
+                            "call_id": call_id,
+                        })
+                    else:
+                        # Fall back to flushing any buffered deltas for this item.
+                        await _flush_caller_transcript(item_id)
+                    continue
+
+                # Accumulate caller transcript deltas — some sessions only emit
+                # deltas, never a `.completed`. Flush on speech_stopped below.
+                if t == "conversation.item.input_audio_transcription.delta":
+                    item_id = msg.get("item_id") or ""
+                    delta = msg.get("delta") or ""
+                    if item_id and delta:
+                        caller_transcript_buf[item_id] = (
+                            caller_transcript_buf.get(item_id, "") + delta
+                        )
                     continue
 
                 # -- Tool calls -------------------------------------------
@@ -273,9 +323,6 @@ async def acs_media_bridge(ws: WebSocket) -> None:
                     "response.output_audio_transcript.delta",
                     "response.audio_transcript.delta",  # keep for compat
                     "conversation.item.created",
-                    "input_audio_buffer.speech_stopped",
-                    "input_audio_buffer.committed",
-                    "conversation.item.input_audio_transcription.delta",
                     "response.function_call_arguments.delta",
                 ):
                     continue
