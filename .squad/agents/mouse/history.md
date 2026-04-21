@@ -188,3 +188,13 @@
 - Transcription is disabled when config is missing (no error, no events)
 - SSE infrastructure (nginx buffering, TranscriptBus, generator) was working perfectly — issue was 100% upstream (no config)
 - Test-driven diagnosis was critical: without the test suite, this would have taken 8+ hours of manual debugging
+
+### Cross-Team Update — 2026-04-21
+
+**Status:** Phone bridge verified on prod, full doc sweep landed
+
+- Phone bridge transcript schema fix verified live on prod (revision azd-1776792457)
+- Full doc sweep completed across specs, runbook, release notes, participant guide, coach guide
+- Backend tests: 461/461 green
+- Frontend: TypeScript clean
+- See .squad/decisions.md for complete decision log
