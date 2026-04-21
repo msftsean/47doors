@@ -14,5 +14,11 @@
 - **Commit:** 4d66431
 - **Impact:** KB search returns articles, human escalation creates tickets, all 4 services UP
 
+### Post-Demo Roadmap Analysis (2026-04-21)
+- **Roadmap recommendation:** Next feature is Conversation Persistence & History (Cosmos DB session storage)
+- **Builds on:** Existing session_id model used across text, browser voice, and phone transcripts
+- **Impact:** Enables multi-visit support journeys, unlocks ServiceNow integration, supports "Reuse Across Campus" narrative
+- **See:** `specs/roadmap/next-feature-recommendation-2026-04-21.md` and `.squad/decisions.md`
+
 ## Ongoing
-KB search pipeline stable. Ready to continue with next priority tasks.
+KB search pipeline stable. Persistence feature (Cosmos DB sessions) prioritized for next build cycle. Ready to review roadmap and kick off speckit.plan for 003-conversation-persistence.
