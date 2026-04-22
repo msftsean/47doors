@@ -61,6 +61,10 @@ class Settings(BaseSettings):
         default="2025-04-01-preview",
         description="Azure OpenAI API version"
     )
+    oracle_image_deployment: str = Field(
+        default="gpt-image-1",
+        description="Azure OpenAI Images deployment (gpt-image-1 or dall-e-3). Used by the NYU Oracle demo."
+    )
 
     # ==========================================================================
     # Azure Cosmos DB Settings

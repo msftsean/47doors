@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router
 from app.api.media_ws import router as media_ws_router
+from app.api.oracle import router as oracle_router
 from app.api.phone import router as phone_router
 from app.api.realtime import router as realtime_router
 from app.api.transcripts import router as transcripts_router
@@ -82,6 +83,7 @@ def create_app() -> FastAPI:
     app.include_router(realtime_router, prefix=f"{settings.api_prefix}/realtime", tags=["Voice Realtime"])
     app.include_router(phone_router, prefix=f"{settings.api_prefix}/phone", tags=["Phone Call Automation"])
     app.include_router(transcripts_router, prefix=f"{settings.api_prefix}/phone", tags=["Phone Transcripts"])
+    app.include_router(oracle_router, prefix=f"{settings.api_prefix}/oracle", tags=["Oracle"])
     app.include_router(media_ws_router, prefix="/ws", tags=["Media WebSocket"])
 
     return app
