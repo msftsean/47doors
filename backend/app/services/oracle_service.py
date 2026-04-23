@@ -131,6 +131,23 @@ def generate_oracle_image(agent_text: str) -> OracleImageResult:
         agent_text, llm_client, settings.azure_openai_deployment
     )
 
+    # Gallery mode: skip the live gpt-image-1 call (60s/image is too slow for
+    # stage demos) and serve a pre-baked image picked by sentiment routing.
+    # The distillation call above still runs — that's where the implicit
+    # pedagogical guardrails live.
+    if settings.oracle_gallery_mode:
+        # Local import to avoid a circular dependency at module load.
+        from app.services.oracle_gallery import (
+            _text_safety_check,
+            get_gallery_image,
+        )
+
+        blocked = _text_safety_check(agent_text)
+        if blocked is not None:
+            blocked.visual_prompt = visual_prompt or blocked.visual_prompt
+            return blocked
+        return get_gallery_image(visual_prompt)
+
     # Image client — uses the same endpoint / key but a dedicated deployment.
     # Configure via ORACLE_IMAGE_DEPLOYMENT env var (e.g., "gpt-image-1" or "dall-e-3").
     image_deployment = getattr(settings, "oracle_image_deployment", None) or "gpt-image-1"

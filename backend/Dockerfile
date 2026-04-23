@@ -15,6 +15,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Stage-demo Oracle gallery (pre-baked PNGs are gitignored; bake them
+# locally with `python -m scripts.generate_gallery` before building the
+# image so they get COPY'd in via the line above).
+
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser
 USER appuser
