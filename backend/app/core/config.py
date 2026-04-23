@@ -61,6 +61,19 @@ class Settings(BaseSettings):
         default="2025-04-01-preview",
         description="Azure OpenAI API version"
     )
+    oracle_image_deployment: str = Field(
+        default="gpt-image-1",
+        description="Azure OpenAI Images deployment (gpt-image-1 or dall-e-3). Used by the NYU Oracle demo."
+    )
+    oracle_gallery_mode: bool = Field(
+        default=False,
+        description=(
+            "When true, Oracle image requests are served from the pre-baked "
+            "gallery in backend/data/oracle-gallery/ via sentiment routing "
+            "instead of a live gpt-image-1 call. Used for stage demos where "
+            "60s/image latency is unacceptable. Env: ORACLE_GALLERY_MODE."
+        ),
+    )
 
     # ==========================================================================
     # Azure Cosmos DB Settings

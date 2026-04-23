@@ -475,3 +475,16 @@ Tests: 461 passed, 97 skipped. No test pinned the old nested shape.
 - Fix confirmed by msftsean (Sean) — phone→/live caller transcripts rendering as expected
 - TEMP_DIAG logging reverted in commit e687215, pushed, and redeployed successfully (30s deploy)
 - Learnings documented in `.squad/skills/azure-realtime-api-schema/SKILL.md` and decision drop at `.squad/decisions/inbox/tank-phone-bridge-verified.md`
+
+## Learnings
+
+### 2026-04-22 — Oracle Gallery Mode (stage-demo latency fix)
+
+**Architecture decision (handed down, not invented):** swap live gpt-image-1 generation for a pre-baked 24-image gallery + sentiment router. Live distillation of vision text stays exactly the same; only the image step changes from generate to select. Triggered by ORACLE_GALLERY_MODE=true (default false preserves existing dev/prod behavior).
+
+**Keyword-first classifier rationale:** the demo runs on a stage with a 14-hour deadline. An LLM-based classifier on every Oracle call would re-introduce 200-800ms of latency we just paid 60s/image to remove. Keyword scoring is O(n_keywords) string-contains, deterministic, and trivially unit-testable. The LLM is kept as a fallback for the ~5% of vision_texts that have zero keyword hits, and a final `neutral` default makes the path safe even when both fail. Tie-break priority order (institutional > wonder > dream > bloom > melancholy > warning > chaos > neutral) is encoded explicitly so the Tisch demo question always lands on institutional and the Alexa Johnson attack lands on dream after distillation softens it.
+
+**Baked-into-image vs. blob storage tradeoff:** the 24 PNGs (~5-10MB total) are gitignored but COPY'd into the container image at build time. Pros: zero runtime dependency on Azure Blob, zero auth, zero network in the hot path, single artifact to deploy. Cons: refreshing the gallery requires rebuilding the container; image size grows by ~10MB. For a stage demo this is the right tradeoff — Sean wants the stage path to be unbreakable and offline-capable. If we ever needed live gallery refresh (e.g., per-event themes) we'd flip to Blob with a manifest pointer.
+
+**Text safety in gallery mode:** since we're not calling gpt-image-1, Azure Content Safety on the IMAGE no longer fires. To preserve the `violence demo` (BLOCKED overlay), added a tiny keyword-driven `_text_safety_check(agent_text)` that scans the *original* agent text (pre-distillation, where the unsanitized words live) for hard-stop terms and returns status=blocked with `safety_violations=[violence|sexual|abuse]` packed into block_reason. This keeps the pedagogical guardrails arc intact in gallery mode.
+

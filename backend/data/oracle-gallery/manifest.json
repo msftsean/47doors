@@ -1,0 +1,45 @@
+{
+  "categories": {
+    "wonder": [
+      "wonder/1.png",
+      "wonder/2.png",
+      "wonder/3.png"
+    ],
+    "institutional": [
+      "institutional/1.png",
+      "institutional/2.png",
+      "institutional/3.png"
+    ],
+    "melancholy": [
+      "melancholy/1.png",
+      "melancholy/2.png",
+      "melancholy/3.png"
+    ],
+    "warning": [
+      "warning/1.png",
+      "warning/2.png",
+      "warning/3.png"
+    ],
+    "chaos": [
+      "chaos/1.png",
+      "chaos/2.png",
+      "chaos/3.png"
+    ],
+    "bloom": [
+      "bloom/1.png",
+      "bloom/2.png",
+      "bloom/3.png"
+    ],
+    "dream": [
+      "dream/1.png",
+      "dream/2.png",
+      "dream/3.png"
+    ],
+    "neutral": [
+      "neutral/1.png",
+      "neutral/2.png",
+      "neutral/3.png"
+    ]
+  },
+  "generated_at": "2026-04-23T00:59:21.670676+00:00"
+}

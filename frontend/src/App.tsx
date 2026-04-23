@@ -5,6 +5,7 @@ import { TicketDashboard } from './components/TicketDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { RunbookPage } from './components/RunbookPage';
 import { LivePage } from './components/LivePage';
+import { OraclePage } from './components/OraclePage';
 import { useChat } from './hooks/useChat';
 import { useTickets } from './hooks/useTickets';
 import { useAdminTickets } from './hooks/useAdminTickets';
@@ -22,10 +23,17 @@ function getInitialView(): View {
 
 // Direct /live URL = audience mode: no header, no exit button
 const isDirectLiveRoute = window.location.pathname.toLowerCase() === '/live';
+// Direct /oracle URL = NYU ITP/IMA projector: full-bleed immersive, no chrome.
+const isDirectOracleRoute = window.location.pathname.toLowerCase() === '/oracle';
 
 function App() {
   const [highContrast, toggleHighContrast] = useHighContrast();
   const [currentView, setCurrentView] = useState<View>(getInitialView);
+
+  // Direct /oracle route bypasses all app chrome for projector mode.
+  if (isDirectOracleRoute) {
+    return <OraclePage />;
+  }
 
   const {
     messages,

@@ -73,3 +73,10 @@ htmlcov/
 # Support tickets (contain subscription/tenant IDs)
 docs/azure-support-ticket-*.md
 .squad/commit-msg.txt
+
+# Oracle stage-demo gallery: 24 baked PNGs are deployed via the container
+# image (COPY in backend/Dockerfile), not committed to git. Keep manifest
+# and the directory placeholder.
+backend/data/oracle-gallery/**/*.png
+!backend/data/oracle-gallery/manifest.json
+!backend/data/oracle-gallery/.gitkeep
