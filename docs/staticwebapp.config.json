@@ -4,6 +4,7 @@
     { "route": "/.auth/logout", "allowedRoles": ["anonymous"] },
     { "route": "/.auth/login/github", "statusCode": 404 },
     { "route": "/.auth/login/twitter", "statusCode": 404 },
+    { "route": "/talk", "rewrite": "/talk.html", "allowedRoles": ["authenticated"] },
     { "route": "/*", "allowedRoles": ["authenticated"] }
   ],
   "responseOverrides": {
