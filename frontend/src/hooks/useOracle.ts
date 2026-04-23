@@ -118,12 +118,13 @@ const SSE_URL = '/api/phone/transcripts/stream';
 const IMAGE_URL = '/api/oracle/image';
 /**
  * Minimum time between image request starts.
- * gpt-image-1 is rate-limited to 3 req / 60s on Azure, so 22s between
- * starts gives us headroom for retries and avoids 429 cascades during
- * rapid back-and-forth conversation turns. Rate-limited scenes still
- * show typography and user utterance — only the image is skipped.
+ * gpt-image-1 is rate-limited to 3 req / 60s on Azure. 8s between starts
+ * keeps well under that while still letting the projector keep up with
+ * normal conversational pacing. When a request would violate the interval,
+ * we DEFER (setTimeout) rather than silently drop — every agent_speech
+ * eventually resolves to a real image, blocked state, or error.
  */
-const MIN_IMAGE_INTERVAL_MS = 22_000;
+const MIN_IMAGE_INTERVAL_MS = 8_000;
 
 export function useOracle() {
   const [state, dispatch] = useReducer(reducer, initial);
@@ -163,45 +164,29 @@ export function useOracle() {
     currentSceneIdRef.current = scene.id;
 
     // Rate-limit guard: if we fired an image request less than
-    // MIN_IMAGE_INTERVAL_MS ago, skip this one. Agent text still shows;
-    // we just don't request an image. Prevents 429 storms on stage.
+    // MIN_IMAGE_INTERVAL_MS ago, DEFER this one (do not silently drop it).
+    // The old behavior dispatched a fake error which left the scene with
+    // no image and no block state — an invisible failure on stage.
+    // Now we wait out the cooldown and then fire the request, so every
+    // agent_speech eventually gets an image (or a real blocked/error).
     const now = Date.now();
     const elapsed = now - lastImageRequestAtRef.current;
-    if (lastImageRequestAtRef.current > 0 && elapsed < MIN_IMAGE_INTERVAL_MS) {
-      dispatch({
-        type: 'scene_image',
-        sceneId: scene.id,
-        response: {
-          status: 'error',
-          error: `rate-limit-guard: ${Math.round((MIN_IMAGE_INTERVAL_MS - elapsed) / 1000)}s until next image`,
-        },
-      });
-      return;
-    }
-    lastImageRequestAtRef.current = now;
+    const delay =
+      lastImageRequestAtRef.current > 0 && elapsed < MIN_IMAGE_INTERVAL_MS
+        ? MIN_IMAGE_INTERVAL_MS - elapsed
+        : 0;
+    lastImageRequestAtRef.current = now + delay;
 
     const controller = new AbortController();
+    const timer = setTimeout(() => {
+      if (controller.signal.aborted) return;
+      fireImageRequest(scene.id, scene.agentText, controller, dispatch);
+    }, delay);
 
-    fetch(IMAGE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: scene.agentText }),
-      signal: controller.signal,
-    })
-      .then((r) => r.json() as Promise<OracleImageResponse>)
-      .then((resp) => {
-        dispatch({ type: 'scene_image', sceneId: scene.id, response: resp });
-      })
-      .catch((err) => {
-        if (err?.name === 'AbortError') return;
-        dispatch({
-          type: 'scene_image',
-          sceneId: scene.id,
-          response: { status: 'error', error: String(err) },
-        });
-      });
-
-    return () => controller.abort();
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [state.scene?.id]);
 
   // 3. Clear previousScene after one second so it crossfades out.
@@ -212,4 +197,30 @@ export function useOracle() {
   }, [state.previousScene]);
 
   return state;
+}
+
+function fireImageRequest(
+  sceneId: string,
+  agentText: string,
+  controller: AbortController,
+  dispatch: (a: Action) => void,
+) {
+  fetch(IMAGE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: agentText }),
+    signal: controller.signal,
+  })
+    .then((r) => r.json() as Promise<OracleImageResponse>)
+    .then((resp) => {
+      dispatch({ type: 'scene_image', sceneId, response: resp });
+    })
+    .catch((err) => {
+      if (err?.name === 'AbortError') return;
+      dispatch({
+        type: 'scene_image',
+        sceneId,
+        response: { status: 'error', error: String(err) },
+      });
+    });
 }

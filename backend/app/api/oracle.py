@@ -19,10 +19,9 @@ import logging
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.core.config import get_settings
 from app.services.oracle_service import (
     generate_oracle_image,
     image_b64_to_data_url,
@@ -99,11 +98,14 @@ async def oracle_image(req: OracleImageRequest) -> OracleImageResponse:
 
 @router.post("/provoke")
 async def oracle_provoke(req: ProvokeRequest) -> dict[str, str]:
-    """Push a synthetic transcript event onto the bus (demo rehearsal only)."""
-    settings = get_settings()
-    if settings.environment == "production":
-        raise HTTPException(status_code=403, detail="Disabled in production")
+    """Push a synthetic transcript event onto the bus (demo rehearsal + stage fallback).
 
+    Intentionally available in all environments: the NYU ITP/IMA stage demo
+    relies on this endpoint as a fallback when the voice agent refuses a
+    prompt at the speech layer (and therefore never produces vivid text
+    for the Oracle to rewrite + block). The endpoint only publishes to an
+    internal SSE bus — no data leaves the instance.
+    """
     call_id = req.call_id or f"rehearsal-{uuid4().hex[:8]}"
     event = {
         "type": req.kind,

@@ -311,3 +311,14 @@ Switch added URL routing for direct access to /live and /runbook pages in `front
 **Key learning:**
 Workshop-site documentation was already updated in parallel commit stream. Cross-agent coordination via commit log inspection confirmed all requested changes already present.
 
+
+## Learnings
+
+### 2026-04-22 · /nyu Oracle page is voice-only (SSE-driven)
+- The /nyu and /oracle projector UI subscribes to `agent_speech` events on the `/api/phone/transcripts/stream` SSE feed. It does NOT poll or listen to direct REST responses.
+- Consequence: hitting `/api/oracle/image` with curl / Postman / a text-input form does not light up the projector, even when the backend correctly generates or blocks. The backend is fine; the UI just never sees it.
+- The only things that drive the projector live are: (a) a real phone call to +1 (913) 217-1946, or (b) a `POST /api/oracle/provoke` with `kind:\"agent_speech\"` publishing onto the same SSE bus (backup path only).
+- Sean's NYU ITP/IMA talk on 2026-04-23 uses two live voice demos as the centerpiece:
+  1. Content Safety BLOCKED — call the number, ask for a graphic violent scene, watch the /nyu projector flip to crimson BLOCKED with `safety_violations=[violence]`.
+  2. Normal creative — call the number with a benign, emotional prompt, watch the cinematic image cross-fade in.
+- Implication for any future talk-script, demo doc, or onstage runbook touching the Oracle: default to phone/voice as the primary path; label any REST / curl / text-input path as backup-only with an explicit warning.
